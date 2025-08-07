@@ -54,7 +54,8 @@ dependencies:
   sizer: ^3.0.5
   pocketbase: ^0.23.0
   local_auth: ^2.3.0
-  flutter_secure_storage: ^9.2.4
+  flutter_secure_storage: ^10.0.0
+  drift: ^2.22.0
   crypto: ^3.0.6
   pointycastle: ^4.0.0
   encrypter_plus: ^5.1.0
@@ -62,6 +63,7 @@ dependencies:
   local_hero: ^0.3.0
   video_player: ^2.10.0
   logger: ^2.6.1
+  sqlite3_flutter_libs: ^0.5.42
 
 dev_dependencies:
   flutter_test:
@@ -74,7 +76,13 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
   build_runner: ^2.6.0
+  drift_dev: ^2.22.0
   flutter_gen_runner: ^5.11.0
+
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc
 
 splash_master:
   # Use to specifies the color for the splash screen
