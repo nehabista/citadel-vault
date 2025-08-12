@@ -1,5 +1,5 @@
+// File: lib/presentation/widgets/custom_button_with_splash.dart
 import 'package:flutter/material.dart';
-import 'package:velocity_x/velocity_x.dart';
 
 class CustomButtonWithSplash extends StatelessWidget {
   final void Function()? onTap;
@@ -20,6 +20,7 @@ class CustomButtonWithSplash extends StatelessWidget {
   final Color? colorDarkMode;
   final Color? colorLightMode;
   final Color? textColor;
+
   const CustomButtonWithSplash({
     super.key,
     required this.onTap,
@@ -44,41 +45,58 @@ class CustomButtonWithSplash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      borderRadius: BorderRadius.circular(borderRadius ?? 8),
-      child: InkWell(
-        splashColor: splashColor ?? Colors.redAccent,
-        borderRadius: BorderRadius.circular(borderRadius ?? 8),
-        onTap: onTap,
-        child: Ink(
-          height: height ?? 35,
-          decoration: BoxDecoration(
-            color: colorDarkMode ?? const Color(0xff4D4DCD),
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: px ?? 12,
+          vertical: py ?? 8,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          borderRadius: BorderRadius.circular(borderRadius ?? 8),
+          child: InkWell(
+            splashColor: splashColor ?? Colors.redAccent,
             borderRadius: BorderRadius.circular(borderRadius ?? 8),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: title.text
-                    .scale(textScale ?? 1.25)
-                    .color(textColor ?? Colors.white)
-                    .extraBold
-                    .make()
-                    .px(textPx ?? 4)
-                    .py(textPy ?? 0)
-                    .pOnly(
-                      right: textPOnlyRight ?? 0,
-                      left: textPOnlyLeft ?? 0,
-                      bottom: textPOnlyBottom ?? 0,
-                      top: textPOnlyTop ?? 0,
-                    ),
+            onTap: onTap,
+            child: Ink(
+              height: height ?? 35,
+              decoration: BoxDecoration(
+                color: colorDarkMode ?? const Color(0xff4D4DCD),
+                borderRadius: BorderRadius.circular(borderRadius ?? 8),
               ),
-            ],
-          ).px(textPxRow ?? 0),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: textPxRow ?? 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          left: textPOnlyLeft ?? 0,
+                          right: textPOnlyRight ?? 0,
+                          top: textPOnlyTop ?? 0,
+                          bottom: textPOnlyBottom ?? 0,
+                        ).add(EdgeInsets.symmetric(
+                          horizontal: textPx ?? 4,
+                          vertical: textPy ?? 0,
+                        )),
+                        child: Text(
+                          title,
+                          textScaler: TextScaler.linear(textScale ?? 1.25),
+                          style: TextStyle(
+                            color: textColor ?? Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
-    ).centered().px(px ?? 12).py(py ?? 8);
+    );
   }
 }

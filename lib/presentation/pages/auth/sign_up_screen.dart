@@ -1,34 +1,39 @@
-import 'package:citadel_password_manager/logic/controllers/auth_controller.dart';
+// File: lib/presentation/pages/auth/sign_up_screen.dart
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:icons_plus/icons_plus.dart';
-import 'package:velocity_x/velocity_x.dart';
 
 import '../../../utils/validator.dart';
 import '../../widgets/custom_button_with_splash.dart';
+import '../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../routing/app_router.dart';
 
-class SignUpScreen extends StatefulWidget {
+class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
+class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('SignUpScreen build called');
-    final AuthController controller = Get.find<AuthController>();
+    final authState = ref.watch(authProvider);
+    final notifier = ref.read(authProvider.notifier);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final width = screenWidth < 600 ? screenWidth * 0.9 : 400.0;
+
     return Form(
       key: _formKey,
       child: Material(
         type: MaterialType.transparency,
         child: Container(
           padding: const EdgeInsets.all(16.0),
-          width: context.isMobile ? context.screenWidth * 0.9 : 400,
+          width: width,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -59,11 +64,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     textAlign: TextAlign.center,
-                  ).shimmer(
-                    primaryColor: const Color.fromARGB(255, 0, 37, 55),
-                    secondaryColor: const Color(0xff4D4DCD),
-                    duration: 5.seconds,
-                    showAnimation: true,
                   ),
                 ),
               ),
@@ -71,11 +71,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               TextFormField(
                 autofocus: false,
                 autofillHints: const [AutofillHints.name],
-                controller: controller.nameControllerForSignUp,
+                controller: notifier.nameSignUpController,
                 keyboardType: TextInputType.name,
-                onSaved: (value) {
-                  controller.nameControllerForSignUp.text = value!;
-                },
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
@@ -94,11 +91,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               TextFormField(
                 autofocus: false,
                 autofillHints: const [AutofillHints.email],
-                controller: controller.emailControllerForSignUp,
+                controller: notifier.emailSignUpController,
                 keyboardType: TextInputType.emailAddress,
-                onSaved: (value) {
-                  controller.emailControllerForSignUp.text = value!;
-                },
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
@@ -114,94 +108,94 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 validator: Validator().email,
               ),
               const SizedBox(height: 15),
-              Obx(() {
-                return TextFormField(
-                  obscureText: controller.passwordVisibility['signUp']!,
-                  autofocus: false,
-                  autofillHints: const [AutofillHints.password],
-                  controller: controller.passwordControllerForSignUp,
-                  onSaved: (value) {
-                    controller.passwordControllerForSignUp.text = value!;
-                  },
-                  textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    fillColor: Color.fromARGB(15, 77, 77, 205),
-                    border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                    ),
-                    filled: true,
-                    prefixIcon: Icon(
-                      controller.passwordVisibility['signUp']!
-                          ? Bootstrap.lock
-                          : Bootstrap.unlock,
-                    ),
-                    suffixIcon: Icon(
-                      controller.passwordVisibility['signUp']!
+              TextFormField(
+                obscureText: authState.passwordVisibility['signUp'] ?? true,
+                autofocus: false,
+                autofillHints: const [AutofillHints.password],
+                controller: notifier.passwordSignUpController,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  fillColor: const Color.fromARGB(15, 77, 77, 205),
+                  border: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                  ),
+                  filled: true,
+                  prefixIcon: Icon(
+                    (authState.passwordVisibility['signUp'] ?? true)
+                        ? Bootstrap.lock
+                        : Bootstrap.unlock,
+                  ),
+                  suffixIcon: GestureDetector(
+                    onTap: () => notifier.togglePasswordVisibility('signUp'),
+                    child: Icon(
+                      (authState.passwordVisibility['signUp'] ?? true)
                           ? Icons.visibility
                           : Icons.visibility_off,
-                    ).onTap(() {
-                      controller.togglePasswordVisibility('signUp');
-                    }),
-                    hintText: 'Enter Account Password',
-                    labelText: 'Password',
+                    ),
                   ),
-                  validator: Validator().password,
-                );
-              }),
+                  hintText: 'Enter Account Password',
+                  labelText: 'Password',
+                ),
+                validator: Validator().password,
+              ),
               const SizedBox(height: 15),
-              Obx(() {
-                return TextFormField(
-                  obscureText: controller.passwordVisibility['master']!,
-                  autofocus: false,
-                  autofillHints: const [AutofillHints.password],
-                  controller: controller.masterPasswordController,
-                  onSaved: (value) {
-                    controller.masterPasswordController.text = value!;
-                  },
-                  textInputAction: TextInputAction.done,
-                  decoration: InputDecoration(
-                    fillColor: Color.fromARGB(15, 77, 77, 205),
-                    border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                    ),
-                    filled: true,
-                    prefixIcon: Icon(
-                      controller.passwordVisibility['master']!
-                          ? Bootstrap.lock
-                          : Bootstrap.unlock,
-                    ),
-                    suffixIcon: Icon(
-                      controller.passwordVisibility['master']!
+              TextFormField(
+                obscureText: authState.passwordVisibility['master'] ?? true,
+                autofocus: false,
+                autofillHints: const [AutofillHints.password],
+                controller: notifier.masterPasswordController,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  fillColor: const Color.fromARGB(15, 77, 77, 205),
+                  border: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                  ),
+                  filled: true,
+                  prefixIcon: Icon(
+                    (authState.passwordVisibility['master'] ?? true)
+                        ? Bootstrap.lock
+                        : Bootstrap.unlock,
+                  ),
+                  suffixIcon: GestureDetector(
+                    onTap: () => notifier.togglePasswordVisibility('master'),
+                    child: Icon(
+                      (authState.passwordVisibility['master'] ?? true)
                           ? Icons.visibility
                           : Icons.visibility_off,
-                    ).onTap(() {
-                      controller.togglePasswordVisibility('master');
-                    }),
-                    hintText: 'Enter Master Password',
-                    labelText: 'Master Password',
+                    ),
                   ),
-                  validator: Validator().password,
-                );
-              }),
+                  hintText: 'Enter Master Password',
+                  labelText: 'Master Password',
+                ),
+                validator: Validator().password,
+              ),
               const SizedBox(height: 16),
               Hero(
                 tag: 'auth_button',
-                child: Obx(() {
-                  return !controller.isLoadingForSignUp.isTrue
-                      ? CustomButtonWithSplash(
+                child: !authState.isLoadingSignUp
+                    ? CustomButtonWithSplash(
                         px: 0,
                         py: 8,
                         borderRadius: 6.8,
                         onTap: () async {
                           FocusManager.instance.primaryFocus?.unfocus();
                           if (_formKey.currentState!.validate()) {
-                            await controller.register();
+                            final result = await notifier.register();
+                            if (!mounted) return;
+                            if (result.needsVerification &&
+                                result.email != null) {
+                              context.go(AppRoutes.verification,
+                                  extra: result.email);
+                            } else if (result.error != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(result.error!)),
+                              );
+                            }
                           }
                         },
                         title: 'Sign Up',
                       )
-                      : const CircularProgressIndicator();
-                }),
+                    : const CircularProgressIndicator(),
               ),
               const SizedBox(height: 16),
               Hero(
@@ -209,12 +203,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    "Already have an account?".text.bold.make(),
+                    const Text("Already have an account?",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     TextButton(
-                      onPressed: () {
-                        controller.changeSlidingValue(0);
-                      },
-                      child: 'Sign In'.text.bold.make(),
+                      onPressed: () => notifier.changeSlidingValue(0),
+                      child: const Text('Sign In',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),

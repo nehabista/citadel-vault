@@ -1,15 +1,16 @@
 // File: lib/data/services/crypto/encryption_service.dart
+// Legacy v1 encryption service (PBKDF2 + AES-256-CBC).
+// Retained for backward compatibility during migration to CryptoEngine.
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:math';
 import 'package:encrypter_plus/encrypter_plus.dart' as encrypt_lib;
-import 'package:get/get.dart' show GetxService;
 import 'package:pointycastle/export.dart';
 
-class EncryptionService extends GetxService {
-  static const int _keyLength = 32; 
-  static const int _saltLength = 16; 
-  static const int _pbkdf2Iterations = 1000000; // one  million iterations
+class EncryptionService {
+  static const int _keyLength = 32;
+  static const int _saltLength = 16;
+  static const int _pbkdf2Iterations = 1000000;
 
   String generateSecureSalt() {
     final random = Random.secure();

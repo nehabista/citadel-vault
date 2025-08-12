@@ -1,39 +1,43 @@
 // File: lib/data/services/vault/vault_service.dart
 import 'dart:convert';
-import 'package:get/get.dart';
 import 'package:pocketbase/pocketbase.dart';
 import '../../models/vault_item_model.dart';
-import '../api/pocketbase_service.dart';
 import '../crypto/encryption_service.dart';
 import '../auth/session_service.dart';
 
-class VaultService extends GetxService {
-  final PocketBase _pb = Get.find<PocketBaseService>().client;
-  final EncryptionService _encryptionService = Get.find<EncryptionService>();
-  final SessionService _sessionService = Get.find<SessionService>();
+/// Handles vault item CRUD operations with encryption/decryption.
+/// Plain Dart class -- no GetX dependency.
+class VaultService {
+  final PocketBase pb;
+  final EncryptionService encryptionService;
+  final SessionService sessionService;
+
+  VaultService({
+    required this.pb,
+    required this.encryptionService,
+    required this.sessionService,
+  });
 
   Future<List<VaultItem>> fetchAndDecryptVaultItems() async {
-    if (!_sessionService.isVaultUnlocked) throw Exception("Vault is locked.");
+    if (!sessionService.isVaultUnlocked) throw Exception("Vault is locked.");
 
-    final records = await _pb
-        .collection('vault_items')
-        .getFullList(
-          filter: 'owner = "${_pb.authStore.model!.id}"',
+    final records = await pb.collection('vault_items').getFullList(
+          filter: 'owner = "${pb.authStore.model!.id}"',
           sort: '-created',
         );
-    final key = _sessionService.encryptionKey;
+    final key = sessionService.encryptionKey;
 
     return records.map((record) {
       final encryptedName = record.getStringValue('name_encrypted');
-      final decryptedName = _encryptionService.decrypt(encryptedName, key);
+      final decryptedName = encryptionService.decrypt(encryptedName, key);
       return VaultItem.fromRecord(record, decryptedName);
     }).toList();
   }
 
   Map<String, dynamic> decryptVaultItemFields(VaultItem item) {
-    if (!_sessionService.isVaultUnlocked) throw Exception("Vault is locked.");
-    final key = _sessionService.encryptionKey;
-    final decryptedJson = _encryptionService.decrypt(item.encryptedFields, key);
+    if (!sessionService.isVaultUnlocked) throw Exception("Vault is locked.");
+    final key = sessionService.encryptionKey;
+    final decryptedJson = encryptionService.decrypt(item.encryptedFields, key);
     return jsonDecode(decryptedJson) as Map<String, dynamic>;
   }
 
@@ -42,20 +46,18 @@ class VaultService extends GetxService {
     required String name,
     required Map<String, dynamic> fields,
   }) async {
-    if (!_sessionService.isVaultUnlocked) throw Exception("Vault is locked.");
+    if (!sessionService.isVaultUnlocked) throw Exception("Vault is locked.");
 
-    final key = _sessionService.encryptionKey;
-    final iv = _encryptionService.generateIV();
+    final key = sessionService.encryptionKey;
+    final iv = encryptionService.generateIV();
     final jsonFields = jsonEncode(fields);
 
-    final encryptedName = _encryptionService.encrypt(name, key, iv);
-    final encryptedFields = _encryptionService.encrypt(jsonFields, key, iv);
+    final encryptedName = encryptionService.encrypt(name, key, iv);
+    final encryptedFields = encryptionService.encrypt(jsonFields, key, iv);
 
-    await _pb
-        .collection('vault_items')
-        .create(
+    await pb.collection('vault_items').create(
           body: {
-            'owner': _pb.authStore.model!.id,
+            'owner': pb.authStore.model!.id,
             'type': type.toShortString(),
             'name_encrypted': encryptedName,
             'iv': iv.base64,
@@ -66,6 +68,6 @@ class VaultService extends GetxService {
   }
 
   Future<void> deleteVaultItem(String itemId) async {
-    await _pb.collection('vault_items').delete(itemId);
+    await pb.collection('vault_items').delete(itemId);
   }
 }

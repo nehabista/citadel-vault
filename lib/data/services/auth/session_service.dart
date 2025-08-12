@@ -1,8 +1,7 @@
 // File: lib/data/services/auth/session_service.dart
 import 'dart:typed_data';
-import 'package:get/get.dart';
 
-class SessionService extends GetxService {
+class SessionService {
   Uint8List? _encryptionKey;
   bool get isVaultUnlocked => _encryptionKey != null;
 

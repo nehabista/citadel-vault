@@ -1,31 +1,37 @@
-import 'package:citadel_password_manager/logic/controllers/auth_controller.dart';
+// File: lib/presentation/pages/auth/login_screen.dart
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:icons_plus/icons_plus.dart';
-import 'package:velocity_x/velocity_x.dart';
 
 import '../../../utils/validator.dart';
 import '../../widgets/custom_button_with_splash.dart';
+import '../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../routing/app_router.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
-    final AuthController controller = Get.find<AuthController>();
+    final authState = ref.watch(authProvider);
+    final notifier = ref.read(authProvider.notifier);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final width = screenWidth < 600 ? screenWidth * 0.9 : 400.0;
+
     return Material(
       type: MaterialType.transparency,
       child: Container(
         padding: const EdgeInsets.all(16.0),
-        width: context.isMobile ? context.screenWidth * 0.9 : 400,
+        width: width,
         child: Form(
           key: _formKey,
           child: Column(
@@ -58,11 +64,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     textAlign: TextAlign.center,
-                  ).shimmer(
-                    primaryColor: const Color.fromARGB(255, 0, 37, 55),
-                    secondaryColor: const Color(0xff4D4DCD),
-                    duration: 5.seconds,
-                    showAnimation: true,
                   ),
                 ),
               ),
@@ -70,11 +71,8 @@ class _LoginScreenState extends State<LoginScreen> {
               TextFormField(
                 autofocus: false,
                 autofillHints: const [AutofillHints.email],
-                controller: controller.emailControllerForLogin,
+                controller: notifier.emailLoginController,
                 keyboardType: TextInputType.emailAddress,
-                onSaved: (value) {
-                  controller.emailControllerForLogin.text = value!;
-                },
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
@@ -90,105 +88,111 @@ class _LoginScreenState extends State<LoginScreen> {
                 validator: Validator().email,
               ),
               const SizedBox(height: 15),
-              Obx(() {
-                return TextFormField(
-                  obscureText: controller.passwordVisibility['login']!,
-                  autofocus: false,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  autofillHints: const [AutofillHints.password],
-                  controller: controller.passwordControllerForLogin,
-                  onSaved: (value) {
-                    controller.passwordControllerForLogin.text = value!;
-                  },
-                  textInputAction: TextInputAction.done,
-                  decoration: InputDecoration(
-                    fillColor: Color.fromARGB(15, 77, 77, 205),
-                    border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                    ),
-                    filled: true,
-                    prefixIcon: Icon(
-                      controller.passwordVisibility['login']!
-                          ? Bootstrap.lock
-                          : Bootstrap.unlock,
-                    ),
-                    suffixIcon: Icon(
-                      controller.passwordVisibility['login']!
+              TextFormField(
+                obscureText: authState.passwordVisibility['login'] ?? true,
+                autofocus: false,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                autofillHints: const [AutofillHints.password],
+                controller: notifier.passwordLoginController,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  fillColor: const Color.fromARGB(15, 77, 77, 205),
+                  border: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                  ),
+                  filled: true,
+                  prefixIcon: Icon(
+                    (authState.passwordVisibility['login'] ?? true)
+                        ? Bootstrap.lock
+                        : Bootstrap.unlock,
+                  ),
+                  suffixIcon: GestureDetector(
+                    onTap: () => notifier.togglePasswordVisibility('login'),
+                    child: Icon(
+                      (authState.passwordVisibility['login'] ?? true)
                           ? Icons.visibility
                           : Icons.visibility_off,
-                    ).onTap(() {
-                      controller.togglePasswordVisibility('login');
-                    }),
-                    hintText: 'Enter Account Password',
-                    labelText: 'Password',
+                    ),
                   ),
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return ("Password can't be Empty");
-                    }
-                    return null;
-                  },
-                );
-              }),
+                  hintText: 'Enter Account Password',
+                  labelText: 'Password',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Password can't be Empty";
+                  }
+                  return null;
+                },
+              ),
               const SizedBox(height: 15),
-              Obx(() {
-                return TextFormField(
-                  obscureText: controller.passwordVisibility['master']!,
-                  autofocus: false,
-                  autofillHints: const [AutofillHints.password],
-                  controller: controller.masterPasswordController,
-                  onSaved: (value) {
-                    controller.masterPasswordController.text = value!;
-                  },
-                  textInputAction: TextInputAction.done,
-                  decoration: InputDecoration(
-                    fillColor: Color.fromARGB(15, 77, 77, 205),
-                    border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                    ),
-                    filled: true,
-                    prefixIcon: Icon(
-                      controller.passwordVisibility['masterLogin']!
-                          ? Bootstrap.lock
-                          : Bootstrap.unlock,
-                    ),
-                    suffixIcon: Icon(
-                      controller.passwordVisibility['masterLogin']!
+              TextFormField(
+                obscureText: authState.passwordVisibility['master'] ?? true,
+                autofocus: false,
+                autofillHints: const [AutofillHints.password],
+                controller: notifier.masterPasswordController,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  fillColor: const Color.fromARGB(15, 77, 77, 205),
+                  border: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                  ),
+                  filled: true,
+                  prefixIcon: Icon(
+                    (authState.passwordVisibility['masterLogin'] ?? true)
+                        ? Bootstrap.lock
+                        : Bootstrap.unlock,
+                  ),
+                  suffixIcon: GestureDetector(
+                    onTap: () =>
+                        notifier.togglePasswordVisibility('masterLogin'),
+                    child: Icon(
+                      (authState.passwordVisibility['masterLogin'] ?? true)
                           ? Icons.visibility
                           : Icons.visibility_off,
-                    ).onTap(() {
-                      controller.togglePasswordVisibility('masterLogin');
-                    }),
-                    hintText: 'Enter Master Password',
-                    labelText: 'Master Password',
+                    ),
                   ),
-                  validator: Validator().password,
-                );
-              }),
+                  hintText: 'Enter Master Password',
+                  labelText: 'Master Password',
+                ),
+                validator: Validator().password,
+              ),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {},
-                  child: 'Forgot Password?'.text.semiBold.make(),
+                  child: const Text(
+                    'Forgot Password?',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
               Hero(
                 tag: 'auth_button',
-                child: Obx(() {
-                  return !controller.isLoadingForLogin.isTrue
-                      ? CustomButtonWithSplash(
+                child: !authState.isLoadingLogin
+                    ? CustomButtonWithSplash(
                         px: 0,
                         borderRadius: 6.8,
                         onTap: () async {
                           FocusManager.instance.primaryFocus?.unfocus();
                           if (_formKey.currentState!.validate()) {
-                            await controller.login();
+                            final result = await notifier.login();
+                            if (!mounted) return;
+                            if (result.success) {
+                              context.go(AppRoutes.home);
+                            } else if (result.needsVerification &&
+                                result.email != null) {
+                              context.go(AppRoutes.verification,
+                                  extra: result.email);
+                            } else if (result.error != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(result.error!)),
+                              );
+                            }
                           }
                         },
                         title: 'Login',
                       )
-                      : const CircularProgressIndicator();
-                }),
+                    : const CircularProgressIndicator(),
               ),
               const SizedBox(height: 16),
               Hero(
@@ -196,12 +200,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    "Don't have an account?".text.bold.make(),
+                    const Text("Don't have an account?",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     TextButton(
-                      onPressed: () async {
-                        controller.changeSlidingValue(1);
-                      },
-                      child: 'Sign Up'.text.bold.make(),
+                      onPressed: () => notifier.changeSlidingValue(1),
+                      child: const Text('Sign Up',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),

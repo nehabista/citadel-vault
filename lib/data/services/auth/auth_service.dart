@@ -2,32 +2,36 @@
 import 'dart:developer' show log;
 import 'dart:typed_data';
 
-import 'package:get/get.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import '../../../utils/dicebear_avatar/preset_gen_dicebear.dart';
 import '../../models/user_model.dart';
-import '../api/pocketbase_service.dart';
 import '../crypto/encryption_service.dart';
 import 'local_auth_service.dart';
 import 'session_service.dart';
 
-/// Handles all user authentication flows, including registration with name,
-/// login, logout, and managing the current user's session data.
-class AuthService extends GetxService {
-  final PocketBase _pb = Get.find<PocketBaseService>().client;
-  final EncryptionService _encryptionService = Get.find<EncryptionService>();
-  final SessionService _sessionService = Get.find<SessionService>();
-  final LocalAuthService _localAuthService = Get.find<LocalAuthService>();
+/// Handles all user authentication flows.
+/// Plain Dart class -- no GetX dependency.
+class AuthService {
+  final PocketBase pb;
+  final EncryptionService encryptionService;
+  final SessionService sessionService;
+  final LocalAuthService localAuthService;
 
-  // Holds the current logged-in user's data.
-  final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
+  AuthService({
+    required this.pb,
+    required this.encryptionService,
+    required this.sessionService,
+    required this.localAuthService,
+  });
 
-  bool get isLoggedIn => _pb.authStore.isValid;
+  UserModel? currentUser;
+
+  bool get isLoggedIn => pb.authStore.isValid;
 
   void loadCurrentUser() {
-    if (_pb.authStore.isValid) {
-      currentUser.value = UserModel.fromRecord(_pb.authStore.record!);
+    if (pb.authStore.isValid && pb.authStore.record != null) {
+      currentUser = UserModel.fromRecord(pb.authStore.record!);
     }
   }
 
@@ -37,8 +41,7 @@ class AuthService extends GetxService {
     required String accountPassword,
     required String masterPassword,
   }) async {
-    final salt = _encryptionService.generateSecureSalt();
-    // Generate a unique avatar seed based on the email
+    final salt = encryptionService.generateSecureSalt();
     final pngUrl =
         AvatarPresets.colorfulRoundedAvatar(seed: email).buildPngUrl();
     final body = <String, dynamic>{
@@ -53,14 +56,8 @@ class AuthService extends GetxService {
     };
     log(body.toString());
 
-    await _pb.collection('users').create(body: body);
-    await _pb.collection('users').requestVerification(email);
-
-    // await loginWithMasterPassword(
-    //   email: email,
-    //   password: accountPassword,
-    //   masterPassword: masterPassword,
-    // );
+    await pb.collection('users').create(body: body);
+    await pb.collection('users').requestVerification(email);
   }
 
   Future<void> loginWithMasterPassword({
@@ -68,84 +65,71 @@ class AuthService extends GetxService {
     required String password,
     required String masterPassword,
   }) async {
-    final authData = await _pb
-        .collection('users')
-        .authWithPassword(email, password);
-    currentUser.value = UserModel.fromRecord(authData.record);
-    final salt = currentUser.value!.salt;
-    final Uint8List derivedKey = _encryptionService.deriveKey(
+    final authData =
+        await pb.collection('users').authWithPassword(email, password);
+    currentUser = UserModel.fromRecord(authData.record);
+    final salt = currentUser!.salt;
+    final Uint8List derivedKey = encryptionService.deriveKey(
       masterPassword,
       salt,
     );
-
-    _sessionService.startSession(derivedKey);
+    sessionService.startSession(derivedKey);
   }
 
   Future<void> markQuickUnlockAsComplete() async {
-    if (currentUser.value == null) {
+    if (currentUser == null) {
       throw Exception("Cannot mark setup as complete. User not logged in.");
     }
-    await _pb
+    await pb
         .collection('users')
-        .update(currentUser.value!.id, body: {'isQuickUnlockSetup': true});
-    // Refresh the local user model to reflect the change
-    currentUser.update((user) {
-      if (user != null) {
-        // This is a bit of a workaround since we can't easily recreate the model
-        // A better approach might be to refetch the user record, but this is efficient.
-        final updatedUser = UserModel(
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          salt: user.salt,
-          avatarUrl: user.avatarUrl,
-          isQuickUnlockSetup: true, // Manually update the flag
-        );
-        currentUser.value = updatedUser;
-      }
-    });
+        .update(currentUser!.id, body: {'isQuickUnlockSetup': true});
+    currentUser = UserModel(
+      id: currentUser!.id,
+      email: currentUser!.email,
+      name: currentUser!.name,
+      salt: currentUser!.salt,
+      avatarUrl: currentUser!.avatarUrl,
+      isQuickUnlockSetup: true,
+    );
   }
 
   Future<bool> unlockWithBiometrics() async {
-    if (currentUser.value == null) {
-      return false; // Can't unlock if not logged in before
-    }
-    final masterPassword = await _localAuthService.authenticateWithBiometrics();
+    if (currentUser == null) return false;
+    final masterPassword = await localAuthService.authenticateWithBiometrics();
     if (masterPassword != null) {
-      final salt = currentUser.value!.salt;
-      final Uint8List derivedKey = _encryptionService.deriveKey(
+      final salt = currentUser!.salt;
+      final Uint8List derivedKey = encryptionService.deriveKey(
         masterPassword,
         salt,
       );
-      _sessionService.startSession(derivedKey);
+      sessionService.startSession(derivedKey);
       return true;
     }
     return false;
   }
 
   Future<bool> unlockWithPin(String pin) async {
-    if (currentUser.value == null) return false;
-    final masterPassword = await _localAuthService.authenticateWithPin(pin);
+    if (currentUser == null) return false;
+    final masterPassword = await localAuthService.authenticateWithPin(pin);
     if (masterPassword != null) {
-      final salt = currentUser.value!.salt;
-      final Uint8List derivedKey = _encryptionService.deriveKey(
+      final salt = currentUser!.salt;
+      final Uint8List derivedKey = encryptionService.deriveKey(
         masterPassword,
         salt,
       );
-      _sessionService.startSession(derivedKey);
+      sessionService.startSession(derivedKey);
       return true;
     }
     return false;
   }
 
-  /// A new method to allow users to resend the verification email.
   Future<void> resendVerification(String email) async {
-    await _pb.collection('users').requestVerification(email);
+    await pb.collection('users').requestVerification(email);
   }
 
   void logout() {
-    _pb.authStore.clear();
-    _sessionService.endSession();
-    currentUser.value = null;
+    pb.authStore.clear();
+    sessionService.endSession();
+    currentUser = null;
   }
 }
