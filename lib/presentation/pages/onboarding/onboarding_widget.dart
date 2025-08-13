@@ -1,8 +1,5 @@
-// widgets/onboarding_page.dart
-
+// File: lib/presentation/pages/onboarding/onboarding_widget.dart
 import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
-import 'package:velocity_x/velocity_x.dart';
 
 class OnboardingPage extends StatelessWidget {
   final double topSpacing;
@@ -18,16 +15,32 @@ class OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.04,
+        vertical: 16,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(height: topSpacing),
-          title.text.size(15.sp).extraBold.maxLines(1).make(),
-          1.h.heightBox,
-          description.text.size(10.5.sp).make(),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: screenWidth * 0.045,
+              fontWeight: FontWeight.w800,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: TextStyle(fontSize: screenWidth * 0.035),
+          ),
         ],
       ),
     );

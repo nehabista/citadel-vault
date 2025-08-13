@@ -1,5 +1,4 @@
 // matching various patterns for kinds of data
-import 'package:get/get.dart';
 
 class Validator {
   Validator();
@@ -90,7 +89,7 @@ class Validator {
     String pattern = r'^\D?(\d{3})\D?\D?(\d{3})\D?(\d{4})$';
     RegExp regex = RegExp(pattern);
     if (!regex.hasMatch(value!)) {
-      return 'validator.number'.tr;
+      return 'Please enter a valid number.';
     } else {
       return null;
     }
@@ -110,7 +109,7 @@ class Validator {
     String pattern = r'^\d+$';
     RegExp regex = RegExp(pattern);
     if (!regex.hasMatch(value!)) {
-      return 'validator.amount'.tr;
+      return 'Please enter a valid amount.';
     } else {
       return null;
     }

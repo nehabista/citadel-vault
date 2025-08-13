@@ -1,5 +1,5 @@
+// File: lib/presentation/widgets/custom_button.dart
 import 'package:flutter/material.dart';
-import 'package:velocity_x/velocity_x.dart';
 
 class CustomButtonWidget extends StatelessWidget {
   const CustomButtonWidget({
@@ -23,12 +23,7 @@ class CustomButtonWidget extends StatelessWidget {
       type: MaterialType.transparency,
       child: InkWell(
         onTap: onPressed,
-        splashColor: Colors.blue.withValues(
-          red: 0,
-          green: 0,
-          blue: 0,
-          alpha: 0.1,
-        ),
+        splashColor: Colors.blue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         child: Ink(
           width: 250,
@@ -39,12 +34,7 @@ class CustomButtonWidget extends StatelessWidget {
             border: border,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(
-                  red: 0,
-                  green: 0,
-                  blue: 0,
-                  alpha: 0.1,
-                ),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -53,12 +43,8 @@ class CustomButtonWidget extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset(
-                iconPath,
-                width: 24,
-                height: 24,
-              ),
-              8.widthBox,
+              Image.asset(iconPath, width: 24, height: 24),
+              const SizedBox(width: 8),
               Text(
                 label,
                 style: const TextStyle(
@@ -89,7 +75,5 @@ class CustomShape extends CustomClipper<Path> {
   }
 
   @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) {
-    return true;
-  }
+  bool shouldReclip(CustomClipper<Path> oldClipper) => true;
 }

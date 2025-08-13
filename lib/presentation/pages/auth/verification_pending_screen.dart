@@ -1,16 +1,18 @@
-import 'package:citadel_password_manager/routing/route_names.dart';
+// File: lib/presentation/pages/auth/verification_pending_screen.dart
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:velocity_x/velocity_x.dart';
-import '../../../logic/controllers/auth_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class VerificationPendingScreen extends StatelessWidget {
+import '../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../routing/app_router.dart';
+
+class VerificationPendingScreen extends ConsumerWidget {
   final String email;
   const VerificationPendingScreen({super.key, required this.email});
 
   @override
-  Widget build(BuildContext context) {
-    final AuthController authController = Get.find();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notifier = ref.read(authProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -27,31 +29,36 @@ class VerificationPendingScreen extends StatelessWidget {
               Icon(
                 Icons.mark_email_read_outlined,
                 size: 80,
-                color: Get.theme.primaryColor,
+                color: Theme.of(context).primaryColor,
               ),
-              30.heightBox,
-              'Check Your Inbox'.text
-                  .size(28)
-                  .bold
-                  .align(TextAlign.center)
-                  .make(),
-              15.heightBox,
-              'We have sent a verification link to:'.text
-                  .size(16)
-                  .align(TextAlign.center)
-                  .gray500
-                  .make(),
-              5.heightBox,
-              email.text.size(16).bold.align(TextAlign.center).make(),
-              40.heightBox,
+              const SizedBox(height: 30),
+              const Text(
+                'Check Your Inbox',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 15),
+              const Text(
+                'We have sent a verification link to:',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                email,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
               ElevatedButton(
-                onPressed: () => Get.offAllNamed(AppRoutes.AUTH),
-                child: 'Go to Login'.text.make(),
+                onPressed: () => context.go(AppRoutes.login),
+                child: const Text('Go to Login'),
               ),
-              20.heightBox,
+              const SizedBox(height: 20),
               TextButton(
-                onPressed: () => authController.resendVerificationEmail(email),
-                child: 'Resend Verification Email'.text.make(),
+                onPressed: () => notifier.resendVerificationEmail(email),
+                child: const Text('Resend Verification Email'),
               ),
             ],
           ),
