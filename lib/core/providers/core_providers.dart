@@ -10,6 +10,15 @@ import '../../data/services/auth/session_service.dart';
 import '../../data/services/crypto/encryption_service.dart';
 import '../../data/services/vault/vault_service.dart';
 import '../crypto/crypto_engine.dart';
+import '../database/app_database.dart';
+
+/// Provides the AppDatabase instance.
+/// Must be overridden at app startup with an actual encrypted database.
+final appDatabaseProvider = Provider<AppDatabase>((ref) {
+  throw UnimplementedError(
+    'appDatabaseProvider must be overridden with ProviderScope.overrides',
+  );
+});
 
 /// Provides a singleton CryptoEngine instance (Argon2id + AES-256-GCM).
 final cryptoEngineProvider = Provider<CryptoEngine>((ref) => CryptoEngine());
