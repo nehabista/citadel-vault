@@ -3,10 +3,12 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  connectivity_plus
   file_selector_windows
   flutter_secure_storage_windows
   local_auth_windows
   rive_common
+  sqlite3_flutter_libs
   url_launcher_windows
 )
 
