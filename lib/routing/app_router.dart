@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/providers/session_provider.dart';
 import '../core/session/session_state.dart';
+import '../features/auth/presentation/pages/migration_page.dart';
 import '../presentation/pages/auth/auth_page.dart';
 import '../presentation/pages/auth/verification_pending_screen.dart';
 import '../presentation/pages/home_page.dart';
@@ -24,6 +25,7 @@ abstract class AppRoutes {
   static const settings = '/settings';
   static const verification = '/verification';
   static const quickUnlockSetup = '/quick-unlock-setup';
+  static const migration = '/migration';
 
   /// Routes that don't require authentication.
   static const publicRoutes = [splash, onboarding, login, signup, verification];
@@ -56,6 +58,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
+      // Allow migration route through when unlocked
+      if (currentPath == AppRoutes.migration) {
+        return session is Unlocked ? null : AppRoutes.login;
+      }
+
       return switch (session) {
         Locked() => isPublicRoute ? null : AppRoutes.login,
         Unlocked() => (currentPath == AppRoutes.login ||
@@ -86,6 +93,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final email = state.extra as String? ?? '';
           return VerificationPendingScreen(email: email);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.migration,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, String>? ?? {};
+          return MigrationPage(
+            masterPassword: extra['masterPassword'] ?? '',
+            salt: extra['salt'] ?? '',
+          );
         },
       ),
       GoRoute(
