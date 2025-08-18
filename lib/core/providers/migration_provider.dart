@@ -9,8 +9,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../crypto/crypto_engine.dart';
 import '../crypto/crypto_migration.dart';
 import '../crypto/legacy_crypto.dart';
+import '../database/app_database.dart';
 import '../database/daos/vault_dao.dart';
 import '../database/daos/sync_dao.dart';
+import 'package:drift/drift.dart';
 import 'core_providers.dart';
 
 /// Checks whether any v1 items exist that need migration.
@@ -189,15 +191,16 @@ class MigrationNotifier extends Notifier<MigrationState> {
     SyncDao syncDao,
     MigratedItem migrated,
   ) async {
-    // Note: In a full implementation, this would use VaultItemsCompanion
-    // from Drift. Since we're in a parallel worktree without generated code,
-    // the actual DB update will be wired during merge.
-    // The CryptoMigration class handles the crypto transformation;
-    // the provider handles persistence orchestration.
     try {
+      await vaultDao.updateVaultItem(VaultItemsCompanion(
+        id: Value(migrated.itemId),
+        encryptedData: Value(migrated.v2EncryptedData),
+        encryptionVersion: const Value(2),
+        updatedAt: Value(DateTime.now()),
+      ));
       await syncDao.enqueue(migrated.itemId, 'vault_items', 'update');
     } catch (_) {
-      // Non-critical: sync will catch up later
+      // Non-critical: item stays at v1, will be retried on next migration run
     }
   }
 }

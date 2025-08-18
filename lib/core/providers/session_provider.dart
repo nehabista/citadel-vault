@@ -1,5 +1,6 @@
 // File: lib/core/providers/session_provider.dart
 // Session state notifier with lock/unlock lifecycle
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
@@ -20,9 +21,11 @@ class SessionNotifier extends Notifier<SessionState> {
   /// Derives the vault key from master password + salt and transitions to Unlocked.
   Future<void> unlock(String masterPassword, String salt) async {
     final crypto = ref.read(cryptoEngineProvider);
-    final key = await crypto.deriveKey(masterPassword, salt);
+    final saltBytes = base64.decode(salt);
+    final key = await crypto.deriveKey(masterPassword, saltBytes);
+    final keyBytes = await key.extractBytes();
     state = Unlocked(
-      vaultKey: Uint8List.fromList(key),
+      vaultKey: Uint8List.fromList(keyBytes),
       unlockedAt: DateTime.now(),
     );
   }

@@ -10,7 +10,10 @@ import '../../data/services/auth/session_service.dart';
 import '../../data/services/crypto/encryption_service.dart';
 import '../../data/services/vault/vault_service.dart';
 import '../crypto/crypto_engine.dart';
+import '../crypto/legacy_crypto.dart';
 import '../database/app_database.dart';
+import '../../features/vault/data/repositories/vault_repository_impl.dart';
+import '../../features/vault/domain/repositories/vault_repository.dart';
 
 /// Provides the AppDatabase instance.
 /// Must be overridden at app startup with an actual encrypted database.
@@ -58,11 +61,24 @@ final authServiceProvider = Provider<AuthService>((ref) {
   );
 });
 
-/// Provides the VaultService with constructor injection.
+/// Provides the VaultService with constructor injection (legacy).
 final vaultServiceProvider = Provider<VaultService>((ref) {
   return VaultService(
     pb: ref.watch(pocketBaseClientProvider),
     encryptionService: ref.watch(encryptionServiceProvider),
     sessionService: ref.watch(sessionServiceProvider),
+  );
+});
+
+/// Provides LegacyCrypto for v1 decryption during migration.
+final legacyCryptoProvider = Provider<LegacyCrypto>((ref) => LegacyCrypto());
+
+/// Provides VaultRepository (new Argon2id+AES-GCM path, offline-first).
+final vaultRepositoryProvider = Provider<VaultRepository>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return VaultRepositoryImpl(
+    vaultDao: db.vaultDao,
+    syncDao: db.syncDao,
+    cryptoEngine: ref.watch(cryptoEngineProvider),
   );
 });
