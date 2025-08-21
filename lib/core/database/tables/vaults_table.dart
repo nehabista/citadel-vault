@@ -24,6 +24,14 @@ class Vaults extends Table {
   /// PocketBase record ID for sync
   TextColumn get remoteId => text().nullable()();
 
+  /// Hex color code for vault display (default: brand purple)
+  TextColumn get colorHex =>
+      text().withDefault(const Constant('#4D4DCD'))();
+
+  /// Icon name for vault display (default: shield)
+  TextColumn get iconName =>
+      text().withDefault(const Constant('shield'))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

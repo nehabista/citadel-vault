@@ -82,6 +82,30 @@ class $VaultsTable extends Vaults with TableInfo<$VaultsTable, Vault> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _colorHexMeta = const VerificationMeta(
+    'colorHex',
+  );
+  @override
+  late final GeneratedColumn<String> colorHex = GeneratedColumn<String>(
+    'color_hex',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('#4D4DCD'),
+  );
+  static const VerificationMeta _iconNameMeta = const VerificationMeta(
+    'iconName',
+  );
+  @override
+  late final GeneratedColumn<String> iconName = GeneratedColumn<String>(
+    'icon_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('shield'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -91,6 +115,8 @@ class $VaultsTable extends Vaults with TableInfo<$VaultsTable, Vault> {
     createdAt,
     updatedAt,
     remoteId,
+    colorHex,
+    iconName,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -154,6 +180,18 @@ class $VaultsTable extends Vaults with TableInfo<$VaultsTable, Vault> {
         remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
       );
     }
+    if (data.containsKey('color_hex')) {
+      context.handle(
+        _colorHexMeta,
+        colorHex.isAcceptableOrUnknown(data['color_hex']!, _colorHexMeta),
+      );
+    }
+    if (data.containsKey('icon_name')) {
+      context.handle(
+        _iconNameMeta,
+        iconName.isAcceptableOrUnknown(data['icon_name']!, _iconNameMeta),
+      );
+    }
     return context;
   }
 
@@ -196,6 +234,16 @@ class $VaultsTable extends Vaults with TableInfo<$VaultsTable, Vault> {
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
+      colorHex:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}color_hex'],
+          )!,
+      iconName:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}icon_name'],
+          )!,
     );
   }
 
@@ -226,6 +274,12 @@ class Vault extends DataClass implements Insertable<Vault> {
 
   /// PocketBase record ID for sync
   final String? remoteId;
+
+  /// Hex color code for vault display (default: brand purple)
+  final String colorHex;
+
+  /// Icon name for vault display (default: shield)
+  final String iconName;
   const Vault({
     required this.id,
     required this.name,
@@ -234,6 +288,8 @@ class Vault extends DataClass implements Insertable<Vault> {
     required this.createdAt,
     required this.updatedAt,
     this.remoteId,
+    required this.colorHex,
+    required this.iconName,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -249,6 +305,8 @@ class Vault extends DataClass implements Insertable<Vault> {
     if (!nullToAbsent || remoteId != null) {
       map['remote_id'] = Variable<String>(remoteId);
     }
+    map['color_hex'] = Variable<String>(colorHex);
+    map['icon_name'] = Variable<String>(iconName);
     return map;
   }
 
@@ -267,6 +325,8 @@ class Vault extends DataClass implements Insertable<Vault> {
           remoteId == null && nullToAbsent
               ? const Value.absent()
               : Value(remoteId),
+      colorHex: Value(colorHex),
+      iconName: Value(iconName),
     );
   }
 
@@ -283,6 +343,8 @@ class Vault extends DataClass implements Insertable<Vault> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       remoteId: serializer.fromJson<String?>(json['remoteId']),
+      colorHex: serializer.fromJson<String>(json['colorHex']),
+      iconName: serializer.fromJson<String>(json['iconName']),
     );
   }
   @override
@@ -296,6 +358,8 @@ class Vault extends DataClass implements Insertable<Vault> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'remoteId': serializer.toJson<String?>(remoteId),
+      'colorHex': serializer.toJson<String>(colorHex),
+      'iconName': serializer.toJson<String>(iconName),
     };
   }
 
@@ -307,6 +371,8 @@ class Vault extends DataClass implements Insertable<Vault> {
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<String?> remoteId = const Value.absent(),
+    String? colorHex,
+    String? iconName,
   }) => Vault(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -315,6 +381,8 @@ class Vault extends DataClass implements Insertable<Vault> {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
+    colorHex: colorHex ?? this.colorHex,
+    iconName: iconName ?? this.iconName,
   );
   Vault copyWithCompanion(VaultsCompanion data) {
     return Vault(
@@ -326,6 +394,8 @@ class Vault extends DataClass implements Insertable<Vault> {
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+      colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
+      iconName: data.iconName.present ? data.iconName.value : this.iconName,
     );
   }
 
@@ -338,7 +408,9 @@ class Vault extends DataClass implements Insertable<Vault> {
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('remoteId: $remoteId')
+          ..write('remoteId: $remoteId, ')
+          ..write('colorHex: $colorHex, ')
+          ..write('iconName: $iconName')
           ..write(')'))
         .toString();
   }
@@ -352,6 +424,8 @@ class Vault extends DataClass implements Insertable<Vault> {
     createdAt,
     updatedAt,
     remoteId,
+    colorHex,
+    iconName,
   );
   @override
   bool operator ==(Object other) =>
@@ -363,7 +437,9 @@ class Vault extends DataClass implements Insertable<Vault> {
           other.sortOrder == this.sortOrder &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.remoteId == this.remoteId);
+          other.remoteId == this.remoteId &&
+          other.colorHex == this.colorHex &&
+          other.iconName == this.iconName);
 }
 
 class VaultsCompanion extends UpdateCompanion<Vault> {
@@ -374,6 +450,8 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String?> remoteId;
+  final Value<String> colorHex;
+  final Value<String> iconName;
   final Value<int> rowid;
   const VaultsCompanion({
     this.id = const Value.absent(),
@@ -383,6 +461,8 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.remoteId = const Value.absent(),
+    this.colorHex = const Value.absent(),
+    this.iconName = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VaultsCompanion.insert({
@@ -393,6 +473,8 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     required DateTime createdAt,
     required DateTime updatedAt,
     this.remoteId = const Value.absent(),
+    this.colorHex = const Value.absent(),
+    this.iconName = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -406,6 +488,8 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? remoteId,
+    Expression<String>? colorHex,
+    Expression<String>? iconName,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -416,6 +500,8 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (remoteId != null) 'remote_id': remoteId,
+      if (colorHex != null) 'color_hex': colorHex,
+      if (iconName != null) 'icon_name': iconName,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -428,6 +514,8 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<String?>? remoteId,
+    Value<String>? colorHex,
+    Value<String>? iconName,
     Value<int>? rowid,
   }) {
     return VaultsCompanion(
@@ -438,6 +526,8 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       remoteId: remoteId ?? this.remoteId,
+      colorHex: colorHex ?? this.colorHex,
+      iconName: iconName ?? this.iconName,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -466,6 +556,12 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     if (remoteId.present) {
       map['remote_id'] = Variable<String>(remoteId.value);
     }
+    if (colorHex.present) {
+      map['color_hex'] = Variable<String>(colorHex.value);
+    }
+    if (iconName.present) {
+      map['icon_name'] = Variable<String>(iconName.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -482,6 +578,8 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('remoteId: $remoteId, ')
+          ..write('colorHex: $colorHex, ')
+          ..write('iconName: $iconName, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2904,6 +3002,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final VaultDao vaultDao = VaultDao(this as AppDatabase);
   late final SyncDao syncDao = SyncDao(this as AppDatabase);
   late final SettingsDao settingsDao = SettingsDao(this as AppDatabase);
+  late final PasswordHistoryDao passwordHistoryDao = PasswordHistoryDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2928,6 +3029,8 @@ typedef $$VaultsTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<String?> remoteId,
+      Value<String> colorHex,
+      Value<String> iconName,
       Value<int> rowid,
     });
 typedef $$VaultsTableUpdateCompanionBuilder =
@@ -2939,6 +3042,8 @@ typedef $$VaultsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<String?> remoteId,
+      Value<String> colorHex,
+      Value<String> iconName,
       Value<int> rowid,
     });
 
@@ -3006,6 +3111,16 @@ class $$VaultsTableFilterComposer
 
   ColumnFilters<String> get remoteId => $composableBuilder(
     column: $table.remoteId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get colorHex => $composableBuilder(
+    column: $table.colorHex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get iconName => $composableBuilder(
+    column: $table.iconName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3078,6 +3193,16 @@ class $$VaultsTableOrderingComposer
     column: $table.remoteId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get colorHex => $composableBuilder(
+    column: $table.colorHex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get iconName => $composableBuilder(
+    column: $table.iconName,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$VaultsTableAnnotationComposer
@@ -3111,6 +3236,12 @@ class $$VaultsTableAnnotationComposer
 
   GeneratedColumn<String> get remoteId =>
       $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  GeneratedColumn<String> get colorHex =>
+      $composableBuilder(column: $table.colorHex, builder: (column) => column);
+
+  GeneratedColumn<String> get iconName =>
+      $composableBuilder(column: $table.iconName, builder: (column) => column);
 
   Expression<T> vaultItemsRefs<T extends Object>(
     Expression<T> Function($$VaultItemsTableAnnotationComposer a) f,
@@ -3173,6 +3304,8 @@ class $$VaultsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String?> remoteId = const Value.absent(),
+                Value<String> colorHex = const Value.absent(),
+                Value<String> iconName = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VaultsCompanion(
                 id: id,
@@ -3182,6 +3315,8 @@ class $$VaultsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 remoteId: remoteId,
+                colorHex: colorHex,
+                iconName: iconName,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3193,6 +3328,8 @@ class $$VaultsTableTableManager
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<String?> remoteId = const Value.absent(),
+                Value<String> colorHex = const Value.absent(),
+                Value<String> iconName = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VaultsCompanion.insert(
                 id: id,
@@ -3202,6 +3339,8 @@ class $$VaultsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 remoteId: remoteId,
+                colorHex: colorHex,
+                iconName: iconName,
                 rowid: rowid,
               ),
           withReferenceMapper:

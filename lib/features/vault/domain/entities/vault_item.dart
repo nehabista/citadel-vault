@@ -1,3 +1,5 @@
+import 'custom_field.dart';
+
 /// Plaintext domain entity representing a vault item.
 ///
 /// This is the PLAINTEXT representation used within the app.
@@ -15,7 +17,7 @@ class VaultItemEntity {
   final VaultItemType type;
   final bool isFavorite;
   final String? folder;
-  final Map<String, dynamic>? customFields;
+  final List<CustomField>? customFields;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -46,7 +48,7 @@ class VaultItemEntity {
       'type': type.name,
       'isFavorite': isFavorite,
       'folder': folder,
-      'customFields': customFields,
+      'customFields': customFields?.map((f) => f.toJson()).toList(),
     };
   }
 
@@ -72,7 +74,9 @@ class VaultItemEntity {
       ),
       isFavorite: fields['isFavorite'] as bool? ?? false,
       folder: fields['folder'] as String?,
-      customFields: fields['customFields'] as Map<String, dynamic>?,
+      customFields: (fields['customFields'] as List<dynamic>?)
+          ?.map((e) => CustomField.fromJson(e as Map<String, dynamic>))
+          .toList(),
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -89,7 +93,7 @@ class VaultItemEntity {
     VaultItemType? type,
     bool? isFavorite,
     String? folder,
-    Map<String, dynamic>? customFields,
+    List<CustomField>? customFields,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {

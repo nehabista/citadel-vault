@@ -13,6 +13,7 @@ import 'tables/settings_table.dart';
 import 'daos/vault_dao.dart';
 import 'daos/sync_dao.dart';
 import 'daos/settings_dao.dart';
+import 'daos/password_history_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -32,13 +33,26 @@ part 'app_database.g.dart';
     AutofillIndex,
     Settings,
   ],
-  daos: [VaultDao, SyncDao, SettingsDao],
+  daos: [VaultDao, SyncDao, SettingsDao, PasswordHistoryDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onUpgrade: (migrator, from, to) async {
+        if (from < 2) {
+          // Add colorHex and iconName columns to vaults table.
+          await migrator.addColumn(vaults, vaults.colorHex);
+          await migrator.addColumn(vaults, vaults.iconName);
+        }
+      },
+    );
+  }
 
   /// Creates an encrypted database using SQLCipher via sqlite3mc.
   /// Per D-06: PRAGMA key sets the encryption passphrase.

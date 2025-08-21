@@ -62,4 +62,25 @@ class VaultDao extends DatabaseAccessor<AppDatabase> with _$VaultDaoMixin {
           ))
         .watch();
   }
+
+  /// Get a single vault by ID.
+  Future<Vault?> getVaultById(String vaultId) {
+    return (select(vaults)..where((t) => t.id.equals(vaultId)))
+        .getSingleOrNull();
+  }
+
+  /// Update an existing vault.
+  Future<bool> updateVault(VaultsCompanion vault) {
+    return (update(vaults)..where((t) => t.id.equals(vault.id.value)))
+        .write(vault)
+        .then((rows) => rows > 0);
+  }
+
+  /// Delete a vault and all its items by vault ID.
+  Future<void> deleteVault(String vaultId) async {
+    // Delete all items belonging to this vault first.
+    await (delete(vaultItems)..where((t) => t.vaultId.equals(vaultId))).go();
+    // Then delete the vault itself.
+    await (delete(vaults)..where((t) => t.id.equals(vaultId))).go();
+  }
 }
