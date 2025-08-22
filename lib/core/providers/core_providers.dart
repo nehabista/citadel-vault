@@ -80,5 +80,6 @@ final vaultRepositoryProvider = Provider<VaultRepository>((ref) {
     vaultDao: db.vaultDao,
     syncDao: db.syncDao,
     cryptoEngine: ref.watch(cryptoEngineProvider),
+    passwordHistoryDao: db.passwordHistoryDao,
   );
 });

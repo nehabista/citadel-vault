@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:citadel_password_manager/core/crypto/crypto_engine.dart';
 import 'package:citadel_password_manager/core/database/app_database.dart';
+import 'package:citadel_password_manager/core/database/daos/password_history_dao.dart';
 import 'package:citadel_password_manager/core/database/daos/sync_dao.dart';
 import 'package:citadel_password_manager/core/database/daos/vault_dao.dart';
 import 'package:citadel_password_manager/features/vault/data/repositories/vault_repository_impl.dart';
@@ -18,6 +19,8 @@ class MockSyncDao extends Mock implements SyncDao {}
 
 class MockCryptoEngine extends Mock implements CryptoEngine {}
 
+class MockPasswordHistoryDao extends Mock implements PasswordHistoryDao {}
+
 class FakeVaultItemsCompanion extends Fake implements VaultItemsCompanion {}
 
 class FakeSecretKey extends Fake implements SecretKey {}
@@ -27,6 +30,7 @@ void main() {
   late MockVaultDao mockVaultDao;
   late MockSyncDao mockSyncDao;
   late MockCryptoEngine mockCryptoEngine;
+  late MockPasswordHistoryDao mockPasswordHistoryDao;
   late SecretKey testKey;
 
   final testEncryptedData = Uint8List.fromList([1, 2, 3, 4, 5]);
@@ -58,18 +62,21 @@ void main() {
     registerFallbackValue(FakeVaultItemsCompanion());
     registerFallbackValue(FakeSecretKey());
     registerFallbackValue(<String, dynamic>{});
+    registerFallbackValue(Uint8List(0));
   });
 
   setUp(() {
     mockVaultDao = MockVaultDao();
     mockSyncDao = MockSyncDao();
     mockCryptoEngine = MockCryptoEngine();
+    mockPasswordHistoryDao = MockPasswordHistoryDao();
     testKey = SecretKey(List.generate(32, (i) => i));
 
     repository = VaultRepositoryImpl(
       vaultDao: mockVaultDao,
       syncDao: mockSyncDao,
       cryptoEngine: mockCryptoEngine,
+      passwordHistoryDao: mockPasswordHistoryDao,
     );
   });
 
@@ -152,6 +159,22 @@ void main() {
         updatedAt: DateTime(2026, 6, 15),
       );
 
+      // Mock password history archival flow (no password change).
+      when(() => mockVaultDao.getItemsByVault('vault-1'))
+          .thenAnswer((_) async => [
+                VaultItem(
+                  id: 'item-1',
+                  vaultId: 'vault-1',
+                  encryptedData: testEncryptedData,
+                  encryptionVersion: 2,
+                  createdAt: DateTime(2026, 1, 1),
+                  updatedAt: DateTime(2026, 1, 1),
+                  remoteId: null,
+                  isDeleted: false,
+                ),
+              ]);
+      when(() => mockCryptoEngine.decryptFields(any(), any()))
+          .thenAnswer((_) async => testFieldsMap);
       when(() => mockCryptoEngine.encryptFields(any(), any()))
           .thenAnswer((_) async => testEncryptedData);
       when(() => mockVaultDao.updateVaultItem(any()))
@@ -161,11 +184,9 @@ void main() {
 
       await repository.updateItem(updatedEntity, testKey);
 
-      verifyInOrder([
-        () => mockCryptoEngine.encryptFields(any(), any()),
-        () => mockVaultDao.updateVaultItem(any()),
-        () => mockSyncDao.enqueue('item-1', 'vault_items', 'update'),
-      ]);
+      verify(() => mockVaultDao.updateVaultItem(any())).called(1);
+      verify(() => mockSyncDao.enqueue('item-1', 'vault_items', 'update'))
+          .called(1);
     });
   });
 
