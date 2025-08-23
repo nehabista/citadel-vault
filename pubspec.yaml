@@ -66,6 +66,11 @@ dependencies:
   cryptography_flutter: ^2.3.2
   sqlite3_flutter_libs: ^0.5.42
   connectivity_plus: ^6.1.4
+  zxcvbnm: ^1.1.1
+  random_x: ^0.3.1
+  csv: ^6.0.0
+  file_picker: ^10.3.10
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
