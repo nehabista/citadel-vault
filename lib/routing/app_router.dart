@@ -27,6 +27,15 @@ abstract class AppRoutes {
   static const quickUnlockSetup = '/quick-unlock-setup';
   static const migration = '/migration';
 
+  // Vault item routes (pages built in Plan 04)
+  static const vaultItemDetail = '/vault-item/:id';
+  static const vaultItemEdit = '/vault-item/:id/edit';
+  static const vaultItemCreate = '/vault-item/create';
+
+  // Import/Export routes (pages built in Plan 05)
+  static const importPage = '/import';
+  static const exportPage = '/export';
+
   /// Routes that don't require authentication.
   static const publicRoutes = [splash, onboarding, login, signup, verification];
 }
