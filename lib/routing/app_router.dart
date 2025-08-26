@@ -7,11 +7,14 @@ import 'package:go_router/go_router.dart';
 import '../core/providers/session_provider.dart';
 import '../core/session/session_state.dart';
 import '../features/auth/presentation/pages/migration_page.dart';
+import '../features/vault/domain/entities/vault_item.dart';
 import '../presentation/pages/auth/auth_page.dart';
 import '../presentation/pages/auth/verification_pending_screen.dart';
 import '../presentation/pages/home_page.dart';
 import '../presentation/pages/onboarding/onbarding_page.dart';
 import '../presentation/pages/splash/splash_screen.dart';
+import '../presentation/pages/vault_item/vault_item_detail_page.dart';
+import '../presentation/pages/vault_item/vault_item_edit_page.dart';
 
 /// Route path constants.
 abstract class AppRoutes {
@@ -26,6 +29,9 @@ abstract class AppRoutes {
   static const verification = '/verification';
   static const quickUnlockSetup = '/quick-unlock-setup';
   static const migration = '/migration';
+  static const vaultItemDetail = '/vault-item/:id';
+  static const vaultItemEdit = '/vault-item/:id/edit';
+  static const vaultItemCreate = '/vault-item/create';
 
   /// Routes that don't require authentication.
   static const publicRoutes = [splash, onboarding, login, signup, verification];
@@ -108,6 +114,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.home,
         builder: (context, state) => const HomePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.vaultItemCreate,
+        builder: (context, state) => const VaultItemEditPage(),
+      ),
+      GoRoute(
+        path: '/vault-item/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return VaultItemDetailPage(itemId: id);
+        },
+        routes: [
+          GoRoute(
+            path: 'edit',
+            builder: (context, state) {
+              final extra = state.extra as VaultItemEntity?;
+              return VaultItemEditPage(existingItem: extra);
+            },
+          ),
+        ],
       ),
     ],
   );
