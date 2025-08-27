@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../core/providers/session_provider.dart';
 import '../core/session/session_state.dart';
 import '../features/auth/presentation/pages/migration_page.dart';
+import '../features/import_export/presentation/pages/export_page.dart';
+import '../features/import_export/presentation/pages/import_page.dart';
 import '../features/vault/domain/entities/vault_item.dart';
 import '../presentation/pages/auth/auth_page.dart';
 import '../presentation/pages/auth/verification_pending_screen.dart';
@@ -32,13 +34,6 @@ abstract class AppRoutes {
   static const vaultItemDetail = '/vault-item/:id';
   static const vaultItemEdit = '/vault-item/:id/edit';
   static const vaultItemCreate = '/vault-item/create';
-
-  // Vault item routes (pages built in Plan 04)
-  static const vaultItemDetail = '/vault-item/:id';
-  static const vaultItemEdit = '/vault-item/:id/edit';
-  static const vaultItemCreate = '/vault-item/create';
-
-  // Import/Export routes (pages built in Plan 05)
   static const importPage = '/import';
   static const exportPage = '/export';
 
@@ -123,6 +118,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.home,
         builder: (context, state) => const HomePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.importPage,
+        builder: (context, state) => const ImportPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.exportPage,
+        builder: (context, state) => const ExportPage(),
       ),
       GoRoute(
         path: AppRoutes.vaultItemCreate,

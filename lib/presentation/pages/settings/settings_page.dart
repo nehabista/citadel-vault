@@ -42,6 +42,30 @@ class SettingsScreen extends ConsumerWidget {
               );
             },
           ),
+          const SizedBox(height: 20),
+          const Text(
+            'Data',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          const SizedBox(height: 10),
+          ListTile(
+            title: const Text('Import'),
+            subtitle: const Text('Import credentials from CSV'),
+            leading: const Icon(Icons.upload_file),
+            onTap: () => context.push(AppRoutes.importPage),
+          ),
+          ListTile(
+            title: const Text('Export'),
+            subtitle: const Text('Export vault as CSV or encrypted backup'),
+            leading: const Icon(Icons.download),
+            onTap: () => context.push(AppRoutes.exportPage),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Account',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          const SizedBox(height: 10),
           ListTile(
             title: const Text('Logout',
                 style: TextStyle(color: Colors.red)),
