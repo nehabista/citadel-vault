@@ -19,23 +19,34 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
-  late VideoPlayerController _videoController;
+  VideoPlayerController? _videoController;
+  bool _videoInitialized = false;
 
   @override
   void initState() {
     super.initState();
-
-    _videoController = VideoPlayerController.asset('assets/video/splash.mp4')
-      ..initialize().then((_) {
-        if (!mounted) return;
-        setState(() {});
-        _videoController.setLooping(true);
-        _videoController.setVolume(0.0);
-        _videoController.play();
-      });
-
-    // Navigate after splash duration
+    _initVideo();
     _setupStartupFlow();
+  }
+
+  Future<void> _initVideo() async {
+    try {
+      final controller =
+          VideoPlayerController.asset('assets/video/splash.mp4');
+      await controller.initialize();
+      if (!mounted) {
+        controller.dispose();
+        return;
+      }
+      _videoController = controller;
+      controller.setLooping(true);
+      controller.setVolume(0.0);
+      controller.play();
+      setState(() => _videoInitialized = true);
+    } catch (_) {
+      // Video player unavailable (simulator, missing asset, platform issue)
+      // Gracefully fall back to static splash
+    }
   }
 
   Future<void> _setupStartupFlow() async {
@@ -67,29 +78,46 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   void dispose() {
-    Future.delayed(const Duration(milliseconds: 100)).then((_) {
-      _videoController.dispose();
-    });
+    _videoController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final controller = _videoController;
     return ColoredBox(
       color: Colors.white,
       child: Center(
-        child: _videoController.value.isInitialized
+        child: controller != null && _videoInitialized
             ? Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: AspectRatio(
-                  aspectRatio: _videoController.value.aspectRatio,
+                  aspectRatio: controller.value.aspectRatio,
                   child: Container(
                     color: Colors.black,
-                    child: VideoPlayer(_videoController),
+                    child: VideoPlayer(controller),
                   ),
                 ),
               )
-            : const SizedBox.expand(),
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shield_outlined,
+                    size: 80,
+                    color: const Color(0xFF4D4DCD),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Citadel',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF4D4DCD),
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
