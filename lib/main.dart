@@ -1,8 +1,11 @@
 // File: lib/main.dart
 // App entry point with ProviderScope wrapping (Riverpod)
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mcp_toolkit/mcp_toolkit.dart';
 
 import 'dart:math';
 
@@ -16,7 +19,8 @@ import 'core/providers/core_providers.dart';
 import 'data/services/api/pocketbase_service.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  MCPToolkitBinding.instance.initialize();
+
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   // Initialize PocketBase (async auth store from secure storage)
@@ -26,14 +30,21 @@ Future<void> main() async {
   // Initialize encrypted database
   final db = await _openDatabase();
 
-  runApp(
-    ProviderScope(
-      overrides: [
-        pocketBaseServiceProvider.overrideWithValue(pbService),
-        appDatabaseProvider.overrideWithValue(db),
-      ],
-      child: const CitadelApp(),
-    ),
+  MCPToolkitBinding.instance.initializeFlutterToolkit();
+
+  runZonedGuarded(
+    () {
+      runApp(
+        ProviderScope(
+          overrides: [
+            pocketBaseServiceProvider.overrideWithValue(pbService),
+            appDatabaseProvider.overrideWithValue(db),
+          ],
+          child: const CitadelApp(),
+        ),
+      );
+    },
+    MCPToolkitBinding.instance.handleZoneError,
   );
 }
 
