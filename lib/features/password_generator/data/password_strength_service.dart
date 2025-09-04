@@ -1,5 +1,6 @@
 import 'dart:math';
 
+<<<<<<< HEAD
 import 'package:intl/intl.dart';
 import 'package:zxcvbnm/languages/en.dart' as en;
 import 'package:zxcvbnm/zxcvbnm.dart';
@@ -9,6 +10,10 @@ import '../domain/entities/password_strength.dart';
 /// One global instance so dictionaries aren't reloaded repeatedly.
 final _zxcvbnm = Zxcvbnm(dictionaries: en.dictionaries);
 
+=======
+import '../domain/entities/password_strength.dart';
+
+>>>>>>> worktree-agent-a3396e4b
 // ---------------------------------------------------------------------------
 // Regex helpers
 // ---------------------------------------------------------------------------
@@ -33,6 +38,7 @@ PasswordChecks runChecks(String input, {int minLen = 12}) {
 }
 
 // ---------------------------------------------------------------------------
+<<<<<<< HEAD
 // Entropy (zxcvbnm)
 // ---------------------------------------------------------------------------
 
@@ -42,6 +48,21 @@ double estimateEntropyBits(String password) {
   final result = _zxcvbnm(password);
   const log10of2 = 0.30102999566; // log10(2)
   return result.guessesLog10 / log10of2;
+=======
+// Entropy estimation (simplified - no zxcvbnm dependency for this worktree)
+// ---------------------------------------------------------------------------
+
+/// Estimate entropy in bits based on character pool size and length.
+double estimateEntropyBits(String password) {
+  if (password.isEmpty) return 0.0;
+  int poolSize = 0;
+  if (_lower.hasMatch(password)) poolSize += 26;
+  if (_upper.hasMatch(password)) poolSize += 26;
+  if (_digit.hasMatch(password)) poolSize += 10;
+  if (_special.hasMatch(password)) poolSize += 32;
+  if (poolSize == 0) poolSize = 26; // fallback
+  return password.length * (log(poolSize) / log(2));
+>>>>>>> worktree-agent-a3396e4b
 }
 
 /// A pragmatic classifier that balances rules + entropy.
@@ -50,6 +71,7 @@ Strength classifyStrength(PasswordChecks c, double bits) {
   if (c.passedCount >= 3 && bits >= 40) return Strength.moderate;
   return Strength.weak;
 }
+<<<<<<< HEAD
 
 // ---------------------------------------------------------------------------
 // Crack time (realistic)
@@ -185,3 +207,5 @@ List<String> improvementTips(PasswordChecks c, {int minLen = 12}) {
   );
   return tips;
 }
+=======
+>>>>>>> worktree-agent-a3396e4b
