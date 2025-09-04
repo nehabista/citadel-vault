@@ -43,6 +43,10 @@ class $AssetsAnimationsGen {
   LottieGenImage get shieldCitadel =>
       const LottieGenImage('assets/animations/shield_citadel.json');
 
+  /// File path: assets/animations/splash.json
+  LottieGenImage get splash =>
+      const LottieGenImage('assets/animations/splash.json');
+
   /// File path: assets/animations/two_cars_j.json
   LottieGenImage get twoCarsJ =>
       const LottieGenImage('assets/animations/two_cars_j.json');
@@ -56,6 +60,7 @@ class $AssetsAnimationsGen {
     nepalFlag,
     redCarFast,
     shieldCitadel,
+    splash,
     twoCarsJ,
   ];
 }
@@ -77,11 +82,22 @@ class $AssetsImagesGen {
   List<AssetGenImage> get values => [citadelLogo, driver, partner];
 }
 
+class $AssetsVideoGen {
+  const $AssetsVideoGen();
+
+  /// File path: assets/video/splash.mp4
+  String get splash => 'assets/video/splash.mp4';
+
+  /// List of all assets
+  List<String> get values => [splash];
+}
+
 class Assets {
   const Assets._();
 
   static const $AssetsAnimationsGen animations = $AssetsAnimationsGen();
   static const $AssetsImagesGen images = $AssetsImagesGen();
+  static const $AssetsVideoGen video = $AssetsVideoGen();
 }
 
 class AssetGenImage {

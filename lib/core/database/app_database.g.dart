@@ -3005,6 +3005,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final PasswordHistoryDao passwordHistoryDao = PasswordHistoryDao(
     this as AppDatabase,
   );
+<<<<<<< HEAD
+=======
+  late final TotpDao totpDao = TotpDao(this as AppDatabase);
+>>>>>>> worktree-agent-ad470482
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();

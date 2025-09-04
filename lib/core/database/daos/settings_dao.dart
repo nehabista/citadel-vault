@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> worktree-agent-ad470482
 import 'package:drift/drift.dart';
 
 import '../app_database.dart';
@@ -31,6 +34,7 @@ class SettingsDao extends DatabaseAccessor<AppDatabase> with _$SettingsDaoMixin 
   Future<void> deleteSetting(String key) {
     return (delete(settings)..where((t) => t.key.equals(key))).go();
   }
+<<<<<<< HEAD
 =======
 /// Abstract interface for key-value settings storage.
 ///
@@ -47,4 +51,6 @@ abstract class SettingsDao {
   /// Delete a setting by key.
   Future<void> deleteSetting(String key);
 >>>>>>> worktree-agent-a3396e4b
+=======
+>>>>>>> worktree-agent-ad470482
 }

@@ -1,22 +1,22 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'vault_dao.dart';
+part of 'totp_dao.dart';
 
 // ignore_for_file: type=lint
-mixin _$VaultDaoMixin on DatabaseAccessor<AppDatabase> {
+mixin _$TotpDaoMixin on DatabaseAccessor<AppDatabase> {
   $VaultsTable get vaults => attachedDatabase.vaults;
   $VaultItemsTable get vaultItems => attachedDatabase.vaultItems;
-<<<<<<< HEAD
-=======
-  VaultDaoManager get managers => VaultDaoManager(this);
+  $TotpEntriesTable get totpEntries => attachedDatabase.totpEntries;
+  TotpDaoManager get managers => TotpDaoManager(this);
 }
 
-class VaultDaoManager {
-  final _$VaultDaoMixin _db;
-  VaultDaoManager(this._db);
+class TotpDaoManager {
+  final _$TotpDaoMixin _db;
+  TotpDaoManager(this._db);
   $$VaultsTableTableManager get vaults =>
       $$VaultsTableTableManager(_db.attachedDatabase, _db.vaults);
   $$VaultItemsTableTableManager get vaultItems =>
       $$VaultItemsTableTableManager(_db.attachedDatabase, _db.vaultItems);
->>>>>>> worktree-agent-ad470482
+  $$TotpEntriesTableTableManager get totpEntries =>
+      $$TotpEntriesTableTableManager(_db.attachedDatabase, _db.totpEntries);
 }
