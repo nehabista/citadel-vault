@@ -12,6 +12,8 @@ import '../../data/services/vault/vault_service.dart';
 import '../crypto/crypto_engine.dart';
 import '../crypto/legacy_crypto.dart';
 import '../database/app_database.dart';
+import '../../features/security/data/repositories/totp_repository.dart';
+import '../../features/security/data/services/totp_service.dart';
 import '../../features/vault/data/repositories/vault_repository_impl.dart';
 import '../../features/vault/domain/repositories/vault_repository.dart';
 
@@ -81,5 +83,17 @@ final vaultRepositoryProvider = Provider<VaultRepository>((ref) {
     syncDao: db.syncDao,
     cryptoEngine: ref.watch(cryptoEngineProvider),
     passwordHistoryDao: db.passwordHistoryDao,
+  );
+});
+
+/// Provides a singleton TotpService instance.
+final totpServiceProvider = Provider<TotpService>((ref) => TotpService());
+
+/// Provides TotpRepository using TotpDao + CryptoEngine.
+final totpRepositoryProvider = Provider<TotpRepository>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return TotpRepository(
+    totpDao: db.totpDao,
+    cryptoEngine: ref.watch(cryptoEngineProvider),
   );
 });
