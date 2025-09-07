@@ -41,6 +41,7 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
   late VaultItemType _selectedType;
   late bool _isFavorite;
   late List<CustomField> _customFields;
+  late int? _expiryDays;
   bool _passwordVisible = false;
   bool _isSaving = false;
 
@@ -58,6 +59,7 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
     _selectedType = item?.type ?? VaultItemType.password;
     _isFavorite = item?.isFavorite ?? false;
     _customFields = List.of(item?.customFields ?? []);
+    _expiryDays = item?.expiryDays;
 
     // Initialize strength provider with current password.
     if (_passwordController.text.isNotEmpty) {
@@ -138,6 +140,7 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
         type: _selectedType,
         isFavorite: _isFavorite,
         customFields: _customFields.isEmpty ? null : _customFields,
+        expiryDays: _expiryDays,
         createdAt: widget.existingItem?.createdAt ?? now,
         updatedAt: now,
       );
@@ -303,6 +306,32 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
               fields: _customFields,
               onChanged: (fields) {
                 setState(() => _customFields = fields);
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // Password Expiry section — per D-18
+            Text(
+              'Password Expiry',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<int?>(
+              initialValue: _expiryDays,
+              decoration: _inputDecoration('Expiry Period'),
+              items: const [
+                DropdownMenuItem<int?>(value: null, child: Text('No expiry')),
+                DropdownMenuItem<int?>(value: 30, child: Text('30 days')),
+                DropdownMenuItem<int?>(value: 60, child: Text('60 days')),
+                DropdownMenuItem<int?>(value: 90, child: Text('90 days')),
+                DropdownMenuItem<int?>(value: 180, child: Text('180 days')),
+                DropdownMenuItem<int?>(value: 365, child: Text('365 days')),
+              ],
+              onChanged: (value) {
+                setState(() => _expiryDays = value);
               },
             ),
             const SizedBox(height: 24),
