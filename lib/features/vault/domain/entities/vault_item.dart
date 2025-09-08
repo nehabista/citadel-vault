@@ -18,14 +18,7 @@ class VaultItemEntity {
   final bool isFavorite;
   final String? folder;
   final List<CustomField>? customFields;
-<<<<<<< HEAD
-=======
-
-  /// Number of days after which the password should be considered expired.
-  /// Null means no expiry configured. Per D-18.
   final int? expiryDays;
-
->>>>>>> worktree-agent-ad470482
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -41,10 +34,7 @@ class VaultItemEntity {
     this.isFavorite = false,
     this.folder,
     this.customFields,
-<<<<<<< HEAD
-=======
     this.expiryDays,
->>>>>>> worktree-agent-ad470482
     required this.createdAt,
     required this.updatedAt,
   });
@@ -61,15 +51,12 @@ class VaultItemEntity {
       'isFavorite': isFavorite,
       'folder': folder,
       'customFields': customFields?.map((f) => f.toJson()).toList(),
-<<<<<<< HEAD
-=======
       'expiryDays': expiryDays,
->>>>>>> worktree-agent-ad470482
     };
   }
 
-  /// Create a VaultItemEntity from a decrypted fields map and metadata.
-  factory VaultItemEntity.fromFieldsMap({
+  /// Deserialize from decrypted fields map.
+  factory VaultItemEntity.fromFields({
     required String id,
     required String vaultId,
     required Map<String, dynamic> fields,
@@ -85,18 +72,15 @@ class VaultItemEntity {
       password: fields['password'] as String?,
       notes: fields['notes'] as String?,
       type: VaultItemType.values.firstWhere(
-        (e) => e.name == fields['type'],
+        (t) => t.name == (fields['type'] as String? ?? 'password'),
         orElse: () => VaultItemType.password,
       ),
       isFavorite: fields['isFavorite'] as bool? ?? false,
       folder: fields['folder'] as String?,
       customFields: (fields['customFields'] as List<dynamic>?)
-          ?.map((e) => CustomField.fromJson(e as Map<String, dynamic>))
+          ?.map((f) => CustomField.fromJson(f as Map<String, dynamic>))
           .toList(),
-<<<<<<< HEAD
-=======
       expiryDays: fields['expiryDays'] as int?,
->>>>>>> worktree-agent-ad470482
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -114,10 +98,7 @@ class VaultItemEntity {
     bool? isFavorite,
     String? folder,
     List<CustomField>? customFields,
-<<<<<<< HEAD
-=======
     int? expiryDays,
->>>>>>> worktree-agent-ad470482
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -133,10 +114,7 @@ class VaultItemEntity {
       isFavorite: isFavorite ?? this.isFavorite,
       folder: folder ?? this.folder,
       customFields: customFields ?? this.customFields,
-<<<<<<< HEAD
-=======
       expiryDays: expiryDays ?? this.expiryDays,
->>>>>>> worktree-agent-ad470482
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

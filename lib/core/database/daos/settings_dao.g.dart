@@ -5,8 +5,6 @@ part of 'settings_dao.dart';
 // ignore_for_file: type=lint
 mixin _$SettingsDaoMixin on DatabaseAccessor<AppDatabase> {
   $SettingsTable get settings => attachedDatabase.settings;
-<<<<<<< HEAD
-=======
   SettingsDaoManager get managers => SettingsDaoManager(this);
 }
 
@@ -15,5 +13,4 @@ class SettingsDaoManager {
   SettingsDaoManager(this._db);
   $$SettingsTableTableManager get settings =>
       $$SettingsTableTableManager(_db.attachedDatabase, _db.settings);
->>>>>>> worktree-agent-ad470482
 }

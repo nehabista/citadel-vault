@@ -14,10 +14,7 @@ import 'daos/vault_dao.dart';
 import 'daos/sync_dao.dart';
 import 'daos/settings_dao.dart';
 import 'daos/password_history_dao.dart';
-<<<<<<< HEAD
-=======
 import 'daos/totp_dao.dart';
->>>>>>> worktree-agent-ad470482
 
 part 'app_database.g.dart';
 
@@ -37,11 +34,7 @@ part 'app_database.g.dart';
     AutofillIndex,
     Settings,
   ],
-<<<<<<< HEAD
-  daos: [VaultDao, SyncDao, SettingsDao, PasswordHistoryDao],
-=======
   daos: [VaultDao, SyncDao, SettingsDao, PasswordHistoryDao, TotpDao],
->>>>>>> worktree-agent-ad470482
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);

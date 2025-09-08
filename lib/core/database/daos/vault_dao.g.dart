@@ -6,8 +6,6 @@ part of 'vault_dao.dart';
 mixin _$VaultDaoMixin on DatabaseAccessor<AppDatabase> {
   $VaultsTable get vaults => attachedDatabase.vaults;
   $VaultItemsTable get vaultItems => attachedDatabase.vaultItems;
-<<<<<<< HEAD
-=======
   VaultDaoManager get managers => VaultDaoManager(this);
 }
 
@@ -18,5 +16,4 @@ class VaultDaoManager {
       $$VaultsTableTableManager(_db.attachedDatabase, _db.vaults);
   $$VaultItemsTableTableManager get vaultItems =>
       $$VaultItemsTableTableManager(_db.attachedDatabase, _db.vaultItems);
->>>>>>> worktree-agent-ad470482
 }

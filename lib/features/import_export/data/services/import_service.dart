@@ -109,7 +109,7 @@ class ImportService {
     final itemsList = data['items'] as List<dynamic>? ?? [];
     return itemsList.map((itemJson) {
       final map = itemJson as Map<String, dynamic>;
-      return VaultItemEntity.fromFieldsMap(
+      return VaultItemEntity.fromFields(
         id: map['id'] as String? ?? CsvParser.generateId(),
         vaultId: map['vaultId'] as String? ?? '',
         fields: map,

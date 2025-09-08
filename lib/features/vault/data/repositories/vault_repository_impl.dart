@@ -152,7 +152,7 @@ class VaultRepositoryImpl implements VaultRepository {
         item.encryptedData,
         vaultKey,
       );
-      decrypted.add(VaultItemEntity.fromFieldsMap(
+      decrypted.add(VaultItemEntity.fromFields(
         id: item.id,
         vaultId: item.vaultId,
         fields: fields,
@@ -177,7 +177,7 @@ class VaultRepositoryImpl implements VaultRepository {
           item.encryptedData,
           vaultKey,
         );
-        decrypted.add(VaultItemEntity.fromFieldsMap(
+        decrypted.add(VaultItemEntity.fromFields(
           id: item.id,
           vaultId: item.vaultId,
           fields: fields,

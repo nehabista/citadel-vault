@@ -7,8 +7,6 @@ mixin _$PasswordHistoryDaoMixin on DatabaseAccessor<AppDatabase> {
   $VaultsTable get vaults => attachedDatabase.vaults;
   $VaultItemsTable get vaultItems => attachedDatabase.vaultItems;
   $PasswordHistoryTable get passwordHistory => attachedDatabase.passwordHistory;
-<<<<<<< HEAD
-=======
   PasswordHistoryDaoManager get managers => PasswordHistoryDaoManager(this);
 }
 
@@ -24,5 +22,4 @@ class PasswordHistoryDaoManager {
         _db.attachedDatabase,
         _db.passwordHistory,
       );
->>>>>>> worktree-agent-ad470482
 }
