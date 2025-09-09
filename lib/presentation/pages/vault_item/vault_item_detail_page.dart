@@ -8,6 +8,10 @@ import 'package:intl/intl.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/providers/session_provider.dart';
 import '../../../core/session/session_state.dart';
+import '../../../features/security/presentation/pages/breach_timeline_page.dart';
+import '../../../features/security/presentation/providers/totp_provider.dart';
+import '../../../features/security/presentation/widgets/totp_add_dialog.dart';
+import '../../../features/security/presentation/widgets/totp_display.dart';
 import '../../../features/vault/domain/entities/custom_field.dart';
 import '../../../features/vault/domain/entities/vault_item.dart';
 import '../../../features/vault/presentation/providers/vault_provider.dart';
@@ -198,6 +202,29 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
           ),
           const SizedBox(height: 16),
 
+          // Expiry warning
+          if (item.expiryDays != null) _buildExpiryWarning(theme, item),
+
+          // TOTP section — per D-14
+          _TotpSection(vaultItemId: item.id),
+          const SizedBox(height: 16),
+
+          // Breach timeline button
+          _SectionCard(
+            title: 'Security',
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _navigateToBreachTimeline(item),
+                icon: const Icon(Icons.timeline_rounded),
+                label: const Text('View Breach Timeline'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF4D4DCD),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
           // Custom fields section
           if (item.customFields != null && item.customFields!.isNotEmpty) ...[
             _SectionCard(
@@ -351,6 +378,56 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
     );
   }
 
+  Widget _buildExpiryWarning(ThemeData theme, VaultItemEntity item) {
+    if (item.expiryDays == null) return const SizedBox.shrink();
+    final expiresAt =
+        item.updatedAt.add(Duration(days: item.expiryDays!));
+    final now = DateTime.now();
+    if (expiresAt.isAfter(now)) return const SizedBox.shrink();
+
+    final daysExpired = now.difference(expiresAt).inDays;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.amber.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.amber.shade300),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.timer_off_rounded, color: Colors.amber.shade800, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Password expired $daysExpired day${daysExpired == 1 ? '' : 's'} ago',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: Colors.amber.shade900,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToBreachTimeline(VaultItemEntity item) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BreachTimelinePage(
+          item: item,
+          breaches: const [], // Populated by caller or fetched in page
+          passwordChangeDates: const [],
+        ),
+      ),
+    );
+  }
+
   String _itemTypeLabel(VaultItemType type) {
     switch (type) {
       case VaultItemType.password:
@@ -368,6 +445,83 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
       case VaultItemType.softwareLicense:
         return 'Software License';
     }
+  }
+}
+
+/// TOTP section that displays TOTP codes and an "Add TOTP" button.
+///
+/// Per D-14: shows TOTP display widgets for each entry linked to the item.
+class _TotpSection extends ConsumerWidget {
+  const _TotpSection({required this.vaultItemId});
+
+  final String vaultItemId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final entriesAsync = ref.watch(totpEntriesProvider(vaultItemId));
+
+    return entriesAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (entries) {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.security_rounded,
+                      color: Color(0xFF4D4DCD), size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Two-Factor Authentication',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (entries.isNotEmpty) ...[
+                for (final entry in entries) TotpDisplay(entry: entry),
+              ] else
+                Text(
+                  'No TOTP configured',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) =>
+                        TotpAddDialog(vaultItemId: vaultItemId),
+                  );
+                },
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Add TOTP'),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF4D4DCD),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 

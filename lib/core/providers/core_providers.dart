@@ -12,6 +12,8 @@ import '../../data/services/vault/vault_service.dart';
 import '../crypto/crypto_engine.dart';
 import '../crypto/legacy_crypto.dart';
 import '../database/app_database.dart';
+import '../../features/security/data/repositories/totp_repository.dart';
+import '../../features/security/data/services/totp_service.dart';
 import '../../features/vault/data/repositories/vault_repository_impl.dart';
 import '../../features/vault/domain/repositories/vault_repository.dart';
 import '../../features/security/data/services/breach_service.dart';
@@ -87,21 +89,14 @@ final vaultRepositoryProvider = Provider<VaultRepository>((ref) {
   );
 });
 
-/// Provides BreachService with optional http.Client and HIBP API key.
-final breachServiceProvider = Provider<BreachService>((ref) {
-  return BreachService();
-});
+/// Provides a singleton TotpService instance.
+final totpServiceProvider = Provider<TotpService>((ref) => TotpService());
 
-/// Provides BreachRepository with caching via SettingsDao.
-final breachRepositoryProvider = Provider<BreachRepository>((ref) {
+/// Provides TotpRepository using TotpDao + CryptoEngine.
+final totpRepositoryProvider = Provider<TotpRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
-  return BreachRepository(
-    breachService: ref.watch(breachServiceProvider),
-    settingsDao: db.settingsDao,
+  return TotpRepository(
+    totpDao: db.totpDao,
+    cryptoEngine: ref.watch(cryptoEngineProvider),
   );
-});
-
-/// Provides WatchtowerService for vault health scoring.
-final watchtowerServiceProvider = Provider<WatchtowerService>((ref) {
-  return WatchtowerService();
 });

@@ -18,7 +18,11 @@ class VaultItemEntity {
   final bool isFavorite;
   final String? folder;
   final List<CustomField>? customFields;
+
+  /// Number of days after which the password should be considered expired.
+  /// Null means no expiry configured. Per D-18.
   final int? expiryDays;
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
