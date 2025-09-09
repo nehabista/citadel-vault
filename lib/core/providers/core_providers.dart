@@ -14,6 +14,9 @@ import '../crypto/legacy_crypto.dart';
 import '../database/app_database.dart';
 import '../../features/vault/data/repositories/vault_repository_impl.dart';
 import '../../features/vault/domain/repositories/vault_repository.dart';
+import '../../features/security/data/services/breach_service.dart';
+import '../../features/security/data/services/watchtower_service.dart';
+import '../../features/security/data/repositories/breach_repository.dart';
 
 /// Provides the AppDatabase instance.
 /// Must be overridden at app startup with an actual encrypted database.
@@ -82,4 +85,23 @@ final vaultRepositoryProvider = Provider<VaultRepository>((ref) {
     cryptoEngine: ref.watch(cryptoEngineProvider),
     passwordHistoryDao: db.passwordHistoryDao,
   );
+});
+
+/// Provides BreachService with optional http.Client and HIBP API key.
+final breachServiceProvider = Provider<BreachService>((ref) {
+  return BreachService();
+});
+
+/// Provides BreachRepository with caching via SettingsDao.
+final breachRepositoryProvider = Provider<BreachRepository>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return BreachRepository(
+    breachService: ref.watch(breachServiceProvider),
+    settingsDao: db.settingsDao,
+  );
+});
+
+/// Provides WatchtowerService for vault health scoring.
+final watchtowerServiceProvider = Provider<WatchtowerService>((ref) {
+  return WatchtowerService();
 });
