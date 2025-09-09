@@ -15,6 +15,9 @@ abstract class VaultRepository {
   /// Get all items in a vault, decrypted.
   Future<List<VaultItemEntity>> getItems(String vaultId, SecretKey vaultKey);
 
+  /// Get all items across all vaults, decrypted.
+  Future<List<VaultItemEntity>> getAllItems(SecretKey vaultKey);
+
   /// Watch items in a vault as a reactive stream, decrypted.
   Stream<List<VaultItemEntity>> watchItems(String vaultId, SecretKey vaultKey);
 

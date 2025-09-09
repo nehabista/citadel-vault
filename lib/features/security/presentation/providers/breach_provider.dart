@@ -1,3 +1,4 @@
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/core_providers.dart';
@@ -19,7 +20,7 @@ final backgroundBreachCheckProvider = FutureProvider<void>((ref) async {
   final vaultRepo = ref.read(vaultRepositoryProvider);
   final breachRepo = ref.read(breachRepositoryProvider);
 
-  final items = await vaultRepo.getAllItems(session.vaultKey);
+  final items = await vaultRepo.getAllItems(SecretKey(session.vaultKey));
   final passwordItems = items
       .where((item) => item.password != null && item.password!.isNotEmpty)
       .toList();
@@ -58,7 +59,7 @@ final breachedItemsProvider =
   final vaultRepo = ref.read(vaultRepositoryProvider);
   final breachRepo = ref.read(breachRepositoryProvider);
 
-  final items = await vaultRepo.getAllItems(session.vaultKey);
+  final items = await vaultRepo.getAllItems(SecretKey(session.vaultKey));
   final passwordItems = items
       .where((item) => item.password != null && item.password!.isNotEmpty)
       .toList();

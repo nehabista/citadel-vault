@@ -165,6 +165,16 @@ class VaultRepositoryImpl implements VaultRepository {
   }
 
   @override
+  Future<List<VaultItemEntity>> getAllItems(SecretKey vaultKey) async {
+    final vaults = await _vaultDao.getAllVaults();
+    final allItems = <VaultItemEntity>[];
+    for (final vault in vaults) {
+      allItems.addAll(await getItems(vault.id, vaultKey));
+    }
+    return allItems;
+  }
+
+  @override
   Stream<List<VaultItemEntity>> watchItems(
     String vaultId,
     SecretKey vaultKey,

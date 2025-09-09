@@ -10,7 +10,15 @@ final breachCatalogProvider = FutureProvider<List<BreachRecord>>((ref) async {
 });
 
 /// Search query state for the breach catalog.
-final breachSearchQueryProvider = StateProvider<String>((ref) => '');
+class BreachSearchNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+
+  void update(String query) => state = query;
+}
+
+final breachSearchQueryProvider =
+    NotifierProvider<BreachSearchNotifier, String>(BreachSearchNotifier.new);
 
 /// Filter options for the breach catalog.
 class BreachFilter {
@@ -33,10 +41,16 @@ class BreachFilter {
   }
 }
 
-/// Filter state for the breach catalog.
-final breachFilterProvider = StateProvider<BreachFilter>(
-  (ref) => const BreachFilter(),
-);
+class BreachFilterNotifier extends Notifier<BreachFilter> {
+  @override
+  BreachFilter build() => const BreachFilter();
+
+  void update(BreachFilter filter) => state = filter;
+}
+
+final breachFilterProvider =
+    NotifierProvider<BreachFilterNotifier, BreachFilter>(
+        BreachFilterNotifier.new);
 
 /// Sort options for the breach catalog (D-07).
 enum BreachSort {
@@ -45,15 +59,19 @@ enum BreachSort {
   alphabetical,
 }
 
-/// Sort state for the breach catalog.
-final breachSortProvider = StateProvider<BreachSort>(
-  (ref) => BreachSort.newest,
-);
+class BreachSortNotifier extends Notifier<BreachSort> {
+  @override
+  BreachSort build() => BreachSort.newest;
+
+  void update(BreachSort sort) => state = sort;
+}
+
+final breachSortProvider =
+    NotifierProvider<BreachSortNotifier, BreachSort>(BreachSortNotifier.new);
 
 /// Combined filtered + searched + sorted breach list.
-///
-/// Combines breachCatalogProvider data with search, filter, and sort state.
-final filteredBreachesProvider = Provider<AsyncValue<List<BreachRecord>>>((ref) {
+final filteredBreachesProvider =
+    Provider<AsyncValue<List<BreachRecord>>>((ref) {
   final catalogAsync = ref.watch(breachCatalogProvider);
   final query = ref.watch(breachSearchQueryProvider).toLowerCase();
   final filter = ref.watch(breachFilterProvider);
@@ -62,7 +80,6 @@ final filteredBreachesProvider = Provider<AsyncValue<List<BreachRecord>>>((ref) 
   return catalogAsync.whenData((breaches) {
     var result = breaches.toList();
 
-    // Search: filter by name/title/domain containing query (case-insensitive)
     if (query.isNotEmpty) {
       result = result.where((b) {
         return b.name.toLowerCase().contains(query) ||
@@ -71,28 +88,23 @@ final filteredBreachesProvider = Provider<AsyncValue<List<BreachRecord>>>((ref) 
       }).toList();
     }
 
-    // Filter: verified only
     if (filter.verifiedOnly) {
       result = result.where((b) => b.verified).toList();
     }
 
-    // Filter: exclude sensitive
     if (filter.excludeSensitive) {
       result = result.where((b) => !b.isSensitive).toList();
     }
 
-    // Sort
     switch (sort) {
       case BreachSort.newest:
         result.sort((a, b) => b.breachDate.compareTo(a.breachDate));
-        break;
       case BreachSort.largest:
         result.sort((a, b) => (b.pwnCount ?? 0).compareTo(a.pwnCount ?? 0));
-        break;
       case BreachSort.alphabetical:
-        result.sort(
-            (a, b) => a.displayTitle.toLowerCase().compareTo(b.displayTitle.toLowerCase()));
-        break;
+        result.sort((a, b) => a.displayTitle
+            .toLowerCase()
+            .compareTo(b.displayTitle.toLowerCase()));
     }
 
     return result;

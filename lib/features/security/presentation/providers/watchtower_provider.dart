@@ -1,3 +1,4 @@
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/core_providers.dart';
@@ -35,7 +36,7 @@ class WatchtowerNotifier extends AsyncNotifier<HealthScore> {
     final session = ref.read(sessionProvider);
     if (session is! Unlocked) return HealthScore.empty();
 
-    final items = await vaultRepo.getAllItems(session.vaultKey);
+    final items = await vaultRepo.getAllItems(SecretKey(session.vaultKey));
     return watchtower.computeScore(items);
   }
 
@@ -47,7 +48,7 @@ class WatchtowerNotifier extends AsyncNotifier<HealthScore> {
 
   /// Update the current health score with breach check results.
   void updateWithBreachedItems(List<VaultItemEntity> breachedItems) {
-    final current = state.valueOrNull;
+    final current = state.value;
     if (current == null) return;
     state = AsyncValue.data(current.withBreachedItems(breachedItems));
   }
@@ -61,7 +62,7 @@ final expiredItemsProvider = FutureProvider<List<VaultItemEntity>>((ref) async {
     Unlocked(:final vaultKey) => () async {
         final vaultRepo = ref.read(vaultRepositoryProvider);
         final watchtower = ref.read(watchtowerServiceProvider);
-        final items = await vaultRepo.getAllItems(vaultKey);
+        final items = await vaultRepo.getAllItems(SecretKey(vaultKey));
         return watchtower.getExpiredItems(items);
       }(),
   };

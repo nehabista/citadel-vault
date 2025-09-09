@@ -89,6 +89,22 @@ final vaultRepositoryProvider = Provider<VaultRepository>((ref) {
   );
 });
 
+/// Provides the BreachService for HIBP API checks.
+final breachServiceProvider = Provider<BreachService>((ref) => BreachService());
+
+/// Provides the BreachRepository with caching via SettingsDao.
+final breachRepositoryProvider = Provider<BreachRepository>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return BreachRepository(
+    breachService: ref.watch(breachServiceProvider),
+    settingsDao: db.settingsDao,
+  );
+});
+
+/// Provides the WatchtowerService for health score computation.
+final watchtowerServiceProvider =
+    Provider<WatchtowerService>((ref) => WatchtowerService());
+
 /// Provides a singleton TotpService instance.
 final totpServiceProvider = Provider<TotpService>((ref) => TotpService());
 
