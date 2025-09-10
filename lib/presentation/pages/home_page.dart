@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icons_plus/icons_plus.dart';
 
+import '../../features/security/presentation/pages/watchtower_page.dart';
+import '../../features/security/presentation/providers/expiry_provider.dart';
 import '../../gen/assets.gen.dart';
 import '../widgets/bottom_nav_item.dart';
 import 'dashboard/dashboard_page.dart';
@@ -24,6 +26,7 @@ class HomePage extends ConsumerWidget {
 
   static const _pages = <Widget>[
     DashBoardPage(),
+    WatchtowerPage(),
     Center(child: Text('Citadel Locksmith')),
     SettingsScreen(),
   ];
@@ -53,11 +56,12 @@ class HomePage extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             Builder(builder: (context) {
-              final title = selectedIndex == 1
-                  ? 'Citadel LocksmithX'
-                  : selectedIndex == 2
-                      ? 'Citadel Settings'
-                      : 'Citadel Vault';
+              final title = switch (selectedIndex) {
+                1 => 'Watchtower',
+                2 => 'Citadel LocksmithX',
+                3 => 'Citadel Settings',
+                _ => 'Citadel Vault',
+              };
               return Text(
                 title,
                 style: TextStyle(
@@ -148,9 +152,7 @@ class HomePage extends ConsumerWidget {
                 ),
               ),
               Expanded(
-                child: BottomNavItem(
-                  icon: Bootstrap.file_lock,
-                  label: 'Locksmith',
+                child: _WatchtowerNavItem(
                   isSelected: selectedIndex == 1,
                   onTap: () =>
                       ref.read(selectedNavIndexProvider.notifier).select(1),
@@ -158,11 +160,20 @@ class HomePage extends ConsumerWidget {
               ),
               Expanded(
                 child: BottomNavItem(
-                  icon: Bootstrap.gear,
-                  label: 'Settings',
+                  icon: Bootstrap.file_lock,
+                  label: 'Locksmith',
                   isSelected: selectedIndex == 2,
                   onTap: () =>
                       ref.read(selectedNavIndexProvider.notifier).select(2),
+                ),
+              ),
+              Expanded(
+                child: BottomNavItem(
+                  icon: Bootstrap.gear,
+                  label: 'Settings',
+                  isSelected: selectedIndex == 3,
+                  onTap: () =>
+                      ref.read(selectedNavIndexProvider.notifier).select(3),
                 ),
               ),
             ],
@@ -170,6 +181,68 @@ class HomePage extends ConsumerWidget {
         ),
       ),
       body: _pages[selectedIndex],
+    );
+  }
+}
+
+/// Watchtower bottom nav item with expiry badge (D-19).
+class _WatchtowerNavItem extends ConsumerWidget {
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _WatchtowerNavItem({
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final badgeCount = ref.watch(expiryBadgeCountProvider);
+    final color =
+        isSelected ? const Color.fromARGB(255, 28, 145, 242) : Colors.blueGrey;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color.fromARGB(255, 26, 147, 246).withAlpha(20)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Badge(
+                    isLabelVisible: badgeCount > 0,
+                    label: Text(
+                      '$badgeCount',
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                    child: Icon(
+                      isSelected ? Icons.shield : Icons.shield_outlined,
+                      color: color,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Watchtower',
+                    style: TextStyle(color: color, fontSize: 15),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

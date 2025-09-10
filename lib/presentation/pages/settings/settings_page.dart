@@ -42,6 +42,12 @@ class SettingsScreen extends ConsumerWidget {
               );
             },
           ),
+          ListTile(
+            title: const Text('HIBP API Key'),
+            subtitle: const Text('Configure breach monitoring API key'),
+            leading: const Icon(Icons.vpn_key),
+            onTap: () => context.push(AppRoutes.hibpSettings),
+          ),
           const SizedBox(height: 20),
           const Text(
             'Data',
