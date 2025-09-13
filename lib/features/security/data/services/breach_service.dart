@@ -17,15 +17,21 @@ class BreachService {
     http.Client? client,
     String? hibpApiKey,
   })  : _client = client ?? http.Client(),
-        _hibpApiKey = hibpApiKey;
+        _hibpApiKey = hibpApiKey ?? _defaultApiKey;
 
   final http.Client _client;
   final String? _hibpApiKey;
 
+  /// Built-in HIBP API key — users don't need to configure this.
+  static const _defaultApiKey = String.fromEnvironment(
+    'HIBP_API_KEY',
+    defaultValue: '19845a8c362a464b837f724beada9cf2',
+  );
+
   static const _ua = 'Citadel/1.0';
 
   /// Check if the API key is available.
-  bool get hasHibpKey => _hibpApiKey != null && _hibpApiKey!.isNotEmpty;
+  bool get hasHibpKey => _hibpApiKey != null && _hibpApiKey.isNotEmpty;
 
   /// Pwned Passwords range API (no key required).
   ///

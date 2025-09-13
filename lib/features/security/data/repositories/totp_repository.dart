@@ -8,7 +8,6 @@ import 'package:drift/drift.dart';
 import '../../../../core/crypto/crypto_engine.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/daos/totp_dao.dart';
-import '../../../../core/database/tables/totp_entries_table.dart';
 import '../models/totp_entry_entity.dart';
 
 /// Repository for TOTP entries with encrypt-at-boundary pattern.

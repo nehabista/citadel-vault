@@ -48,7 +48,7 @@ class _BreachCatalogPageState extends ConsumerState<BreachCatalogPage> {
                   border: InputBorder.none,
                 ),
                 onChanged: (value) {
-                  ref.read(breachSearchQueryProvider.notifier).state = value;
+                  ref.read(breachSearchQueryProvider.notifier).update(value);
                 },
               )
             : const Text('Breach Catalog'),
@@ -60,7 +60,7 @@ class _BreachCatalogPageState extends ConsumerState<BreachCatalogPage> {
                 _isSearching = !_isSearching;
                 if (!_isSearching) {
                   _searchController.clear();
-                  ref.read(breachSearchQueryProvider.notifier).state = '';
+                  ref.read(breachSearchQueryProvider.notifier).update('');
                 }
               });
             },
@@ -78,8 +78,8 @@ class _BreachCatalogPageState extends ConsumerState<BreachCatalogPage> {
                   label: const Text('Verified only'),
                   selected: filter.verifiedOnly,
                   onSelected: (value) {
-                    ref.read(breachFilterProvider.notifier).state =
-                        filter.copyWith(verifiedOnly: value);
+                    ref.read(breachFilterProvider.notifier).update(
+                        filter.copyWith(verifiedOnly: value));
                   },
                 ),
                 const SizedBox(width: 8),
@@ -87,15 +87,15 @@ class _BreachCatalogPageState extends ConsumerState<BreachCatalogPage> {
                   label: const Text('Exclude sensitive'),
                   selected: filter.excludeSensitive,
                   onSelected: (value) {
-                    ref.read(breachFilterProvider.notifier).state =
-                        filter.copyWith(excludeSensitive: value);
+                    ref.read(breachFilterProvider.notifier).update(
+                        filter.copyWith(excludeSensitive: value));
                   },
                 ),
                 const Spacer(),
                 PopupMenuButton<BreachSort>(
                   initialValue: sort,
                   onSelected: (value) {
-                    ref.read(breachSortProvider.notifier).state = value;
+                    ref.read(breachSortProvider.notifier).update(value);
                   },
                   itemBuilder: (context) => [
                     const PopupMenuItem(
