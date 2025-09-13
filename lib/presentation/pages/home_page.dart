@@ -1,11 +1,14 @@
 // File: lib/presentation/pages/home_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:icons_plus/icons_plus.dart';
 
+import '../../features/password_generator/presentation/pages/generator_page.dart';
 import '../../features/security/presentation/pages/watchtower_page.dart';
 import '../../features/security/presentation/providers/expiry_provider.dart';
 import '../../gen/assets.gen.dart';
+import '../../routing/app_router.dart';
 import '../widgets/bottom_nav_item.dart';
 import 'dashboard/dashboard_page.dart';
 import 'settings/settings_page.dart';
@@ -27,7 +30,7 @@ class HomePage extends ConsumerWidget {
   static const _pages = <Widget>[
     DashBoardPage(),
     WatchtowerPage(),
-    Center(child: Text('Citadel Locksmith')),
+    GeneratorPage(),
     SettingsScreen(),
   ];
 
@@ -98,7 +101,7 @@ class HomePage extends ConsumerWidget {
                 ),
                 child: TextButton.icon(
                   onPressed: () {
-                    debugPrint('+ New button tapped');
+                    context.push(AppRoutes.vaultItemCreate);
                   },
                   icon: const Icon(Icons.add, color: Colors.white, size: 22),
                   label: const Text(
