@@ -1,15 +1,13 @@
 // File: lib/main.dart
 // App entry point with ProviderScope wrapping (Riverpod)
-import 'dart:async';
+import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mcp_toolkit/mcp_toolkit.dart';
-
-import 'dart:math';
-
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mcp_toolkit/mcp_toolkit.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -19,7 +17,17 @@ import 'core/providers/core_providers.dart';
 import 'data/services/api/pocketbase_service.dart';
 
 Future<void> main() async {
-  MCPToolkitBinding.instance.initialize();
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // MCP toolkit for debug UI inspection (only in debug mode)
+  if (kDebugMode) {
+    try {
+      MCPToolkitBinding.instance.initialize();
+      MCPToolkitBinding.instance.initializeFlutterToolkit();
+    } catch (_) {
+      // MCP toolkit is optional — don't block app startup
+    }
+  }
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
@@ -30,21 +38,14 @@ Future<void> main() async {
   // Initialize encrypted database
   final db = await _openDatabase();
 
-  MCPToolkitBinding.instance.initializeFlutterToolkit();
-
-  runZonedGuarded(
-    () {
-      runApp(
-        ProviderScope(
-          overrides: [
-            pocketBaseServiceProvider.overrideWithValue(pbService),
-            appDatabaseProvider.overrideWithValue(db),
-          ],
-          child: const CitadelApp(),
-        ),
-      );
-    },
-    MCPToolkitBinding.instance.handleZoneError,
+  runApp(
+    ProviderScope(
+      overrides: [
+        pocketBaseServiceProvider.overrideWithValue(pbService),
+        appDatabaseProvider.overrideWithValue(db),
+      ],
+      child: const CitadelApp(),
+    ),
   );
 }
 
