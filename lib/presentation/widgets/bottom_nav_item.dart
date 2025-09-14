@@ -15,39 +15,44 @@ class BottomNavItem extends StatelessWidget {
     required this.onTap,
   });
 
+  static const _selectedColor = Color(0xFF4D4DCD);
+  static const _unselectedColor = Color(0xFF9E9E9E);
+
   @override
   Widget build(BuildContext context) {
-    final color =
-        isSelected ? const Color.fromARGB(255, 28, 145, 242) : Colors.blueGrey;
+    final color = isSelected ? _selectedColor : _unselectedColor;
 
     return GestureDetector(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? const Color.fromARGB(255, 26, 147, 246).withAlpha(20)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12.0),
+      behavior: HitTestBehavior.opaque,
+      child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          padding: EdgeInsets.symmetric(
+            horizontal: isSelected ? 12 : 8,
+            vertical: 6,
           ),
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: color, size: 20),
-                  const SizedBox(width: 4),
-                  Text(
-                    label,
-                    style: TextStyle(color: color, fontSize: 15),
-                    overflow: TextOverflow.ellipsis,
+          decoration: BoxDecoration(
+            color: isSelected ? _selectedColor.withAlpha(20) : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 20),
+              if (isSelected) ...[
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ),
-            ),
+                ),
+              ],
+            ],
           ),
         ),
       ),

@@ -21,9 +21,10 @@ import 'widgets/custom_fields_section.dart';
 /// If [existingItem] is null, operates in create mode.
 /// Otherwise operates in edit mode with pre-filled fields.
 class VaultItemEditPage extends ConsumerStatefulWidget {
-  const VaultItemEditPage({super.key, this.existingItem});
+  const VaultItemEditPage({super.key, this.existingItem, this.initialType});
 
   final VaultItemEntity? existingItem;
+  final VaultItemType? initialType;
 
   @override
   ConsumerState<VaultItemEditPage> createState() => _VaultItemEditPageState();
@@ -56,7 +57,7 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
     _usernameController = TextEditingController(text: item?.username ?? '');
     _passwordController = TextEditingController(text: item?.password ?? '');
     _notesController = TextEditingController(text: item?.notes ?? '');
-    _selectedType = item?.type ?? VaultItemType.password;
+    _selectedType = item?.type ?? widget.initialType ?? VaultItemType.password;
     _isFavorite = item?.isFavorite ?? false;
     _customFields = List.of(item?.customFields ?? []);
     _expiryDays = item?.expiryDays;

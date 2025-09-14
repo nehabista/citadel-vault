@@ -97,80 +97,148 @@ class VaultTabs extends ConsumerWidget {
           builder: (ctx, setState) {
             return AlertDialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
               ),
+              elevation: 8,
+              shadowColor: Colors.black.withAlpha(40),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 20,
+              ),
+              titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
               title: const Text(
                 'Create Vault',
-                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 20,
+                ),
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const SizedBox(height: 8),
                   TextField(
                     controller: nameController,
                     decoration: InputDecoration(
                       labelText: 'Vault Name',
+                      labelStyle: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF4D4DCD),
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
                       ),
                     ),
                     autofocus: true,
                   ),
-                  const SizedBox(height: 16),
-                  const Text('Color', style: TextStyle(fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Color',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   Wrap(
-                    spacing: 8,
+                    spacing: 12,
+                    runSpacing: 12,
                     children: colors.map((c) {
                       final color = _parseColor(c);
                       final isSelected = c == selectedColor;
                       return GestureDetector(
                         onTap: () => setState(() => selectedColor = c),
-                        child: Container(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
                             color: color,
                             shape: BoxShape.circle,
                             border: isSelected
-                                ? Border.all(color: Colors.white, width: 2)
+                                ? Border.all(color: Colors.white, width: 3)
                                 : null,
-                            boxShadow: isSelected
-                                ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 6)]
-                                : null,
+                            boxShadow: [
+                              if (isSelected)
+                                BoxShadow(
+                                  color: color.withAlpha(120),
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
+                                )
+                              else
+                                BoxShadow(
+                                  color: color.withAlpha(40),
+                                  blurRadius: 4,
+                                ),
+                            ],
                           ),
+                          child: isSelected
+                              ? const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 16,
+                                )
+                              : null,
                         ),
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 16),
-                  const Text('Icon', style: TextStyle(fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Icon',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   Wrap(
-                    spacing: 8,
+                    spacing: 10,
+                    runSpacing: 10,
                     children: icons.map((iconName) {
                       final isSelected = iconName == selectedIcon;
+                      final activeColor = _parseColor(selectedColor);
                       return GestureDetector(
                         onTap: () => setState(() => selectedIcon = iconName),
-                        child: Container(
-                          width: 40,
-                          height: 40,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 44,
+                          height: 44,
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? _parseColor(selectedColor).withValues(alpha: 0.2)
+                                ? activeColor.withAlpha(30)
                                 : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                            border: isSelected
-                                ? Border.all(color: _parseColor(selectedColor))
-                                : null,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected
+                                  ? activeColor
+                                  : Colors.grey.shade200,
+                              width: isSelected ? 2 : 1,
+                            ),
                           ),
                           child: Icon(
                             _vaultIcon(iconName),
-                            size: 20,
+                            size: 22,
                             color: isSelected
-                                ? _parseColor(selectedColor)
-                                : Colors.grey.shade600,
+                                ? activeColor
+                                : Colors.grey.shade500,
                           ),
                         ),
                       );
@@ -178,10 +246,21 @@ class VaultTabs extends ConsumerWidget {
                   ),
                 ],
               ),
+              actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey.shade600,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
                 ),
                 FilledButton(
                   onPressed: () {
@@ -200,8 +279,15 @@ class VaultTabs extends ConsumerWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                   ),
-                  child: const Text('Create'),
+                  child: const Text(
+                    'Create',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             );
@@ -215,19 +301,27 @@ class VaultTabs extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0E0E0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   vault.name,
                   style: const TextStyle(
-                    fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),
@@ -266,6 +360,7 @@ class VaultTabs extends ConsumerWidget {
                   _showDeleteConfirmation(context, ref, vault);
                 },
               ),
+              const SizedBox(height: 8),
             ],
           ),
         );
@@ -280,7 +375,7 @@ class VaultTabs extends ConsumerWidget {
       builder: (ctx) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
           ),
           title: const Text('Rename Vault'),
           content: TextField(
@@ -289,12 +384,22 @@ class VaultTabs extends ConsumerWidget {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF4D4DCD),
+                  width: 2,
+                ),
+              ),
             ),
             autofocus: true,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey.shade600,
+              ),
               child: const Text('Cancel'),
             ),
             FilledButton(
@@ -311,6 +416,9 @@ class VaultTabs extends ConsumerWidget {
               },
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF4D4DCD),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text('Save'),
             ),
@@ -327,7 +435,7 @@ class VaultTabs extends ConsumerWidget {
       builder: (ctx) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
           ),
           title: const Text('Delete Vault?'),
           content: Text(
@@ -336,6 +444,9 @@ class VaultTabs extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey.shade600,
+              ),
               child: const Text('Cancel'),
             ),
             FilledButton(
@@ -345,6 +456,9 @@ class VaultTabs extends ConsumerWidget {
               },
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text('Delete'),
             ),
@@ -381,7 +495,7 @@ class _VaultTab extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? color.withValues(alpha: 0.15) : Colors.white,
+            color: isSelected ? color.withAlpha(25) : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected ? color : Colors.grey.shade300,
@@ -400,7 +514,6 @@ class _VaultTab extends StatelessWidget {
               Text(
                 vault.name,
                 style: TextStyle(
-                  fontFamily: 'Poppins',
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   fontSize: 13,
                   color: isSelected ? color : Colors.grey.shade700,
@@ -440,7 +553,6 @@ class _AddVaultButton extends StatelessWidget {
               Text(
                 'New',
                 style: TextStyle(
-                  fontFamily: 'Poppins',
                   fontWeight: FontWeight.w500,
                   fontSize: 13,
                   color: Colors.grey.shade600,

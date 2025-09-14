@@ -138,7 +138,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.vaultItemCreate,
-        builder: (context, state) => const VaultItemEditPage(),
+        builder: (context, state) {
+          final initialType = state.extra as VaultItemType?;
+          return VaultItemEditPage(initialType: initialType);
+        },
       ),
       GoRoute(
         path: '/vault-item/:id',

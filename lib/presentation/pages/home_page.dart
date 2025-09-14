@@ -7,6 +7,7 @@ import 'package:icons_plus/icons_plus.dart';
 import '../../features/password_generator/presentation/pages/generator_page.dart';
 import '../../features/security/presentation/pages/watchtower_page.dart';
 import '../../features/security/presentation/providers/expiry_provider.dart';
+import '../../features/vault/domain/entities/vault_item.dart';
 import '../../gen/assets.gen.dart';
 import '../../routing/app_router.dart';
 import '../widgets/bottom_nav_item.dart';
@@ -61,15 +62,15 @@ class HomePage extends ConsumerWidget {
             Builder(builder: (context) {
               final title = switch (selectedIndex) {
                 1 => 'Watchtower',
-                2 => 'Citadel LocksmithX',
-                3 => 'Citadel Settings',
-                _ => 'Citadel Vault',
+                2 => 'Locksmith',
+                3 => 'Settings',
+                _ => 'Vault',
               };
               return Text(
                 title,
                 style: TextStyle(
                   fontSize: screenWidth * 0.042,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
                 overflow: TextOverflow.ellipsis,
               );
@@ -84,31 +85,24 @@ class HomePage extends ConsumerWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: const Color(0xFF1C91F2),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color.fromARGB(93, 28, 146, 242),
-                      offset: const Offset(0, 4),
+                      color: const Color(0xFF1C91F2).withAlpha(60),
+                      offset: const Offset(0, 3),
                       blurRadius: 8,
-                    ),
-                    const BoxShadow(
-                      color: Colors.white,
-                      offset: Offset(-1, -1),
-                      blurRadius: 1,
-                      spreadRadius: -1,
                     ),
                   ],
                 ),
                 child: TextButton.icon(
-                  onPressed: () {
-                    context.push(AppRoutes.vaultItemCreate);
-                  },
-                  icon: const Icon(Icons.add, color: Colors.white, size: 22),
+                  onPressed: () => _showNewItemSheet(context),
+                  icon: const Icon(Icons.add, color: Colors.white, size: 20),
                   label: const Text(
                     'New',
                     style: TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
                     ),
                   ),
                   style: TextButton.styleFrom(
@@ -129,16 +123,16 @@ class HomePage extends ConsumerWidget {
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
-          height: screenHeight * 0.075,
+          height: screenHeight * 0.065,
           margin: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.08, vertical: screenHeight * 0.01),
+              horizontal: screenWidth * 0.05, vertical: screenHeight * 0.01),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12.0),
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8.0,
+                color: Colors.black.withAlpha(18),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -148,7 +142,7 @@ class HomePage extends ConsumerWidget {
               Expanded(
                 child: BottomNavItem(
                   icon: Bootstrap.shield_lock,
-                  label: 'Citadel',
+                  label: 'Vault',
                   isSelected: selectedIndex == 0,
                   onTap: () =>
                       ref.read(selectedNavIndexProvider.notifier).select(0),
@@ -186,9 +180,175 @@ class HomePage extends ConsumerWidget {
       body: _pages[selectedIndex],
     );
   }
+
+  /// Shows the expandable bottom sheet with item type options.
+  void _showNewItemSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return const _NewItemBottomSheet();
+      },
+    );
+  }
 }
 
-/// Watchtower bottom nav item with expiry badge (D-19).
+/// Bottom sheet with grid of item types for creating new vault items.
+class _NewItemBottomSheet extends StatelessWidget {
+  const _NewItemBottomSheet();
+
+  static const _itemTypes = <({IconData icon, String label, VaultItemType type})>[
+    (icon: Icons.lock_outline, label: 'Password', type: VaultItemType.password),
+    (icon: Icons.sticky_note_2_outlined, label: 'Secure Note', type: VaultItemType.secureNote),
+    (icon: Icons.account_balance_outlined, label: 'Bank Account', type: VaultItemType.bankAccount),
+    (icon: Icons.credit_card_outlined, label: 'Payment Card', type: VaultItemType.paymentCard),
+    (icon: Icons.wifi_outlined, label: 'WiFi', type: VaultItemType.wifiPassword),
+    (icon: Icons.contact_page_outlined, label: 'Contact', type: VaultItemType.contactInfo),
+    (icon: Icons.code_outlined, label: 'Software License', type: VaultItemType.softwareLicense),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          // Handle bar
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE0E0E0),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Create New Item',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1A1A2E),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Choose the type of item to add to your vault',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF9E9E9E),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 2.4,
+              ),
+              itemCount: _itemTypes.length,
+              itemBuilder: (context, index) {
+                final item = _itemTypes[index];
+                return _ItemTypeCard(
+                  icon: item.icon,
+                  label: item.label,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push(AppRoutes.vaultItemCreate, extra: item.type);
+                  },
+                );
+              },
+            ),
+          ),
+          SizedBox(height: MediaQuery.of(context).padding.bottom + 24),
+        ],
+      ),
+    );
+  }
+}
+
+/// A single item type card in the new-item bottom sheet grid.
+class _ItemTypeCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ItemTypeCard({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFFF8FAFC),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE8EDF5)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4D4DCD).withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: const Color(0xFF4D4DCD)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A2E),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Watchtower bottom nav item with expiry badge.
 class _WatchtowerNavItem extends ConsumerWidget {
   final bool isSelected;
   final VoidCallback onTap;
@@ -198,51 +358,56 @@ class _WatchtowerNavItem extends ConsumerWidget {
     required this.onTap,
   });
 
+  static const _selectedColor = Color(0xFF4D4DCD);
+  static const _unselectedColor = Color(0xFF9E9E9E);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final badgeCount = ref.watch(expiryBadgeCountProvider);
-    final color =
-        isSelected ? const Color.fromARGB(255, 28, 145, 242) : Colors.blueGrey;
+    final color = isSelected ? _selectedColor : _unselectedColor;
 
     return GestureDetector(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? const Color.fromARGB(255, 26, 147, 246).withAlpha(20)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12.0),
+      behavior: HitTestBehavior.opaque,
+      child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          padding: EdgeInsets.symmetric(
+            horizontal: isSelected ? 12 : 8,
+            vertical: 6,
           ),
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Badge(
-                    isLabelVisible: badgeCount > 0,
-                    label: Text(
-                      '$badgeCount',
-                      style: const TextStyle(fontSize: 10),
-                    ),
-                    child: Icon(
-                      isSelected ? Icons.shield : Icons.shield_outlined,
-                      color: color,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Watchtower',
-                    style: TextStyle(color: color, fontSize: 15),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+          decoration: BoxDecoration(
+            color: isSelected ? _selectedColor.withAlpha(20) : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Badge(
+                isLabelVisible: badgeCount > 0,
+                label: Text(
+                  '$badgeCount',
+                  style: const TextStyle(fontSize: 9),
+                ),
+                child: Icon(
+                  isSelected ? Icons.shield : Icons.shield_outlined,
+                  color: color,
+                  size: 20,
+                ),
               ),
-            ),
+              if (isSelected) ...[
+                const SizedBox(width: 6),
+                Text(
+                  'Watchtower',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
