@@ -394,12 +394,15 @@ class _WatchtowerNavItem extends ConsumerWidget {
               ),
               if (isSelected) ...[
                 const SizedBox(width: 6),
-                Text(
-                  'Watchtower',
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                Flexible(
+                  child: Text(
+                    'Watch',
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
