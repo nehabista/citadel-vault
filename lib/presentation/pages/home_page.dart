@@ -95,7 +95,14 @@ class HomePage extends ConsumerWidget {
                   ],
                 ),
                 child: TextButton.icon(
-                  onPressed: () => _showNewItemSheet(context),
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => const _NewItemBottomSheet(),
+                    );
+                  },
                   icon: const Icon(Icons.add, color: Colors.white, size: 20),
                   label: const Text(
                     'New',
@@ -181,17 +188,6 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  /// Shows the expandable bottom sheet with item type options.
-  void _showNewItemSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return const _NewItemBottomSheet();
-      },
-    );
-  }
 }
 
 /// Bottom sheet with grid of item types for creating new vault items.
