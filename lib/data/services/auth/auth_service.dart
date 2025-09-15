@@ -93,8 +93,9 @@ class AuthService {
     );
   }
 
-  Future<bool> unlockWithBiometrics() async {
-    if (currentUser == null) return false;
+  /// Returns the master password on success (for Riverpod session unlock), null on failure.
+  Future<String?> unlockWithBiometrics() async {
+    if (currentUser == null) return null;
     final masterPassword = await localAuthService.authenticateWithBiometrics();
     if (masterPassword != null) {
       final salt = currentUser!.salt;
@@ -103,13 +104,14 @@ class AuthService {
         salt,
       );
       sessionService.startSession(derivedKey);
-      return true;
+      return masterPassword;
     }
-    return false;
+    return null;
   }
 
-  Future<bool> unlockWithPin(String pin) async {
-    if (currentUser == null) return false;
+  /// Returns the master password on success, null on failure.
+  Future<String?> unlockWithPin(String pin) async {
+    if (currentUser == null) return null;
     final masterPassword = await localAuthService.authenticateWithPin(pin);
     if (masterPassword != null) {
       final salt = currentUser!.salt;
@@ -118,9 +120,9 @@ class AuthService {
         salt,
       );
       sessionService.startSession(derivedKey);
-      return true;
+      return masterPassword;
     }
-    return false;
+    return null;
   }
 
   Future<void> resendVerification(String email) async {

@@ -16,6 +16,7 @@ import '../features/security/presentation/pages/breach_timeline_page.dart';
 import '../features/security/presentation/pages/hibp_settings_page.dart';
 import '../features/vault/domain/entities/vault_item.dart';
 import '../presentation/pages/auth/auth_page.dart';
+import '../presentation/pages/auth/unlock_screen.dart';
 import '../presentation/pages/auth/verification_pending_screen.dart';
 import '../presentation/pages/home_page.dart';
 import '../presentation/pages/onboarding/onbarding_page.dart';
@@ -47,7 +48,7 @@ abstract class AppRoutes {
   static const hibpSettings = '/settings/hibp-api-key';
 
   /// Routes that don't require authentication.
-  static const publicRoutes = [splash, onboarding, login, signup, verification];
+  static const publicRoutes = [splash, onboarding, login, signup, verification, unlock];
 }
 
 /// A [ChangeNotifier] that rebuilds the router when session state changes.
@@ -102,6 +103,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.login,
         builder: (context, state) => const AuthScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.unlock,
+        builder: (context, state) => const UnlockScreen(),
       ),
       GoRoute(
         path: AppRoutes.signup,

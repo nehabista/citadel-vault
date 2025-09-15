@@ -173,9 +173,13 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<bool> unlockWithPin() async {
     state = state.copyWith(isLoadingPin: true);
     try {
-      final success = await _authService.unlockWithPin(pinController.text);
+      final masterPw = await _authService.unlockWithPin(pinController.text);
+      if (masterPw != null && _authService.currentUser != null) {
+        final sessionNotifier = ref.read(sessionProvider.notifier);
+        await sessionNotifier.unlock(masterPw, _authService.currentUser!.salt);
+      }
       state = state.copyWith(isLoadingPin: false);
-      return success;
+      return masterPw != null;
     } catch (e) {
       state = state.copyWith(isLoadingPin: false);
       return false;
@@ -186,9 +190,13 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(
         isLoadingBiometrics: true, showPinAfterBioFailure: false);
     try {
-      final success = await _authService.unlockWithBiometrics();
+      final masterPw = await _authService.unlockWithBiometrics();
+      if (masterPw != null && _authService.currentUser != null) {
+        final sessionNotifier = ref.read(sessionProvider.notifier);
+        await sessionNotifier.unlock(masterPw, _authService.currentUser!.salt);
+      }
       state = state.copyWith(isLoadingBiometrics: false);
-      return success;
+      return masterPw != null;
     } catch (e) {
       state = state.copyWith(
           isLoadingBiometrics: false, showPinAfterBioFailure: true);

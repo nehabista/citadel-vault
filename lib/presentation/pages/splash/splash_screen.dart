@@ -65,13 +65,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     try {
       final pbService = ref.read(pocketBaseServiceProvider);
       if (pbService.client.authStore.isValid) {
-        // User is logged in, go to unlock screen
-        if (mounted) context.go(AppRoutes.home);
+        // Load the current user so AuthService.currentUser is available
+        // for biometric/PIN unlock flow
+        ref.read(authServiceProvider).loadCurrentUser();
+        // Send to unlock screen (biometric/PIN) to re-derive vault key
+        if (mounted) context.go(AppRoutes.unlock);
       } else {
         if (mounted) context.go(AppRoutes.login);
       }
     } catch (_) {
-      // PocketBase not initialized yet, go to login
       if (mounted) context.go(AppRoutes.login);
     }
   }
