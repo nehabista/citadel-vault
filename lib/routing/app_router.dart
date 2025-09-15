@@ -1,12 +1,11 @@
 // File: lib/routing/app_router.dart
-// GoRouter configuration with auth-based redirects (D-03)
+// GoRouter configuration with auth-based redirects
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/providers/session_provider.dart';
 import '../core/session/session_state.dart';
-import '../features/auth/presentation/pages/migration_page.dart';
 import '../features/import_export/presentation/pages/export_page.dart';
 import '../features/import_export/presentation/pages/import_page.dart';
 import '../features/security/data/models/breach_record.dart';
@@ -35,8 +34,6 @@ abstract class AppRoutes {
   static const dashboard = '/dashboard';
   static const settings = '/settings';
   static const verification = '/verification';
-  static const quickUnlockSetup = '/quick-unlock-setup';
-  static const migration = '/migration';
   static const vaultItemDetail = '/vault-item/:id';
   static const vaultItemEdit = '/vault-item/:id/edit';
   static const vaultItemCreate = '/vault-item/create';
@@ -70,7 +67,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final session = ref.read(sessionProvider);
       final currentPath = state.matchedLocation;
-      final isPublicRoute = AppRoutes.publicRoutes.contains(currentPath);
 
       // If on splash or onboarding, let them through
       if (currentPath == AppRoutes.splash ||
@@ -78,13 +74,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      // Allow migration route through when unlocked
-      if (currentPath == AppRoutes.migration) {
-        return session is Unlocked ? null : AppRoutes.login;
-      }
-
       return switch (session) {
-        Locked() => isPublicRoute ? null : AppRoutes.login,
+        // When locked: allow public routes (login, unlock, etc.), redirect others to login
+        Locked() => AppRoutes.publicRoutes.contains(currentPath)
+            ? null
+            : AppRoutes.login,
+        // When unlocked: redirect login/unlock to home, allow everything else
         Unlocked() => (currentPath == AppRoutes.login ||
                 currentPath == AppRoutes.unlock)
             ? AppRoutes.home
@@ -117,16 +112,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final email = state.extra as String? ?? '';
           return VerificationPendingScreen(email: email);
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.migration,
-        builder: (context, state) {
-          final extra = state.extra as Map<String, String>? ?? {};
-          return MigrationPage(
-            masterPassword: extra['masterPassword'] ?? '',
-            salt: extra['salt'] ?? '',
-          );
         },
       ),
       GoRoute(

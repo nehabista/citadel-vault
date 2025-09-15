@@ -2,13 +2,17 @@ import 'package:pocketbase/pocketbase.dart';
 
 /// Represents a user of the Citadel application.
 /// This model holds non-sensitive user data fetched from the server.
+///
+/// PocketBase `users` collection fields:
+///   id, created, updated, username, email, emailVisibility, verified,
+///   name, salt, avatar, usesSecretKey
 class UserModel {
   final String id;
   final String email;
   final String name;
   final String salt;
   final String avatarUrl;
-  final bool isQuickUnlockSetup;
+  final bool usesSecretKey;
 
   UserModel({
     required this.id,
@@ -16,7 +20,7 @@ class UserModel {
     required this.name,
     required this.salt,
     required this.avatarUrl,
-    required this.isQuickUnlockSetup,
+    this.usesSecretKey = false,
   });
 
   /// Creates a UserModel instance from a PocketBase RecordModel.
@@ -27,7 +31,7 @@ class UserModel {
       name: record.getStringValue('name'),
       salt: record.getStringValue('salt'),
       avatarUrl: record.getStringValue('avatar'),
-      isQuickUnlockSetup: record.getBoolValue('isQuickUnlockSetup'),
+      usesSecretKey: record.getBoolValue('usesSecretKey'),
     );
   }
 }

@@ -14,7 +14,7 @@ import '../../../features/security/presentation/widgets/totp_add_dialog.dart';
 import '../../../features/security/presentation/widgets/totp_display.dart';
 import '../../../features/vault/domain/entities/custom_field.dart';
 import '../../../features/vault/domain/entities/vault_item.dart';
-import '../../../features/vault/presentation/providers/vault_provider.dart';
+import '../../../features/vault/presentation/providers/multi_vault_provider.dart';
 import 'vault_item_edit_page.dart';
 import 'widgets/password_history_section.dart';
 
@@ -28,9 +28,9 @@ final vaultItemDetailProvider =
   final vaultKey = SecretKey(session.vaultKey);
   final repo = ref.read(vaultRepositoryProvider);
 
-  // Load all items from default vault and find matching ID.
-  final items = await repo.getItems('default', vaultKey);
-  return items.where((i) => i.id == itemId).firstOrNull;
+  // Search across all vaults to find the item by ID.
+  final allItems = await repo.getAllItems(vaultKey);
+  return allItems.where((i) => i.id == itemId).firstOrNull;
 });
 
 /// Detail page for viewing a vault item.
@@ -318,7 +318,7 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
 
     try {
       await ref.read(vaultRepositoryProvider).deleteItem(item.id);
-      ref.read(vaultProvider.notifier).fetchItems();
+      ref.read(multiVaultProvider.notifier).refreshItems();
       if (!mounted) return;
       GoRouter.of(context).pop();
     } catch (e) {

@@ -66,10 +66,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       final pbService = ref.read(pocketBaseServiceProvider);
       if (pbService.client.authStore.isValid) {
         // Load the current user so AuthService.currentUser is available
-        // for biometric/PIN unlock flow
         ref.read(authServiceProvider).loadCurrentUser();
-        // Send to unlock screen (biometric/PIN) to re-derive vault key
-        if (mounted) context.go(AppRoutes.unlock);
+
+        // Check if user has set up PIN/biometric quick unlock
+        final localAuth = ref.read(localAuthServiceProvider);
+        final hasQuickUnlock = await localAuth.hasQuickUnlockSetup();
+
+        if (hasQuickUnlock) {
+          // User has PIN/biometric set up -> go to unlock screen
+          if (mounted) context.go(AppRoutes.unlock);
+        } else {
+          // No quick unlock set up -> go directly to login
+          // (user needs to re-enter master password to derive vault key)
+          if (mounted) context.go(AppRoutes.login);
+        }
       } else {
         if (mounted) context.go(AppRoutes.login);
       }

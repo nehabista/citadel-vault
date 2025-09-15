@@ -1,27 +1,24 @@
 // File: lib/data/services/auth/auth_service.dart
+import 'dart:convert';
 import 'dart:developer' show log;
-import 'dart:typed_data';
 
 import 'package:pocketbase/pocketbase.dart';
 
+import '../../../core/crypto/crypto_engine.dart';
 import '../../../utils/dicebear_avatar/preset_gen_dicebear.dart';
 import '../../models/user_model.dart';
-import '../crypto/encryption_service.dart';
 import 'local_auth_service.dart';
-import 'session_service.dart';
 
 /// Handles all user authentication flows.
-/// Plain Dart class -- no GetX dependency.
+/// Uses CryptoEngine (Argon2id + AES-256-GCM) for key derivation.
 class AuthService {
   final PocketBase pb;
-  final EncryptionService encryptionService;
-  final SessionService sessionService;
+  final CryptoEngine cryptoEngine;
   final LocalAuthService localAuthService;
 
   AuthService({
     required this.pb,
-    required this.encryptionService,
-    required this.sessionService,
+    required this.cryptoEngine,
     required this.localAuthService,
   });
 
@@ -41,7 +38,9 @@ class AuthService {
     required String accountPassword,
     required String masterPassword,
   }) async {
-    final salt = encryptionService.generateSecureSalt();
+    // Generate a salt using CryptoEngine and encode as base64.
+    final saltBytes = cryptoEngine.generateSalt();
+    final salt = base64.encode(saltBytes);
     final pngUrl =
         AvatarPresets.colorfulRoundedAvatar(seed: email).buildPngUrl();
     final body = <String, dynamic>{
@@ -68,61 +67,20 @@ class AuthService {
     final authData =
         await pb.collection('users').authWithPassword(email, password);
     currentUser = UserModel.fromRecord(authData.record);
-    final salt = currentUser!.salt;
-    final Uint8List derivedKey = encryptionService.deriveKey(
-      masterPassword,
-      salt,
-    );
-    sessionService.startSession(derivedKey);
-  }
-
-  Future<void> markQuickUnlockAsComplete() async {
-    if (currentUser == null) {
-      throw Exception("Cannot mark setup as complete. User not logged in.");
-    }
-    await pb
-        .collection('users')
-        .update(currentUser!.id, body: {'isQuickUnlockSetup': true});
-    currentUser = UserModel(
-      id: currentUser!.id,
-      email: currentUser!.email,
-      name: currentUser!.name,
-      salt: currentUser!.salt,
-      avatarUrl: currentUser!.avatarUrl,
-      isQuickUnlockSetup: true,
-    );
+    // Key derivation now handled by SessionNotifier.unlock() in the auth provider.
+    // AuthService just authenticates with PocketBase and loads the user record.
   }
 
   /// Returns the master password on success (for Riverpod session unlock), null on failure.
   Future<String?> unlockWithBiometrics() async {
     if (currentUser == null) return null;
-    final masterPassword = await localAuthService.authenticateWithBiometrics();
-    if (masterPassword != null) {
-      final salt = currentUser!.salt;
-      final Uint8List derivedKey = encryptionService.deriveKey(
-        masterPassword,
-        salt,
-      );
-      sessionService.startSession(derivedKey);
-      return masterPassword;
-    }
-    return null;
+    return localAuthService.authenticateWithBiometrics();
   }
 
   /// Returns the master password on success, null on failure.
   Future<String?> unlockWithPin(String pin) async {
     if (currentUser == null) return null;
-    final masterPassword = await localAuthService.authenticateWithPin(pin);
-    if (masterPassword != null) {
-      final salt = currentUser!.salt;
-      final Uint8List derivedKey = encryptionService.deriveKey(
-        masterPassword,
-        salt,
-      );
-      sessionService.startSession(derivedKey);
-      return masterPassword;
-    }
-    return null;
+    return localAuthService.authenticateWithPin(pin);
   }
 
   Future<void> resendVerification(String email) async {
@@ -131,7 +89,6 @@ class AuthService {
 
   void logout() {
     pb.authStore.clear();
-    sessionService.endSession();
     currentUser = null;
   }
 }

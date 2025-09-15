@@ -19,7 +19,7 @@ void main() {
     setUp(() {
       container = ProviderContainer();
       crypto = container.read(cryptoEngineProvider);
-      testSalt = crypto.generateSalt();
+      testSalt = base64.encode(crypto.generateSalt());
     });
 
     tearDown(() {

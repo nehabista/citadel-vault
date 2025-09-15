@@ -1,5 +1,6 @@
 // File: test/unit/auth/session_lifecycle_test.dart
 // Tests AppLifecycleObserver and lock/unlock cycle
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:citadel_password_manager/core/crypto/crypto_engine.dart';
@@ -21,7 +22,7 @@ void main() {
       container = ProviderContainer();
       notifier = container.read(sessionProvider.notifier);
       crypto = container.read(cryptoEngineProvider);
-      testSalt = crypto.generateSalt();
+      testSalt = base64.encode(crypto.generateSalt());
     });
 
     tearDown(() {

@@ -13,7 +13,7 @@ import '../../../features/password_generator/presentation/widgets/entropy_gauge.
 import '../../../features/password_generator/presentation/widgets/password_generator_sheet.dart';
 import '../../../features/vault/domain/entities/custom_field.dart';
 import '../../../features/vault/domain/entities/vault_item.dart';
-import '../../../features/vault/presentation/providers/vault_provider.dart';
+import '../../../features/vault/presentation/providers/multi_vault_provider.dart';
 import 'widgets/custom_fields_section.dart';
 
 /// Page for creating or editing a vault item.
@@ -122,9 +122,13 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
       final repo = ref.read(vaultRepositoryProvider);
       final now = DateTime.now();
 
+      // Use the currently selected vault ID, or fall back to 'default'.
+      final selectedVaultId =
+          ref.read(multiVaultProvider).selectedVaultId ?? 'default';
+
       final entity = VaultItemEntity(
         id: widget.existingItem?.id ?? _generateId(),
-        vaultId: widget.existingItem?.vaultId ?? 'default',
+        vaultId: widget.existingItem?.vaultId ?? selectedVaultId,
         name: _nameController.text.trim(),
         url: _urlController.text.trim().isEmpty
             ? null
@@ -153,7 +157,7 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
       }
 
       // Refresh vault items.
-      ref.read(vaultProvider.notifier).fetchItems();
+      ref.read(multiVaultProvider.notifier).refreshItems();
 
       if (mounted) {
         context.pop();

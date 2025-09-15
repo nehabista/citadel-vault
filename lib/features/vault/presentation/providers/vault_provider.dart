@@ -1,17 +1,19 @@
 // File: lib/features/vault/presentation/providers/vault_provider.dart
-// Session-gated vault provider using exhaustive switch on SessionState
+// Legacy vault provider — kept for compatibility but delegates to VaultRepository.
+// New code should use multiVaultProvider instead.
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
-import '../../../../data/models/vault_item_model.dart';
+import '../../domain/entities/vault_item.dart';
 
 /// Vault state
 class VaultState {
   final bool isLoading;
-  final List<VaultItem> allItems;
-  final List<VaultItem> filteredItems;
+  final List<VaultItemEntity> allItems;
+  final List<VaultItemEntity> filteredItems;
   final VaultItemType? selectedFilter;
   final String? errorMessage;
 
@@ -25,8 +27,8 @@ class VaultState {
 
   VaultState copyWith({
     bool? isLoading,
-    List<VaultItem>? allItems,
-    List<VaultItem>? filteredItems,
+    List<VaultItemEntity>? allItems,
+    List<VaultItemEntity>? filteredItems,
     VaultItemType? Function()? selectedFilter,
     String? errorMessage,
   }) {
@@ -41,12 +43,10 @@ class VaultState {
   }
 }
 
-/// Session-gated vault notifier.
-/// Uses exhaustive switch on SessionState for compile-time safety.
+/// Session-gated vault notifier using VaultRepository.
 class VaultNotifier extends Notifier<VaultState> {
   @override
   VaultState build() {
-    // Watch session state -- rebuild when it changes
     final session = ref.watch(sessionProvider);
     return switch (session) {
       Locked() => const VaultState(isLoading: false, errorMessage: 'Vault is locked'),
@@ -58,15 +58,16 @@ class VaultNotifier extends Notifier<VaultState> {
     final session = ref.read(sessionProvider);
     return switch (session) {
       Locked() => throw const VaultLockedException(),
-      Unlocked() => _doFetchItems(),
+      Unlocked(vaultKey: final keyBytes) => _doFetchItems(keyBytes),
     };
   }
 
-  Future<void> _doFetchItems() async {
+  Future<void> _doFetchItems(List<int> keyBytes) async {
     state = state.copyWith(isLoading: true);
     try {
-      final vaultService = ref.read(vaultServiceProvider);
-      final items = await vaultService.fetchAndDecryptVaultItems();
+      final repo = ref.read(vaultRepositoryProvider);
+      final vaultKey = SecretKey(keyBytes);
+      final items = await repo.getAllItems(vaultKey);
       state = state.copyWith(
         isLoading: false,
         allItems: items,
@@ -101,8 +102,8 @@ class VaultNotifier extends Notifier<VaultState> {
 
   Future<void> _doDeleteItem(String itemId) async {
     try {
-      final vaultService = ref.read(vaultServiceProvider);
-      await vaultService.deleteVaultItem(itemId);
+      final repo = ref.read(vaultRepositoryProvider);
+      await repo.deleteItem(itemId);
       final updated = state.allItems.where((i) => i.id != itemId).toList();
       state = state.copyWith(allItems: updated);
       changeFilter(

@@ -118,7 +118,7 @@ void main() {
         ],
       };
 
-      final entity = VaultItemEntity.fromFieldsMap(
+      final entity = VaultItemEntity.fromFields(
         id: 'item-1',
         vaultId: 'vault-1',
         fields: fields,
@@ -141,7 +141,7 @@ void main() {
         'customFields': null,
       };
 
-      final entity = VaultItemEntity.fromFieldsMap(
+      final entity = VaultItemEntity.fromFields(
         id: 'item-1',
         vaultId: 'vault-1',
         fields: fields,
@@ -159,7 +159,7 @@ void main() {
         'customFields': <dynamic>[],
       };
 
-      final entity = VaultItemEntity.fromFieldsMap(
+      final entity = VaultItemEntity.fromFields(
         id: 'item-1',
         vaultId: 'vault-1',
         fields: fields,

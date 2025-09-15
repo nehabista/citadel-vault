@@ -7,29 +7,32 @@ import 'package:pocketbase/pocketbase.dart';
 ///
 /// Per D-18: PocketBase stores opaque encrypted blobs.
 /// Sends/receives base64-encoded encrypted data -- no server-side decryption.
+///
+/// PocketBase collection fields:
+///   vault_items: id, vaultId (relation), owner (relation), encryptedData (text/base64), encryptionVersion (number)
+///   vault_collections: id, name, owner (relation), colorHex, iconName
 class RemoteVaultDatasource {
   final PocketBase _pb;
-  static const String _collection = 'vault_items';
+  static const String _itemsCollection = 'vault_items';
+  static const String _collectionsCollection = 'vault_collections';
 
   RemoteVaultDatasource({required PocketBase pb}) : _pb = pb;
 
+  /// The current authenticated user's ID.
+  String? get _currentUserId => _pb.authStore.record?.id;
+
   /// Create a vault item record on PocketBase.
   Future<RecordModel> createItem({
-    required String itemId,
     required String vaultId,
     required Uint8List encryptedData,
     required int encryptionVersion,
-    required DateTime createdAt,
-    required DateTime updatedAt,
   }) {
-    return _pb.collection(_collection).create(
+    return _pb.collection(_itemsCollection).create(
       body: {
-        'item_id': itemId,
-        'vault_id': vaultId,
-        'encrypted_data': base64Encode(encryptedData),
-        'encryption_version': encryptionVersion,
-        'created_at': createdAt.toUtc().toIso8601String(),
-        'updated_at': updatedAt.toUtc().toIso8601String(),
+        'vaultId': vaultId,
+        'owner': _currentUserId,
+        'encryptedData': base64Encode(encryptedData),
+        'encryptionVersion': encryptionVersion,
       },
     );
   }
@@ -39,29 +42,52 @@ class RemoteVaultDatasource {
     required String remoteId,
     required Uint8List encryptedData,
     required int encryptionVersion,
-    required DateTime updatedAt,
   }) {
-    return _pb.collection(_collection).update(
+    return _pb.collection(_itemsCollection).update(
       remoteId,
       body: {
-        'encrypted_data': base64Encode(encryptedData),
-        'encryption_version': encryptionVersion,
-        'updated_at': updatedAt.toUtc().toIso8601String(),
+        'encryptedData': base64Encode(encryptedData),
+        'encryptionVersion': encryptionVersion,
+        'owner': _currentUserId,
       },
     );
   }
 
   /// Delete a vault item record from PocketBase.
   Future<void> deleteItem(String remoteId) {
-    return _pb.collection(_collection).delete(remoteId);
+    return _pb.collection(_itemsCollection).delete(remoteId);
   }
 
-  /// Fetch all vault items updated since a given timestamp.
+  /// Fetch all vault items for the current user updated since a given timestamp.
   Future<List<RecordModel>> getItemsSince(String? lastSync) {
-    String? filter;
+    final userId = _currentUserId;
+    if (userId == null) return Future.value([]);
+
+    String filter = 'owner = "$userId"';
     if (lastSync != null) {
-      filter = 'updated > "$lastSync"';
+      filter += ' && updated > "$lastSync"';
     }
-    return _pb.collection(_collection).getFullList(filter: filter);
+    return _pb.collection(_itemsCollection).getFullList(filter: filter);
+  }
+
+  /// Create a vault collection on PocketBase.
+  Future<RecordModel> createVaultCollection({
+    required String name,
+    String colorHex = '#4D4DCD',
+    String iconName = 'shield',
+  }) {
+    return _pb.collection(_collectionsCollection).create(
+      body: {
+        'name': name,
+        'owner': _currentUserId,
+        'colorHex': colorHex,
+        'iconName': iconName,
+      },
+    );
+  }
+
+  /// Delete a vault collection from PocketBase.
+  Future<void> deleteVaultCollection(String remoteId) {
+    return _pb.collection(_collectionsCollection).delete(remoteId);
   }
 }

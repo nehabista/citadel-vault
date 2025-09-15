@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:pocketbase/pocketbase.dart';
@@ -43,6 +44,9 @@ class SyncEngine {
 
   /// Whether a sync operation is currently in progress.
   bool get isSyncing => _isSyncing;
+
+  /// The current PocketBase user ID for populating the `owner` field.
+  String? get _currentUserId => _pb.authStore.record?.id;
 
   SyncEngine({
     required SyncDao syncDao,
@@ -101,54 +105,89 @@ class SyncEngine {
   }
 
   Future<void> _pushCreate(SyncQueueData entry) async {
-    // Read the local item to get encrypted data.
-    // We search across all vaults since we only have the item ID.
-    final items = await _vaultDao.getItemsByVault('');
-    final localItem = items.where((i) => i.id == entry.itemId).firstOrNull;
+    final userId = _currentUserId;
+    if (userId == null) return;
 
-    if (localItem == null) {
-      // Item may have been created and immediately deleted, skip.
-      return;
+    if (entry.entityTable == 'vault_items') {
+      // Search across all vaults to find the item by its ID.
+      VaultItem? localItem;
+      final allVaults = await _vaultDao.getAllVaults();
+      for (final vault in allVaults) {
+        final vaultItems = await _vaultDao.getItemsByVault(vault.id);
+        localItem = vaultItems.where((i) => i.id == entry.itemId).firstOrNull;
+        if (localItem != null) break;
+      }
+
+      if (localItem == null) return; // Item deleted before sync.
+
+      final record = await _pb.collection('vault_items').create(
+        body: {
+          'vaultId': localItem.vaultId,
+          'owner': userId,
+          'encryptedData': base64Encode(localItem.encryptedData),
+          'encryptionVersion': localItem.encryptionVersion,
+        },
+      );
+
+      // Store the remote ID in the local item for future updates.
+      await _vaultDao.updateVaultItem(
+        VaultItemsCompanion(
+          id: Value(localItem.id),
+          remoteId: Value(record.id),
+        ),
+      );
+    } else if (entry.entityTable == 'vaults') {
+      // Push vault collection creation.
+      final vault = await _vaultDao.getVaultById(entry.itemId);
+      if (vault == null) return;
+
+      await _pb.collection('vault_collections').create(
+        body: {
+          'name': vault.name,
+          'owner': userId,
+          'colorHex': vault.colorHex,
+          'iconName': vault.iconName,
+        },
+      );
     }
-
-    final record = await _pb.collection(entry.entityTable).create(
-      body: {
-        'item_id': localItem.id,
-        'vault_id': localItem.vaultId,
-        'encrypted_data': localItem.encryptedData,
-        'encryption_version': localItem.encryptionVersion,
-        'created_at': localItem.createdAt.toIso8601String(),
-        'updated_at': localItem.updatedAt.toIso8601String(),
-      },
-    );
-
-    // Store the remote ID in the local item for future updates.
-    await _vaultDao.updateVaultItem(
-      VaultItemsCompanion(
-        id: Value(localItem.id),
-        remoteId: Value(record.id),
-      ),
-    );
   }
 
   Future<void> _pushUpdate(SyncQueueData entry) async {
-    final items = await _vaultDao.getItemsByVault('');
-    final localItem = items.where((i) => i.id == entry.itemId).firstOrNull;
-    if (localItem == null || localItem.remoteId == null) return;
+    final userId = _currentUserId;
+    if (userId == null) return;
 
-    await _pb.collection(entry.entityTable).update(
-      localItem.remoteId!,
-      body: {
-        'encrypted_data': localItem.encryptedData,
-        'encryption_version': localItem.encryptionVersion,
-        'updated_at': localItem.updatedAt.toIso8601String(),
-      },
-    );
+    if (entry.entityTable == 'vault_items') {
+      VaultItem? localItem;
+      final allVaults = await _vaultDao.getAllVaults();
+      for (final vault in allVaults) {
+        final vaultItems = await _vaultDao.getItemsByVault(vault.id);
+        localItem = vaultItems.where((i) => i.id == entry.itemId).firstOrNull;
+        if (localItem != null) break;
+      }
+      if (localItem == null || localItem.remoteId == null) return;
+
+      await _pb.collection('vault_items').update(
+        localItem.remoteId!,
+        body: {
+          'encryptedData': base64Encode(localItem.encryptedData),
+          'encryptionVersion': localItem.encryptionVersion,
+          'owner': userId,
+        },
+      );
+    } else if (entry.entityTable == 'vaults') {
+      final vault = await _vaultDao.getVaultById(entry.itemId);
+      if (vault == null) return;
+
+      // For vaults, we'd need a remoteId mapping too.
+      // For now, skip vault updates until we add remote ID tracking for vaults.
+    }
   }
 
   Future<void> _pushDelete(SyncQueueData entry) async {
     try {
-      await _pb.collection(entry.entityTable).delete(entry.itemId);
+      final collection =
+          entry.entityTable == 'vaults' ? 'vault_collections' : entry.entityTable;
+      await _pb.collection(collection).delete(entry.itemId);
     } catch (_) {
       // If the remote record doesn't exist, that's fine -- already deleted.
     }
@@ -156,10 +195,13 @@ class SyncEngine {
 
   /// Pull remote changes from PocketBase since last sync.
   Future<void> _pull() async {
+    final userId = _currentUserId;
+    if (userId == null) return;
+
     final lastSync = await _settingsDao.getSetting('lastSync');
-    String? filter;
+    String filter = 'owner = "$userId"';
     if (lastSync != null) {
-      filter = 'updated > "$lastSync"';
+      filter += ' && updated > "$lastSync"';
     }
 
     final records = await _pb.collection('vault_items').getFullList(
@@ -178,30 +220,34 @@ class SyncEngine {
 
   /// Apply a remote record to the local database with conflict resolution.
   Future<void> _applyRemoteRecord(RecordModel record) async {
-    final remoteUpdatedAt =
-        DateTime.parse(record.data['updated_at'] as String);
+    // ignore: deprecated_member_use
+    final remoteUpdatedAt = DateTime.parse(record.updated);
 
     // Check if we have this item locally by remote ID.
-    final items = await _vaultDao.getItemsByVault('');
-    final localItem =
-        items.where((i) => i.remoteId == record.id).firstOrNull;
+    VaultItem? localItem;
+    final allVaults = await _vaultDao.getAllVaults();
+    for (final vault in allVaults) {
+      final vaultItems = await _vaultDao.getItemsByVault(vault.id);
+      localItem = vaultItems.where((i) => i.remoteId == record.id).firstOrNull;
+      if (localItem != null) break;
+    }
 
-    final rawEncryptedData = record.data['encrypted_data'];
-    final encryptedData = rawEncryptedData is Uint8List
-        ? rawEncryptedData
-        : Uint8List.fromList(List<int>.from(rawEncryptedData as List));
+    // PocketBase stores encryptedData as base64 text.
+    final encryptedDataB64 = record.getStringValue('encryptedData');
+    final encryptedData = base64Decode(encryptedDataB64);
+    final vaultId = record.getStringValue('vaultId');
 
     if (localItem == null) {
       // New remote item -- insert locally.
       await _vaultDao.insertVaultItem(
         VaultItemsCompanion(
-          id: Value(record.data['item_id'] as String? ?? record.id),
-          vaultId: Value(record.data['vault_id'] as String),
-          encryptedData: Value(encryptedData),
+          id: Value(record.id), // Use PB ID as local ID for new remote items.
+          vaultId: Value(vaultId),
+          encryptedData: Value(Uint8List.fromList(encryptedData)),
           encryptionVersion:
-              Value(record.data['encryption_version'] as int),
-          createdAt:
-              Value(DateTime.parse(record.data['created_at'] as String)),
+              Value(record.getIntValue('encryptionVersion')),
+          // ignore: deprecated_member_use
+          createdAt: Value(DateTime.parse(record.created)),
           updatedAt: Value(remoteUpdatedAt),
           remoteId: Value(record.id),
         ),
@@ -218,9 +264,9 @@ class SyncEngine {
     await _vaultDao.updateVaultItem(
       VaultItemsCompanion(
         id: Value(localItem.id),
-        encryptedData: Value(encryptedData),
+        encryptedData: Value(Uint8List.fromList(encryptedData)),
         encryptionVersion:
-            Value(record.data['encryption_version'] as int),
+            Value(record.getIntValue('encryptionVersion')),
         updatedAt: Value(remoteUpdatedAt),
       ),
     );
