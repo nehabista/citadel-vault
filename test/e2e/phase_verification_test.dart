@@ -10,7 +10,6 @@ import 'dart:typed_data';
 
 import 'package:citadel_password_manager/core/crypto/crypto_engine.dart';
 import 'package:citadel_password_manager/core/crypto/encrypted_blob.dart';
-import 'package:citadel_password_manager/core/crypto/legacy_crypto.dart';
 import 'package:citadel_password_manager/core/database/app_database.dart';
 import 'package:citadel_password_manager/features/import_export/data/parsers/format_detector.dart';
 import 'package:citadel_password_manager/features/password_generator/data/password_generator_service.dart';
@@ -86,60 +85,7 @@ void main() {
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // 2. Legacy crypto compat
-  // ---------------------------------------------------------------------------
-  group('2. Legacy crypto compat', () {
-    late LegacyCrypto legacy;
-    late SecretKey legacyKey;
-    late String legacySalt;
-
-    setUpAll(() async {
-      legacy = LegacyCrypto();
-      // Legacy uses base64-encoded salt string
-      legacySalt = base64.encode(List.generate(16, (i) => i + 1));
-      legacyKey = await legacy.deriveKey('legacy-password', legacySalt);
-    });
-
-    test('create v1 encrypted data -> detect version -> decrypt', () async {
-      const original = 'my-legacy-password-123';
-      final v1Cipher = await legacy.encryptForTesting(original, legacyKey);
-
-      // Verify v1 format detection
-      expect(EncryptedBlob.isV1Format(v1Cipher), isTrue);
-      expect(EncryptedBlob.isV1Format('not-base64'), isFalse);
-      expect(EncryptedBlob.isV1Format('plaintext-no-colon'), isFalse);
-
-      // Decrypt with LegacyCrypto
-      final decrypted = await legacy.decrypt(v1Cipher, legacyKey);
-      expect(decrypted, original);
-    });
-
-    test('v1 decrypt -> v2 encrypt -> v2 decrypt roundtrip (migration)',
-        () async {
-      const original = '{"name":"test","password":"legacy123"}';
-      final v1Cipher = await legacy.encryptForTesting(original, legacyKey);
-
-      // Step 1: Decrypt with legacy
-      final plaintext = await legacy.decrypt(v1Cipher, legacyKey);
-      expect(plaintext, original);
-
-      // Step 2: Re-encrypt with v2 engine
-      final engine = CryptoEngine();
-      final v2Key =
-          await engine.deriveKey('new-password', engine.generateSalt());
-      final v2Blob =
-          await engine.encrypt(Uint8List.fromList(utf8.encode(plaintext)), v2Key);
-
-      // Step 3: Verify v2 blob structure
-      final parsed = EncryptedBlob.fromBytes(v2Blob);
-      expect(parsed.version, CryptoVersion.v2);
-
-      // Step 4: Decrypt with v2 and verify
-      final result = await engine.decrypt(v2Blob, v2Key);
-      expect(utf8.decode(result), original);
-    });
-  });
+  // Legacy crypto tests removed — app was never launched, no users to migrate.
 
   // ---------------------------------------------------------------------------
   // 3. Drift database

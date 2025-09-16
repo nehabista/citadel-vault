@@ -73,12 +73,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         final hasQuickUnlock = await localAuth.hasQuickUnlockSetup();
 
         if (hasQuickUnlock) {
-          // User has PIN/biometric set up -> go to unlock screen
+          // User has PIN/biometric set up -> go to PIN/biometric unlock
           if (mounted) context.go(AppRoutes.unlock);
         } else {
-          // No quick unlock set up -> go directly to login
-          // (user needs to re-enter master password to derive vault key)
-          if (mounted) context.go(AppRoutes.login);
+          // No PIN/biometric, but PB session is valid.
+          // Go to unlock screen which will show master password field
+          // instead of full login (email+password+master).
+          if (mounted) context.go(AppRoutes.unlock);
         }
       } else {
         if (mounted) context.go(AppRoutes.login);

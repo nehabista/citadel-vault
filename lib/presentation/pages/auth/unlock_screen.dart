@@ -7,11 +7,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/core_providers.dart';
+import '../../../core/providers/session_provider.dart';
 import '../../../data/services/auth/local_auth_service.dart';
 import '../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../routing/app_router.dart';
 
-/// Beautiful PIN unlock screen with number pad, dot indicators, and biometric support.
+/// Unlock screen that shows either PIN pad or master password field
+/// depending on whether quick unlock (PIN/biometric) is configured.
 class UnlockScreen extends ConsumerStatefulWidget {
   const UnlockScreen({super.key});
 
@@ -25,10 +27,15 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
   static const Color _primaryColor = Color(0xFF4D4DCD);
   static const Color _errorColor = Color(0xFFE53935);
 
+  // State
   final List<int> _enteredPin = [];
+  final _masterPwController = TextEditingController();
   bool _isProcessing = false;
   bool _hasError = false;
   bool _biometricsAvailable = false;
+  bool _hasQuickUnlock = false; // true = PIN mode, false = master password mode
+  bool _loading = true;
+  bool _obscureMasterPw = true;
 
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
@@ -44,63 +51,57 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
       CurvedAnimation(parent: _shakeController, curve: Curves.elasticIn),
     );
     _shakeController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _shakeController.reset();
-      }
+      if (status == AnimationStatus.completed) _shakeController.reset();
     });
 
-    _loadUnlockMethod();
+    _detectUnlockMethod();
   }
 
-  Future<void> _loadUnlockMethod() async {
+  Future<void> _detectUnlockMethod() async {
     final localAuth = ref.read(localAuthServiceProvider);
-    final method = await localAuth.getSavedUnlockMethod();
+    final hasSetup = await localAuth.hasQuickUnlockSetup();
     final canBio = await localAuth.canUseBiometrics();
 
     if (mounted) {
       setState(() {
+        _hasQuickUnlock = hasSetup;
         _biometricsAvailable = canBio;
+        _loading = false;
       });
 
-      // Auto-trigger biometric prompt if biometric unlock is configured.
-      if (method == UnlockMethod.biometrics && canBio) {
+      // Auto-trigger biometric if available and configured
+      if (hasSetup && canBio) {
         _attemptBiometricUnlock();
       }
     }
   }
 
+  // ─── Biometric ───
   Future<void> _attemptBiometricUnlock() async {
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
-
     try {
       final success =
           await ref.read(authProvider.notifier).unlockWithBiometrics();
-      if (success && mounted) {
-        context.go(AppRoutes.home);
-      }
+      if (success && mounted) context.go(AppRoutes.home);
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
   }
 
+  // ─── PIN ───
   void _onDigitTap(int digit) {
     if (_isProcessing || _enteredPin.length >= _pinLength) return;
-
     HapticFeedback.lightImpact();
     setState(() {
       _hasError = false;
       _enteredPin.add(digit);
     });
-
-    if (_enteredPin.length == _pinLength) {
-      _verifyPin();
-    }
+    if (_enteredPin.length == _pinLength) _verifyPin();
   }
 
   void _onBackspace() {
     if (_isProcessing || _enteredPin.isEmpty) return;
-
     HapticFeedback.lightImpact();
     setState(() {
       _hasError = false;
@@ -110,192 +111,354 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
 
   Future<void> _verifyPin() async {
     setState(() => _isProcessing = true);
-
     final pin = _enteredPin.join();
     final notifier = ref.read(authProvider.notifier);
     notifier.pinController.text = pin;
-
     final success = await notifier.unlockWithPin();
-
     if (success && mounted) {
       context.go(AppRoutes.home);
     } else if (mounted) {
-      // Show error with shake animation.
       HapticFeedback.heavyImpact();
       setState(() {
         _hasError = true;
         _isProcessing = false;
       });
       _shakeController.forward();
-
-      // Clear after a short delay.
       Future.delayed(const Duration(milliseconds: 600), () {
-        if (mounted) {
-          setState(() => _enteredPin.clear());
-        }
+        if (mounted) setState(() => _enteredPin.clear());
       });
+    }
+  }
+
+  // ─── Master Password ───
+  Future<void> _unlockWithMasterPassword() async {
+    final masterPw = _masterPwController.text.trim();
+    if (masterPw.isEmpty) return;
+
+    setState(() {
+      _isProcessing = true;
+      _hasError = false;
+    });
+
+    try {
+      final authService = ref.read(authServiceProvider);
+      final user = authService.currentUser;
+      if (user == null) {
+        // Shouldn't happen — splash loaded the user. Fallback to login.
+        if (mounted) context.go(AppRoutes.login);
+        return;
+      }
+
+      // Derive vault key and unlock session
+      final sessionNotifier = ref.read(sessionProvider.notifier);
+      await sessionNotifier.unlock(masterPw, user.salt);
+
+      if (mounted) context.go(AppRoutes.home);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _isProcessing = false;
+        });
+        _shakeController.forward();
+      }
     }
   }
 
   @override
   void dispose() {
     _shakeController.dispose();
+    _masterPwController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(child: CircularProgressIndicator(color: _primaryColor)),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          children: [
-            SizedBox(height: screenHeight * 0.08),
+        child: _hasQuickUnlock ? _buildPinMode() : _buildMasterPasswordMode(),
+      ),
+    );
+  }
 
-            // App logo
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: _primaryColor.withAlpha(20),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.shield_rounded,
-                size: 40,
-                color: _primaryColor,
-              ),
-            ),
-            const SizedBox(height: 24),
+  // ─── Master Password Mode ───
+  Widget _buildMasterPasswordMode() {
+    final screenHeight = MediaQuery.of(context).size.height;
 
-            // Title
-            Text(
-              _hasError ? 'Incorrect PIN' : 'Enter your PIN',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: _hasError ? _errorColor : const Color(0xFF1A1A2E),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Unlock your vault',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                color: Colors.grey.shade500,
-              ),
-            ),
-            const SizedBox(height: 32),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        children: [
+          SizedBox(height: screenHeight * 0.12),
 
-            // PIN dots
-            AnimatedBuilder(
-              animation: _shakeAnimation,
-              builder: (context, child) {
-                final offset =
-                    _shakeAnimation.value * 12 * _shakeDirection(_shakeAnimation.value);
-                return Transform.translate(
-                  offset: Offset(offset, 0),
-                  child: child,
-                );
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_pinLength, (index) {
-                  final isFilled = index < _enteredPin.length;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOutCubic,
-                      width: isFilled ? 18 : 14,
-                      height: isFilled ? 18 : 14,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _hasError
-                            ? _errorColor
-                            : isFilled
-                                ? _primaryColor
-                                : Colors.transparent,
-                        border: Border.all(
-                          color: _hasError
-                              ? _errorColor
-                              : _primaryColor.withAlpha(isFilled ? 255 : 80),
-                          width: 2,
-                        ),
-                      ),
+          // Logo
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: _primaryColor.withAlpha(20),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: const Icon(Icons.shield_rounded,
+                size: 44, color: _primaryColor),
+          ),
+          const SizedBox(height: 24),
+
+          const Text(
+            'Welcome Back',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Enter your master password to unlock',
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+          ),
+          const SizedBox(height: 40),
+
+          // Master password field
+          AnimatedBuilder(
+            animation: _shakeAnimation,
+            builder: (context, child) {
+              final offset = _shakeAnimation.value *
+                  12 *
+                  _shakeDirection(_shakeAnimation.value);
+              return Transform.translate(
+                  offset: Offset(offset, 0), child: child);
+            },
+            child: TextField(
+              controller: _masterPwController,
+              obscureText: _obscureMasterPw,
+              enabled: !_isProcessing,
+              decoration: InputDecoration(
+                labelText: 'Master Password',
+                errorText: _hasError ? 'Incorrect master password' : null,
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide:
+                      const BorderSide(color: _primaryColor, width: 2),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: _errorColor, width: 2),
+                ),
+                prefixIcon:
+                    const Icon(Icons.lock_outline, color: _primaryColor),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureMasterPw
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscureMasterPw = !_obscureMasterPw),
+                ),
+              ),
+              onSubmitted: (_) => _unlockWithMasterPassword(),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Unlock button
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: _isProcessing ? null : _unlockWithMasterPassword,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                elevation: 2,
+              ),
+              child: _isProcessing
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text(
+                      'Unlock',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                     ),
-                  );
-                }),
+            ),
+          ),
+
+          const Spacer(),
+
+          // Logout link
+          TextButton(
+            onPressed: () {
+              ref.read(authProvider.notifier).logout();
+              if (mounted) context.go(AppRoutes.login);
+            },
+            child: Text(
+              'Use a different account',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade600,
               ),
             ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
 
-            const Spacer(),
+  // ─── PIN Mode ───
+  Widget _buildPinMode() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-            // Number pad
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Column(
+    return Column(
+      children: [
+        SizedBox(height: screenHeight * 0.08),
+
+        // Logo
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: _primaryColor.withAlpha(20),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Icon(Icons.shield_rounded,
+              size: 40, color: _primaryColor),
+        ),
+        const SizedBox(height: 24),
+
+        Text(
+          _hasError ? 'Incorrect PIN' : 'Enter your PIN',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: _hasError ? _errorColor : const Color(0xFF1A1A2E),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Unlock your vault',
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+        ),
+        const SizedBox(height: 32),
+
+        // PIN dots
+        AnimatedBuilder(
+          animation: _shakeAnimation,
+          builder: (context, child) {
+            final offset = _shakeAnimation.value *
+                12 *
+                _shakeDirection(_shakeAnimation.value);
+            return Transform.translate(
+                offset: Offset(offset, 0), child: child);
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(_pinLength, (index) {
+              final isFilled = index < _enteredPin.length;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOutCubic,
+                  width: isFilled ? 18 : 14,
+                  height: isFilled ? 18 : 14,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _hasError
+                        ? _errorColor
+                        : isFilled
+                            ? _primaryColor
+                            : Colors.transparent,
+                    border: Border.all(
+                      color: _hasError
+                          ? _errorColor
+                          : _primaryColor.withAlpha(isFilled ? 255 : 80),
+                      width: 2,
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+
+        const Spacer(),
+
+        // Number pad
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Column(
+            children: [
+              _buildNumberRow([1, 2, 3]),
+              const SizedBox(height: 16),
+              _buildNumberRow([4, 5, 6]),
+              const SizedBox(height: 16),
+              _buildNumberRow([7, 8, 9]),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // Row 1: 1, 2, 3
-                  _buildNumberRow([1, 2, 3]),
-                  const SizedBox(height: 16),
-                  // Row 2: 4, 5, 6
-                  _buildNumberRow([4, 5, 6]),
-                  const SizedBox(height: 16),
-                  // Row 3: 7, 8, 9
-                  _buildNumberRow([7, 8, 9]),
-                  const SizedBox(height: 16),
-                  // Row 4: biometric, 0, backspace
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Biometric button (bottom-left)
-                      _buildActionButton(
-                        icon: Icons.fingerprint_rounded,
-                        visible: _biometricsAvailable,
-                        onTap: _attemptBiometricUnlock,
-                      ),
-                      _buildDigitButton(0),
-                      // Backspace button (bottom-right)
-                      _buildActionButton(
-                        icon: Icons.backspace_outlined,
-                        visible: _enteredPin.isNotEmpty,
-                        onTap: _onBackspace,
-                      ),
-                    ],
+                  _buildActionButton(
+                    icon: Icons.fingerprint_rounded,
+                    visible: _biometricsAvailable,
+                    onTap: _attemptBiometricUnlock,
+                  ),
+                  _buildDigitButton(0),
+                  _buildActionButton(
+                    icon: Icons.backspace_outlined,
+                    visible: _enteredPin.isNotEmpty,
+                    onTap: _onBackspace,
                   ),
                 ],
               ),
-            ),
-
-            SizedBox(height: screenHeight * 0.02),
-
-            // Logout link
-            TextButton(
-              onPressed: () {
-                ref.read(authProvider.notifier).logout();
-                if (mounted) context.go(AppRoutes.login);
-              },
-              child: Text(
-                'Use a different account',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ),
-
-            SizedBox(height: bottomPadding + 16),
-          ],
+            ],
+          ),
         ),
-      ),
+
+        SizedBox(height: screenHeight * 0.02),
+
+        TextButton(
+          onPressed: () {
+            ref.read(authProvider.notifier).logout();
+            if (mounted) context.go(AppRoutes.login);
+          },
+          child: Text(
+            'Use a different account',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ),
+
+        SizedBox(height: bottomPadding + 16),
+      ],
     );
   }
 
@@ -321,7 +484,6 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
             child: Text(
               '$digit',
               style: const TextStyle(
-                fontFamily: 'Poppins',
                 fontSize: 28,
                 fontWeight: FontWeight.w500,
                 color: Color(0xFF1A1A2E),
@@ -352,11 +514,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
               customBorder: const CircleBorder(),
               splashColor: _primaryColor.withAlpha(30),
               child: Center(
-                child: Icon(
-                  icon,
-                  size: 28,
-                  color: _primaryColor,
-                ),
+                child: Icon(icon, size: 28, color: _primaryColor),
               ),
             ),
           ),
@@ -365,15 +523,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
     );
   }
 
-  /// Returns a sin-like direction multiplier for the shake animation.
   double _shakeDirection(double t) {
-    // Produces a left-right-left-right pattern.
-    return (t < 0.25)
-        ? -1
-        : (t < 0.5)
-            ? 1
-            : (t < 0.75)
-                ? -1
-                : 1;
+    return (t < 0.25) ? -1 : (t < 0.5) ? 1 : (t < 0.75) ? -1 : 1;
   }
 }
