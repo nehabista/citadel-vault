@@ -179,13 +179,21 @@ class _PasswordDisplay extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _primary.withAlpha(15),
+            _primary.withAlpha(30),
+          ],
+        ),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _primary.withAlpha(40)),
         boxShadow: [
           BoxShadow(
-            color: _primary.withValues(alpha: 0.15),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+            color: _primary.withAlpha(15),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -194,10 +202,11 @@ class _PasswordDisplay extends StatelessWidget {
           // Password text with character coloring
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _primary.withAlpha(25)),
             ),
             child: password.isEmpty
                 ? Text(
@@ -205,7 +214,7 @@ class _PasswordDisplay extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 17,
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: Colors.grey.shade400,
                       letterSpacing: 0.5,
                     ),
                     textAlign: TextAlign.center,
@@ -218,20 +227,43 @@ class _PasswordDisplay extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _ActionButton(
-                  icon: Icons.refresh_rounded,
-                  label: 'Generate',
-                  onTap: onRegenerate,
-                  filled: true,
+                child: ElevatedButton.icon(
+                  onPressed: onRegenerate,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('Generate'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _ActionButton(
-                  icon: Icons.copy_rounded,
-                  label: 'Copy',
-                  onTap: onCopy,
-                  filled: false,
+                child: OutlinedButton.icon(
+                  onPressed: onCopy,
+                  icon: const Icon(Icons.copy_rounded, size: 18),
+                  label: const Text('Copy'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _primary,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    side: BorderSide(color: _primary.withAlpha(80)),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -272,76 +304,13 @@ class _ColoredPasswordText extends StatelessWidget {
   }
 
   static Color _charColor(String c) {
-    if (RegExp(r'[A-Z]').hasMatch(c)) return const Color(0xFF64B5F6); // blue
-    if (RegExp(r'[a-z]').hasMatch(c)) return const Color(0xFFE0E0E0); // light
-    if (RegExp(r'\d').hasMatch(c)) return const Color(0xFFFFB74D); // orange
-    return const Color(0xFFEF5350); // red for symbols
+    if (RegExp(r'[A-Z]').hasMatch(c)) return const Color(0xFF1565C0); // blue
+    if (RegExp(r'[a-z]').hasMatch(c)) return const Color(0xFF1A1A2E); // near black
+    if (RegExp(r'\d').hasMatch(c)) return const Color(0xFFE65100); // orange
+    return const Color(0xFFC62828); // red for symbols
   }
 }
 
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-  final bool filled;
-
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    this.onTap,
-    required this.filled,
-  });
-
-  static const _primary = Color(0xFF4D4DCD);
-
-  @override
-  Widget build(BuildContext context) {
-    final isDisabled = onTap == null;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        splashColor: Colors.white.withValues(alpha: 0.1),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: filled
-                ? _primary.withValues(alpha: 0.9)
-                : Colors.white.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: filled
-                  ? _primary
-                  : Colors.white.withValues(alpha: isDisabled ? 0.08 : 0.2),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 17,
-                color: Colors.white.withValues(alpha: isDisabled ? 0.3 : 0.9),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: isDisabled ? 0.3 : 0.9),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // =============================================================================
 // 2. Strength Section — gauge ring + label + crack time
@@ -745,47 +714,51 @@ class _GeneratorConfig extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Character type chips
+          // Character options — clear toggle rows
           const Text(
-            'Characters',
+            'Include',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: Color(0xFF1A1A2E),
             ),
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _CharChip(
-                label: 'A-Z',
-                active: config.upper as bool,
-                onTap: onToggleUpper,
-              ),
-              _CharChip(
-                label: 'a-z',
-                active: config.lower as bool,
-                onTap: onToggleLower,
-              ),
-              _CharChip(
-                label: '0-9',
-                active: config.digits as bool,
-                onTap: onToggleDigits,
-              ),
-              _CharChip(
-                label: '!@#\$',
-                active: config.symbols as bool,
-                onTap: onToggleSymbols,
-              ),
-              _CharChip(
-                label: 'Passphrase',
-                active: config.pronounceable as bool,
-                onTap: onTogglePassphrase,
-                icon: Icons.text_fields_rounded,
-              ),
-            ],
+          const SizedBox(height: 8),
+          _ToggleRow(
+            icon: Icons.text_format_rounded,
+            label: 'Uppercase',
+            example: 'ABC',
+            active: config.upper as bool,
+            onTap: onToggleUpper,
+          ),
+          _ToggleRow(
+            icon: Icons.text_format_rounded,
+            label: 'Lowercase',
+            example: 'abc',
+            active: config.lower as bool,
+            onTap: onToggleLower,
+          ),
+          _ToggleRow(
+            icon: Icons.pin_rounded,
+            label: 'Numbers',
+            example: '123',
+            active: config.digits as bool,
+            onTap: onToggleDigits,
+          ),
+          _ToggleRow(
+            icon: Icons.tag_rounded,
+            label: 'Symbols',
+            example: '!@#',
+            active: config.symbols as bool,
+            onTap: onToggleSymbols,
+          ),
+          const Divider(height: 16),
+          _ToggleRow(
+            icon: Icons.text_snippet_rounded,
+            label: 'Passphrase',
+            example: 'word-word-word',
+            active: config.pronounceable as bool,
+            onTap: onTogglePassphrase,
           ),
         ],
       ),
@@ -793,59 +766,70 @@ class _GeneratorConfig extends StatelessWidget {
   }
 }
 
-class _CharChip extends StatelessWidget {
+/// Modern toggle row with icon, label, example, and animated switch.
+class _ToggleRow extends StatelessWidget {
+  final IconData icon;
   final String label;
+  final String example;
   final bool active;
   final VoidCallback onTap;
-  final IconData? icon;
 
-  const _CharChip({
+  const _ToggleRow({
+    required this.icon,
     required this.label,
+    required this.example,
     required this.active,
     required this.onTap,
-    this.icon,
   });
 
   static const _primary = Color(0xFF4D4DCD);
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-        decoration: BoxDecoration(
-          color: active ? _primary : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: active ? _primary : const Color(0xFFE0E0E0),
-            width: 1.5,
-          ),
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: _primary.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null) ...[
-              Icon(icon, size: 15, color: active ? Colors.white : _primary),
-              const SizedBox(width: 5),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: active ? Colors.white : const Color(0xFF1A1A2E),
+            Icon(icon, size: 18, color: active ? _primary : Colors.grey.shade400),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: active
+                          ? const Color(0xFF1A1A2E)
+                          : Colors.grey.shade500,
+                    ),
+                  ),
+                  Text(
+                    example,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade400,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 28,
+              width: 48,
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: Switch.adaptive(
+                  value: active,
+                  onChanged: (_) => onTap(),
+                  activeTrackColor: _primary,
+                ),
               ),
             ),
           ],
