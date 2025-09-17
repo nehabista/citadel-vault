@@ -5,8 +5,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/password_strength.dart';
 import '../providers/generator_provider.dart';
 import '../providers/strength_provider.dart';
+import '../widgets/entropy_gauge.dart';
 
-/// Modern password generator — clean, minimal, premium feel.
+/// Premium password generator page -- Citadel Locksmith.
+///
+/// Layout (top to bottom):
+/// 1. Character-colored password display with copy/regenerate
+/// 2. Entropy gauge ring with strength label and crack time
+/// 3. Improvement tips (contextual)
+/// 4. Password checks (visual checklist)
+/// 5. Generator config (length slider + character type chips)
 class GeneratorPage extends ConsumerStatefulWidget {
   const GeneratorPage({super.key});
 
@@ -34,7 +42,7 @@ class _GeneratorPageState extends ConsumerState<GeneratorPage> {
     final password = genState.generatedPassword;
     final config = genState.config;
 
-    // Sync to strength provider
+    // Sync generated password to strength provider.
     ref.listen(passwordGeneratorProvider, (prev, next) {
       if (next.generatedPassword.isNotEmpty &&
           next.generatedPassword != (prev?.generatedPassword ?? '')) {
@@ -44,203 +52,737 @@ class _GeneratorPageState extends ConsumerState<GeneratorPage> {
 
     final bits = ref.watch(entropyBitsProvider);
     final strength = ref.watch(strengthProvider);
-    final crackTime = ref.watch(crackTimeShortProvider);
+    final checks = ref.watch(passwordChecksProvider);
+    final tips = ref.watch(tipsProvider);
+    final crackTimes = ref.watch(crackTimesProvider);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // ── Password Card ──
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [_primary, _primary.withAlpha(200)],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: _primary.withAlpha(60),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // Password display
-                Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(20),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: SelectableText(
-                    password.isEmpty ? 'Tap Generate' : password,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      letterSpacing: 0.8,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 16),
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 380;
 
-                // Strength bar + label
-                if (password.isNotEmpty) ...[
-                  _StrengthBar(bits: bits, strength: strength),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${strength.name[0].toUpperCase()}${strength.name.substring(1)} · $crackTime',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.white.withAlpha(200),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxContentWidth = constraints.maxWidth > 640 ? 600.0 : double.infinity;
 
-                // Action buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: _GlassButton(
-                        icon: Icons.refresh_rounded,
-                        label: 'Generate',
-                        onTap: () => ref
-                            .read(passwordGeneratorProvider.notifier)
-                            .generate(),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _GlassButton(
-                        icon: Icons.copy_rounded,
-                        label: 'Copy',
-                        onTap: password.isEmpty
-                            ? null
-                            : () {
-                                Clipboard.setData(
-                                    ClipboardData(text: password));
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text('Copied to clipboard'),
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10)),
-                                    duration: const Duration(seconds: 1),
-                                  ),
-                                );
-                              },
-                      ),
-                    ),
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            isCompact ? 16 : 20,
+            8,
+            isCompact ? 16 : 20,
+            100,
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxContentWidth),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 1. Password Display
+                  _PasswordDisplay(
+                    password: password,
+                    onCopy: password.isEmpty ? null : () => _copyPassword(password),
+                    onRegenerate: () =>
+                        ref.read(passwordGeneratorProvider.notifier).generate(),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 2. Strength Section (gauge + label)
+                  _StrengthSection(bits: bits, strength: strength),
+                  const SizedBox(height: 20),
+
+                  // 3. Improvement Tips
+                  if (password.isNotEmpty) ...[
+                    _TipsPanel(tips: tips, strength: strength),
+                    const SizedBox(height: 20),
                   ],
-                ),
-              ],
+
+                  // 4. Password Checks
+                  if (password.isNotEmpty) ...[
+                    _PasswordChecklist(checks: checks),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // 5. Attack Scenarios (collapsible)
+                  if (password.isNotEmpty && crackTimes.isNotEmpty) ...[
+                    _AttackScenarios(scenarios: crackTimes),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // 6. Generator Config
+                  _GeneratorConfig(
+                    config: config,
+                    isCompact: isCompact,
+                    onLengthChanged: (v) =>
+                        ref.read(passwordGeneratorProvider.notifier).setLength(v),
+                    onToggleUpper: () =>
+                        ref.read(passwordGeneratorProvider.notifier).toggleUpper(),
+                    onToggleLower: () =>
+                        ref.read(passwordGeneratorProvider.notifier).toggleLower(),
+                    onToggleDigits: () =>
+                        ref.read(passwordGeneratorProvider.notifier).toggleDigits(),
+                    onToggleSymbols: () =>
+                        ref.read(passwordGeneratorProvider.notifier).toggleSymbols(),
+                    onTogglePassphrase: () => ref
+                        .read(passwordGeneratorProvider.notifier)
+                        .togglePronounceable(),
+                    onGenerate: () =>
+                        ref.read(passwordGeneratorProvider.notifier).generate(),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 28),
+        );
+      },
+    );
+  }
 
-          // ── Length Slider ──
-          _SectionTitle('Length'),
-          const SizedBox(height: 4),
+  void _copyPassword(String password) {
+    Clipboard.setData(ClipboardData(text: password));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+            SizedBox(width: 8),
+            Text('Copied to clipboard'),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(milliseconds: 1200),
+        backgroundColor: _primary,
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// 1. Password Display — character-colored monospace text
+// =============================================================================
+
+class _PasswordDisplay extends StatelessWidget {
+  final String password;
+  final VoidCallback? onCopy;
+  final VoidCallback onRegenerate;
+
+  const _PasswordDisplay({
+    required this.password,
+    required this.onCopy,
+    required this.onRegenerate,
+  });
+
+  static const _primary = Color(0xFF4D4DCD);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _primary.withValues(alpha: 0.15),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Password text with character coloring
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: password.isEmpty
+                ? Text(
+                    'Tap Generate',
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 17,
+                      color: Colors.white.withValues(alpha: 0.4),
+                      letterSpacing: 0.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  )
+                : _ColoredPasswordText(password: password),
+          ),
+          const SizedBox(height: 14),
+
+          // Action row
           Row(
             children: [
               Expanded(
-                child: SliderTheme(
-                  data: SliderThemeData(
-                    activeTrackColor: _primary,
-                    inactiveTrackColor: _primary.withAlpha(30),
-                    thumbColor: _primary,
-                    overlayColor: _primary.withAlpha(20),
-                    trackHeight: 6,
-                    thumbShape:
-                        const RoundSliderThumbShape(enabledThumbRadius: 10),
-                  ),
-                  child: Slider(
-                    value: config.length.toDouble(),
-                    min: 8,
-                    max: 64,
-                    divisions: 56,
-                    onChanged: (v) => ref
-                        .read(passwordGeneratorProvider.notifier)
-                        .setLength(v.toInt()),
-                  ),
+                child: _ActionButton(
+                  icon: Icons.refresh_rounded,
+                  label: 'Generate',
+                  onTap: onRegenerate,
+                  filled: true,
                 ),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _ActionButton(
+                  icon: Icons.copy_rounded,
+                  label: 'Copy',
+                  onTap: onCopy,
+                  filled: false,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Renders each character in the password with a color based on its type:
+/// uppercase = blue, lowercase = white, digit = orange, symbol = red.
+class _ColoredPasswordText extends StatelessWidget {
+  final String password;
+  const _ColoredPasswordText({required this.password});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      TextSpan(
+        children: password.split('').map((c) {
+          return TextSpan(
+            text: c,
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.8,
+              color: _charColor(c),
+            ),
+          );
+        }).toList(),
+      ),
+      textAlign: TextAlign.center,
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  static Color _charColor(String c) {
+    if (RegExp(r'[A-Z]').hasMatch(c)) return const Color(0xFF64B5F6); // blue
+    if (RegExp(r'[a-z]').hasMatch(c)) return const Color(0xFFE0E0E0); // light
+    if (RegExp(r'\d').hasMatch(c)) return const Color(0xFFFFB74D); // orange
+    return const Color(0xFFEF5350); // red for symbols
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool filled;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    required this.filled,
+  });
+
+  static const _primary = Color(0xFF4D4DCD);
+
+  @override
+  Widget build(BuildContext context) {
+    final isDisabled = onTap == null;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        splashColor: Colors.white.withValues(alpha: 0.1),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: filled
+                ? _primary.withValues(alpha: 0.9)
+                : Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: filled
+                  ? _primary
+                  : Colors.white.withValues(alpha: isDisabled ? 0.08 : 0.2),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 17,
+                color: Colors.white.withValues(alpha: isDisabled ? 0.3 : 0.9),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: isDisabled ? 0.3 : 0.9),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// 2. Strength Section — gauge ring + label + crack time
+// =============================================================================
+
+class _StrengthSection extends StatelessWidget {
+  final double bits;
+  final Strength strength;
+  const _StrengthSection({required this.bits, required this.strength});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: const Column(
+        children: [
+          EntropyGauge(size: 130),
+          SizedBox(height: 12),
+          StrengthLabel(),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// 3. Improvement Tips
+// =============================================================================
+
+class _TipsPanel extends StatelessWidget {
+  final List<String> tips;
+  final Strength strength;
+  const _TipsPanel({required this.tips, required this.strength});
+
+  @override
+  Widget build(BuildContext context) {
+    final isOk = tips.length == 1 && tips.first.startsWith('Nice!');
+
+    final bgColor = isOk
+        ? const Color(0xFF43A047).withValues(alpha: 0.06)
+        : const Color(0xFFFFA726).withValues(alpha: 0.06);
+    final borderColor = isOk
+        ? const Color(0xFF43A047).withValues(alpha: 0.2)
+        : const Color(0xFFFFA726).withValues(alpha: 0.2);
+    final iconColor = isOk ? const Color(0xFF43A047) : const Color(0xFFFFA726);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isOk ? Icons.verified_rounded : Icons.lightbulb_outline_rounded,
+                color: iconColor,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isOk ? 'Looks good' : 'Improvement Tips',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1A1A2E),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...tips.map(
+            (t) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(
+                      isOk ? Icons.check_rounded : Icons.arrow_right_rounded,
+                      size: 16,
+                      color: iconColor,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      t,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF1A1A2E).withValues(alpha: 0.8),
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// 4. Password Checks — visual checklist
+// =============================================================================
+
+class _PasswordChecklist extends StatelessWidget {
+  final PasswordChecks checks;
+  const _PasswordChecklist({required this.checks});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.checklist_rounded, size: 18, color: Color(0xFF4D4DCD)),
+              SizedBox(width: 8),
+              Text(
+                'Password Checks',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1A1A2E),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            children: [
+              _CheckItem(passed: checks.longEnough, label: '12+ chars'),
+              _CheckItem(passed: checks.hasUpper, label: 'Uppercase'),
+              _CheckItem(passed: checks.hasLower, label: 'Lowercase'),
+              _CheckItem(passed: checks.hasDigit, label: 'Digit'),
+              _CheckItem(passed: checks.hasSpecial, label: 'Special'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckItem extends StatelessWidget {
+  final bool passed;
+  final String label;
+  const _CheckItem({required this.passed, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = passed ? const Color(0xFF43A047) : const Color(0xFFBDBDBD);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          passed ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+          size: 16,
+          color: color,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: passed
+                ? const Color(0xFF1A1A2E)
+                : const Color(0xFF1A1A2E).withValues(alpha: 0.45),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// 5. Attack Scenarios (collapsible)
+// =============================================================================
+
+class _AttackScenarios extends StatelessWidget {
+  final Map<String, String> scenarios;
+  const _AttackScenarios({required this.scenarios});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          shape: const RoundedRectangleBorder(),
+          collapsedShape: const RoundedRectangleBorder(),
+          leading: const Icon(Icons.security_rounded, size: 18, color: Color(0xFF4D4DCD)),
+          title: const Text(
+            'Attack Scenarios',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
+          children: scenarios.entries.map((e) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      e.key,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: const Color(0xFF1A1A2E).withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    e.value,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A2E),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// 6. Generator Config
+// =============================================================================
+
+class _GeneratorConfig extends StatelessWidget {
+  final dynamic config;
+  final bool isCompact;
+  final ValueChanged<int> onLengthChanged;
+  final VoidCallback onToggleUpper;
+  final VoidCallback onToggleLower;
+  final VoidCallback onToggleDigits;
+  final VoidCallback onToggleSymbols;
+  final VoidCallback onTogglePassphrase;
+  final VoidCallback onGenerate;
+
+  const _GeneratorConfig({
+    required this.config,
+    required this.isCompact,
+    required this.onLengthChanged,
+    required this.onToggleUpper,
+    required this.onToggleLower,
+    required this.onToggleDigits,
+    required this.onToggleSymbols,
+    required this.onTogglePassphrase,
+    required this.onGenerate,
+  });
+
+  static const _primary = Color(0xFF4D4DCD);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          const Row(
+            children: [
+              Icon(Icons.tune_rounded, size: 18, color: _primary),
+              SizedBox(width: 8),
+              Text(
+                'Generator Settings',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1A1A2E),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Length slider
+          Row(
+            children: [
+              const Text(
+                'Length',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1A2E),
+                ),
+              ),
+              const Spacer(),
               Container(
-                width: 44,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _primary.withAlpha(15),
+                  color: _primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '${config.length}',
                   style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
                     color: _primary,
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 4),
+          SliderTheme(
+            data: SliderThemeData(
+              activeTrackColor: _primary,
+              inactiveTrackColor: _primary.withValues(alpha: 0.12),
+              thumbColor: _primary,
+              overlayColor: _primary.withValues(alpha: 0.08),
+              trackHeight: 5,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
+              showValueIndicator: ShowValueIndicator.onDrag,
+              valueIndicatorColor: _primary,
+              valueIndicatorTextStyle: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+            child: Slider(
+              value: config.length.toDouble(),
+              min: 8,
+              max: 64,
+              divisions: 56,
+              label: '${config.length}',
+              onChanged: (v) => onLengthChanged(v.toInt()),
+            ),
+          ),
+          const SizedBox(height: 12),
 
-          // ── Character Options ──
-          _SectionTitle('Characters'),
-          const SizedBox(height: 8),
+          // Character type chips
+          const Text(
+            'Characters',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              _OptionChip(
+              _CharChip(
                 label: 'A-Z',
-                active: config.upper,
-                onTap: () => ref
-                    .read(passwordGeneratorProvider.notifier)
-                    .toggleUpper(),
+                active: config.upper as bool,
+                onTap: onToggleUpper,
               ),
-              _OptionChip(
+              _CharChip(
                 label: 'a-z',
-                active: config.lower,
-                onTap: () => ref
-                    .read(passwordGeneratorProvider.notifier)
-                    .toggleLower(),
+                active: config.lower as bool,
+                onTap: onToggleLower,
               ),
-              _OptionChip(
+              _CharChip(
                 label: '0-9',
-                active: config.digits,
-                onTap: () => ref
-                    .read(passwordGeneratorProvider.notifier)
-                    .toggleDigits(),
+                active: config.digits as bool,
+                onTap: onToggleDigits,
               ),
-              _OptionChip(
+              _CharChip(
                 label: '!@#\$',
-                active: config.symbols,
-                onTap: () => ref
-                    .read(passwordGeneratorProvider.notifier)
-                    .toggleSymbols(),
+                active: config.symbols as bool,
+                onTap: onToggleSymbols,
               ),
-              _OptionChip(
+              _CharChip(
                 label: 'Passphrase',
-                active: config.pronounceable,
-                onTap: () => ref
-                    .read(passwordGeneratorProvider.notifier)
-                    .togglePronounceable(),
+                active: config.pronounceable as bool,
+                onTap: onTogglePassphrase,
                 icon: Icons.text_fields_rounded,
               ),
             ],
@@ -251,108 +793,13 @@ class _GeneratorPageState extends ConsumerState<GeneratorPage> {
   }
 }
 
-// ─── Strength Bar ───
-class _StrengthBar extends StatelessWidget {
-  final double bits;
-  final Strength strength;
-
-  const _StrengthBar({required this.bits, required this.strength});
-
-  @override
-  Widget build(BuildContext context) {
-    final fraction = (bits / 128).clamp(0.0, 1.0);
-    final color = switch (strength) {
-      Strength.weak => const Color(0xFFE53935),
-      Strength.moderate => const Color(0xFFFFA726),
-      Strength.strong => const Color(0xFF66BB6A),
-    };
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
-      child: SizedBox(
-        height: 6,
-        child: LinearProgressIndicator(
-          value: fraction,
-          backgroundColor: Colors.white.withAlpha(30),
-          color: color,
-          minHeight: 6,
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Glass Button ───
-class _GlassButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-
-  const _GlassButton({required this.icon, required this.label, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        splashColor: Colors.white.withAlpha(30),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withAlpha(20),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withAlpha(30)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 18, color: Colors.white),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Section Title ───
-class _SectionTitle extends StatelessWidget {
-  final String text;
-  const _SectionTitle(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFF1A1A2E),
-        letterSpacing: 0.3,
-      ),
-    );
-  }
-}
-
-// ─── Option Chip ───
-class _OptionChip extends StatelessWidget {
+class _CharChip extends StatelessWidget {
   final String label;
   final bool active;
   final VoidCallback onTap;
   final IconData? icon;
 
-  const _OptionChip({
+  const _CharChip({
     required this.label,
     required this.active,
     required this.onTap,
@@ -366,20 +813,20 @@ class _OptionChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
           color: active ? _primary : Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: active ? _primary : Colors.grey.shade300,
+            color: active ? _primary : const Color(0xFFE0E0E0),
             width: 1.5,
           ),
           boxShadow: active
               ? [
                   BoxShadow(
-                    color: _primary.withAlpha(30),
+                    color: _primary.withValues(alpha: 0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -390,13 +837,13 @@ class _OptionChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 16, color: active ? Colors.white : _primary),
-              const SizedBox(width: 6),
+              Icon(icon, size: 15, color: active ? Colors.white : _primary),
+              const SizedBox(width: 5),
             ],
             Text(
               label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: active ? Colors.white : const Color(0xFF1A1A2E),
               ),

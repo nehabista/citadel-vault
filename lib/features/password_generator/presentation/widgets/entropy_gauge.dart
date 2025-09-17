@@ -6,133 +6,85 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/password_strength.dart';
 import '../providers/strength_provider.dart';
 
-/// Gradient ring gauge widget that visualises password strength.
-///
-/// Uses [entropyBitsProvider], [crackTimeShortProvider], and
-/// [strengthProvider] from Riverpod to derive its display.
-///
-/// Pass [overrideEntropy] for standalone/preview usage outside the
-/// provider graph.
+/// Premium entropy gauge ring with gradient arc, centered bits display,
+/// and strength metrics. Adapted from Protego's design for Citadel's theme.
 class EntropyGauge extends ConsumerWidget {
-  const EntropyGauge({super.key, this.overrideEntropy});
+  const EntropyGauge({super.key, this.overrideEntropy, this.size = 140});
 
-  /// If set, bypasses the provider and uses this value directly.
   final double? overrideEntropy;
+  final double size;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final double bits = overrideEntropy ?? ref.watch(entropyBitsProvider);
     final strength = ref.watch(strengthProvider);
-    final crack = ref.watch(crackTimeShortProvider);
     final pwd = ref.watch(currentPasswordProvider);
 
     final color = _strengthColor(strength);
-    final track = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12);
+    final track = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
 
-    // Visual normalisation: 0..1 capped at 128 bits.
     const maxBitsVisual = 128.0;
     final progress = (bits / maxBitsVisual).clamp(0.0, 1.0);
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).shadowColor.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          // Gauge ring
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: SizedBox(
-              width: 96,
-              height: 96,
-              child: CustomPaint(
-                painter: _GradientRingPainter(
-                  progress: progress,
-                  color: color,
-                  trackColor: track,
-                  strokeWidth: 11,
-                ),
+          // Ring
+          SizedBox(
+            width: size,
+            height: size,
+            child: CustomPaint(
+              painter: _GradientRingPainter(
+                progress: progress,
+                color: color,
+                trackColor: track,
+                strokeWidth: 10,
               ),
             ),
           ),
-          const SizedBox(width: 16),
-
-          // Text block
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          // Center content
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (pwd.isEmpty)
+                Icon(
+                  Icons.shield_outlined,
+                  size: 28,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.3),
+                )
+              else ...[
                 Text(
-                  'Strength',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _strengthLabel(strength),
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.2,
-                        color: color,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                if (pwd.isEmpty)
-                  Text(
-                    'Type a password or tap Generate to see strength analysis.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          height: 1.25,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.75),
-                        ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  )
-                else ...[
-                  _metricLine(
-                    context,
-                    'Entropy',
-                    '${bits.toStringAsFixed(1)} bits',
+                  bits.toStringAsFixed(0),
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: color,
+                    height: 1,
+                    letterSpacing: -0.5,
                   ),
-                  const SizedBox(height: 4),
-                  _metricLine(context, 'Estimated crack time', crack),
-                ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'bits',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.5),
+                    letterSpacing: 0.5,
+                  ),
+                ),
               ],
-            ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  static Widget _metricLine(
-    BuildContext context,
-    String label,
-    String value,
-  ) {
-    return RichText(
-      text: TextSpan(
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.25),
-        children: [
-          TextSpan(
-            text: '$label: ',
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-          TextSpan(text: value),
         ],
       ),
     );
@@ -141,15 +93,83 @@ class EntropyGauge extends ConsumerWidget {
   static Color _strengthColor(Strength s) {
     switch (s) {
       case Strength.weak:
-        return Colors.redAccent;
+        return const Color(0xFFE53935);
       case Strength.moderate:
-        return Colors.amber.shade700;
+        return const Color(0xFFFFA726);
       case Strength.strong:
-        return Colors.green.shade600;
+        return const Color(0xFF43A047);
+    }
+  }
+}
+
+/// Strength label + crack time widget for use alongside [EntropyGauge].
+class StrengthLabel extends ConsumerWidget {
+  const StrengthLabel({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strength = ref.watch(strengthProvider);
+    final crack = ref.watch(crackTimeShortProvider);
+    final pwd = ref.watch(currentPasswordProvider);
+
+    final color = _strengthColor(strength);
+    final label = _strengthText(strength);
+
+    if (pwd.isEmpty) {
+      return Text(
+        'Generate a password to see strength',
+        style: TextStyle(
+          fontSize: 13,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+        ),
+        textAlign: TextAlign.center,
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: color,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Crack time: $crack',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+          ),
+        ),
+      ],
+    );
+  }
+
+  static Color _strengthColor(Strength s) {
+    switch (s) {
+      case Strength.weak:
+        return const Color(0xFFE53935);
+      case Strength.moderate:
+        return const Color(0xFFFFA726);
+      case Strength.strong:
+        return const Color(0xFF43A047);
     }
   }
 
-  static String _strengthLabel(Strength s) {
+  static String _strengthText(Strength s) {
     switch (s) {
       case Strength.weak:
         return 'Weak';
@@ -161,7 +181,7 @@ class EntropyGauge extends ConsumerWidget {
   }
 }
 
-/// Gradient ring with a full-track underlay and a sweep-gradient progress arc.
+/// Gradient ring with full-track underlay and sweep-gradient progress arc.
 class _GradientRingPainter extends CustomPainter {
   _GradientRingPainter({
     required this.progress,
@@ -193,8 +213,8 @@ class _GradientRingPainter extends CustomPainter {
     if (progress <= 0) return;
 
     // Gradient progress ring
-    final start = _tint(color, -0.25);
-    final end = _tint(color, 0.08);
+    final start = _tint(color, -0.15);
+    final end = _tint(color, 0.12);
     final shader = SweepGradient(
       startAngle: -pi / 2,
       endAngle: 3 * pi / 2,
