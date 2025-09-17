@@ -219,7 +219,11 @@ class _PasswordDisplay extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                   )
-                : _ColoredPasswordText(password: password),
+                : AnimatedSize(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                    child: _ColoredPasswordText(password: password),
+                  ),
           ),
           const SizedBox(height: 14),
 
@@ -298,8 +302,6 @@ class _ColoredPasswordText extends StatelessWidget {
         }).toList(),
       ),
       textAlign: TextAlign.center,
-      maxLines: 3,
-      overflow: TextOverflow.ellipsis,
     );
   }
 
