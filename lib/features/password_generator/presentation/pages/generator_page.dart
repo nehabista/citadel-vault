@@ -161,7 +161,7 @@ class _GeneratorPageState extends ConsumerState<GeneratorPage> {
 // 1. Password Display — character-colored monospace text
 // =============================================================================
 
-class _PasswordDisplay extends StatelessWidget {
+class _PasswordDisplay extends StatefulWidget {
   final String password;
   final VoidCallback? onCopy;
   final VoidCallback onRegenerate;
@@ -172,20 +172,61 @@ class _PasswordDisplay extends StatelessWidget {
     required this.onRegenerate,
   });
 
+  @override
+  State<_PasswordDisplay> createState() => _PasswordDisplayState();
+}
+
+class _PasswordDisplayState extends State<_PasswordDisplay>
+    with SingleTickerProviderStateMixin {
   static const _primary = Color(0xFF4D4DCD);
+  bool _obscured = false;
+  String _prevPassword = '';
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _PasswordDisplay old) {
+    super.didUpdateWidget(old);
+    if (old.password != widget.password && widget.password.isNotEmpty) {
+      // Animate: fade out old → swap → fade in new
+      _fadeController.forward().then((_) {
+        if (mounted) {
+          setState(() => _prevPassword = widget.password);
+          _fadeController.reverse();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final pw = widget.password;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            _primary.withAlpha(15),
-            _primary.withAlpha(30),
-          ],
+          colors: [_primary.withAlpha(15), _primary.withAlpha(30)],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _primary.withAlpha(40)),
@@ -199,31 +240,73 @@ class _PasswordDisplay extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Password text with character coloring
+          // Password field with eye toggle
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+            padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: _primary.withAlpha(25)),
             ),
-            child: password.isEmpty
-                ? Text(
-                    'Tap Generate',
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 17,
-                      color: Colors.grey.shade400,
-                      letterSpacing: 0.5,
+            child: Row(
+              children: [
+                Expanded(
+                  child: pw.isEmpty
+                      ? Text(
+                          'Tap Generate',
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 17,
+                            color: Colors.grey.shade400,
+                          ),
+                          textAlign: TextAlign.center,
+                        )
+                      : AnimatedBuilder(
+                          animation: _fadeAnimation,
+                          builder: (context, child) {
+                            return Opacity(
+                              opacity: (1.0 - (_fadeAnimation.value * 2).abs())
+                                  .clamp(0.0, 1.0),
+                              child: child,
+                            );
+                          },
+                          child: AnimatedSize(
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeInOut,
+                            child: _obscured
+                                ? Text(
+                                    '•' * pw.length,
+                                    style: const TextStyle(
+                                      fontFamily: 'monospace',
+                                      fontSize: 20,
+                                      letterSpacing: 2,
+                                      color: Color(0xFF1A1A2E),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  )
+                                : _ColoredPasswordText(password: pw),
+                          ),
+                        ),
+                ),
+                if (pw.isNotEmpty)
+                  IconButton(
+                    icon: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        _obscured
+                            ? Icons.visibility_off_rounded
+                            : Icons.visibility_rounded,
+                        key: ValueKey(_obscured),
+                        size: 20,
+                        color: Colors.grey.shade500,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  )
-                : AnimatedSize(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeInOut,
-                    child: _ColoredPasswordText(password: password),
+                    onPressed: () => setState(() => _obscured = !_obscured),
+                    splashRadius: 20,
                   ),
+              ],
+            ),
           ),
           const SizedBox(height: 14),
 
@@ -232,7 +315,7 @@ class _PasswordDisplay extends StatelessWidget {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: onRegenerate,
+                  onPressed: widget.onRegenerate,
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   label: const Text('Generate'),
                   style: ElevatedButton.styleFrom(
@@ -253,7 +336,7 @@ class _PasswordDisplay extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: onCopy,
+                  onPressed: widget.onCopy,
                   icon: const Icon(Icons.copy_rounded, size: 18),
                   label: const Text('Copy'),
                   style: OutlinedButton.styleFrom(
