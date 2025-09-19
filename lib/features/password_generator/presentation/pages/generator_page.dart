@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../presentation/widgets/hyper_text.dart';
 import '../../domain/entities/password_strength.dart';
 import '../providers/generator_provider.dart';
 import '../providers/strength_provider.dart';
@@ -176,50 +177,15 @@ class _PasswordDisplay extends StatefulWidget {
   State<_PasswordDisplay> createState() => _PasswordDisplayState();
 }
 
-class _PasswordDisplayState extends State<_PasswordDisplay>
-    with SingleTickerProviderStateMixin {
+class _PasswordDisplayState extends State<_PasswordDisplay> {
   static const _primary = Color(0xFF4D4DCD);
   bool _obscured = false;
 
-  /// How many characters are currently visible (for typewriter effect).
-  int _visibleChars = 0;
-  String _animatingPassword = '';
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.password.isNotEmpty) {
-      _animatingPassword = widget.password;
-      _visibleChars = widget.password.length;
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _PasswordDisplay old) {
-    super.didUpdateWidget(old);
-    if (old.password != widget.password && widget.password.isNotEmpty) {
-      _startTypewriterAnimation(widget.password);
-    }
-  }
-
-  void _startTypewriterAnimation(String newPassword) {
-    setState(() {
-      _animatingPassword = newPassword;
-      _visibleChars = 0;
-    });
-
-    // Reveal one character at a time
-    final totalChars = newPassword.length;
-    // Speed: shorter passwords = slower per char, longer = faster
-    final perCharMs = totalChars > 30 ? 12 : totalChars > 16 ? 20 : 30;
-
-    for (int i = 1; i <= totalChars; i++) {
-      Future.delayed(Duration(milliseconds: i * perCharMs), () {
-        if (mounted && _animatingPassword == newPassword) {
-          setState(() => _visibleChars = i);
-        }
-      });
-    }
+  static Color _passwordCharColor(String c) {
+    if (RegExp(r'[A-Z]').hasMatch(c)) return const Color(0xFF1565C0);
+    if (RegExp(r'[a-z]').hasMatch(c)) return const Color(0xFF1A1A2E);
+    if (RegExp(r'\d').hasMatch(c)) return const Color(0xFFE65100);
+    return const Color(0xFFC62828);
   }
 
   @override
@@ -282,9 +248,16 @@ class _PasswordDisplayState extends State<_PasswordDisplay>
                                 ),
                                 textAlign: TextAlign.center,
                               )
-                            : _TypewriterText(
-                                password: _animatingPassword,
-                                visibleChars: _visibleChars,
+                            : HyperText(
+                                text: pw,
+                                duration: const Duration(milliseconds: 800),
+                                style: const TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.8,
+                                ),
+                                charColorFn: _passwordCharColor,
                               ),
                   ),
                 ),
@@ -360,47 +333,6 @@ class _PasswordDisplayState extends State<_PasswordDisplay>
   }
 }
 
-/// Renders password text with typewriter effect — only shows [visibleChars]
-/// characters, rest are invisible. Each visible char is color-coded by type.
-class _TypewriterText extends StatelessWidget {
-  final String password;
-  final int visibleChars;
-
-  const _TypewriterText({
-    required this.password,
-    required this.visibleChars,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Text.rich(
-      TextSpan(
-        children: List.generate(password.length, (i) {
-          final c = password[i];
-          final visible = i < visibleChars;
-          return TextSpan(
-            text: c,
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.8,
-              color: visible ? _charColor(c) : Colors.transparent,
-            ),
-          );
-        }),
-      ),
-      textAlign: TextAlign.center,
-    );
-  }
-
-  static Color _charColor(String c) {
-    if (RegExp(r'[A-Z]').hasMatch(c)) return const Color(0xFF1565C0);
-    if (RegExp(r'[a-z]').hasMatch(c)) return const Color(0xFF1A1A2E);
-    if (RegExp(r'\d').hasMatch(c)) return const Color(0xFFE65100);
-    return const Color(0xFFC62828);
-  }
-}
 
 
 
