@@ -180,40 +180,46 @@ class _PasswordDisplayState extends State<_PasswordDisplay>
     with SingleTickerProviderStateMixin {
   static const _primary = Color(0xFF4D4DCD);
   bool _obscured = false;
-  String _prevPassword = '';
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
+
+  /// How many characters are currently visible (for typewriter effect).
+  int _visibleChars = 0;
+  String _animatingPassword = '';
 
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
+    if (widget.password.isNotEmpty) {
+      _animatingPassword = widget.password;
+      _visibleChars = widget.password.length;
+    }
   }
 
   @override
   void didUpdateWidget(covariant _PasswordDisplay old) {
     super.didUpdateWidget(old);
     if (old.password != widget.password && widget.password.isNotEmpty) {
-      // Animate: fade out old → swap → fade in new
-      _fadeController.forward().then((_) {
-        if (mounted) {
-          setState(() => _prevPassword = widget.password);
-          _fadeController.reverse();
-        }
-      });
+      _startTypewriterAnimation(widget.password);
     }
   }
 
-  @override
-  void dispose() {
-    _fadeController.dispose();
-    super.dispose();
+  void _startTypewriterAnimation(String newPassword) {
+    setState(() {
+      _animatingPassword = newPassword;
+      _visibleChars = 0;
+    });
+
+    // Reveal one character at a time
+    final totalChars = newPassword.length;
+    // Speed: shorter passwords = slower per char, longer = faster
+    final perCharMs = totalChars > 30 ? 12 : totalChars > 16 ? 20 : 30;
+
+    for (int i = 1; i <= totalChars; i++) {
+      Future.delayed(Duration(milliseconds: i * perCharMs), () {
+        if (mounted && _animatingPassword == newPassword) {
+          setState(() => _visibleChars = i);
+        }
+      });
+    }
   }
 
   @override
@@ -252,42 +258,35 @@ class _PasswordDisplayState extends State<_PasswordDisplay>
             child: Row(
               children: [
                 Expanded(
-                  child: pw.isEmpty
-                      ? Text(
-                          'Tap Generate',
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 17,
-                            color: Colors.grey.shade400,
-                          ),
-                          textAlign: TextAlign.center,
-                        )
-                      : AnimatedBuilder(
-                          animation: _fadeAnimation,
-                          builder: (context, child) {
-                            return Opacity(
-                              opacity: (1.0 - (_fadeAnimation.value * 2).abs())
-                                  .clamp(0.0, 1.0),
-                              child: child,
-                            );
-                          },
-                          child: AnimatedSize(
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeInOut,
-                            child: _obscured
-                                ? Text(
-                                    '•' * pw.length,
-                                    style: const TextStyle(
-                                      fontFamily: 'monospace',
-                                      fontSize: 20,
-                                      letterSpacing: 2,
-                                      color: Color(0xFF1A1A2E),
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  )
-                                : _ColoredPasswordText(password: pw),
-                          ),
-                        ),
+                  child: AnimatedSize(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    child: pw.isEmpty
+                        ? Text(
+                            'Tap Generate',
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 17,
+                              color: Colors.grey.shade400,
+                            ),
+                            textAlign: TextAlign.center,
+                          )
+                        : _obscured
+                            ? Text(
+                                '•' * pw.length,
+                                style: const TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 20,
+                                  letterSpacing: 2,
+                                  color: Color(0xFF1A1A2E),
+                                ),
+                                textAlign: TextAlign.center,
+                              )
+                            : _TypewriterText(
+                                password: _animatingPassword,
+                                visibleChars: _visibleChars,
+                              ),
+                  ),
                 ),
                 if (pw.isNotEmpty)
                   IconButton(
@@ -361,17 +360,24 @@ class _PasswordDisplayState extends State<_PasswordDisplay>
   }
 }
 
-/// Renders each character in the password with a color based on its type:
-/// uppercase = blue, lowercase = white, digit = orange, symbol = red.
-class _ColoredPasswordText extends StatelessWidget {
+/// Renders password text with typewriter effect — only shows [visibleChars]
+/// characters, rest are invisible. Each visible char is color-coded by type.
+class _TypewriterText extends StatelessWidget {
   final String password;
-  const _ColoredPasswordText({required this.password});
+  final int visibleChars;
+
+  const _TypewriterText({
+    required this.password,
+    required this.visibleChars,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Text.rich(
       TextSpan(
-        children: password.split('').map((c) {
+        children: List.generate(password.length, (i) {
+          final c = password[i];
+          final visible = i < visibleChars;
           return TextSpan(
             text: c,
             style: TextStyle(
@@ -379,22 +385,24 @@ class _ColoredPasswordText extends StatelessWidget {
               fontSize: 17,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.8,
-              color: _charColor(c),
+              color: visible ? _charColor(c) : Colors.transparent,
             ),
           );
-        }).toList(),
+        }),
       ),
       textAlign: TextAlign.center,
     );
   }
 
   static Color _charColor(String c) {
-    if (RegExp(r'[A-Z]').hasMatch(c)) return const Color(0xFF1565C0); // blue
-    if (RegExp(r'[a-z]').hasMatch(c)) return const Color(0xFF1A1A2E); // near black
-    if (RegExp(r'\d').hasMatch(c)) return const Color(0xFFE65100); // orange
-    return const Color(0xFFC62828); // red for symbols
+    if (RegExp(r'[A-Z]').hasMatch(c)) return const Color(0xFF1565C0);
+    if (RegExp(r'[a-z]').hasMatch(c)) return const Color(0xFF1A1A2E);
+    if (RegExp(r'\d').hasMatch(c)) return const Color(0xFFE65100);
+    return const Color(0xFFC62828);
   }
 }
+
+
 
 
 // =============================================================================
