@@ -133,12 +133,20 @@ class _HyperTextState extends State<HyperText> {
         final char = _displayText[index];
         final isResolved = index < _resolved.length && _resolved[index];
 
-        // Color: use charColorFn for resolved chars, grey for scrambled
-        final charColor = isResolved && colorFn != null
-            ? colorFn(char)
-            : isResolved
-                ? (baseStyle?.color ?? const Color(0xFF1A1A2E))
-                : const Color(0xFF9E9E9E).withAlpha(120);
+        // Color: use charColorFn for ALL chars (scrambled ones get colored too
+        // for a vibrant scramble effect). Scrambled chars are slightly transparent.
+        Color charColor;
+        if (colorFn != null) {
+          charColor = colorFn(char);
+          if (!isResolved) {
+            charColor = charColor.withAlpha(150); // slightly faded while scrambling
+          }
+        } else {
+          charColor = baseStyle?.color ?? const Color(0xFF1A1A2E);
+          if (!isResolved) {
+            charColor = charColor.withAlpha(150);
+          }
+        }
 
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 50),
