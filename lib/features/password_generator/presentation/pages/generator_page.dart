@@ -250,7 +250,7 @@ class _PasswordDisplayState extends State<_PasswordDisplay> {
                               )
                             : HyperText(
                                 text: pw,
-                                duration: const Duration(milliseconds: 800),
+                                duration: const Duration(milliseconds: 1800),
                                 style: const TextStyle(
                                   fontFamily: 'monospace',
                                   fontSize: 17,
