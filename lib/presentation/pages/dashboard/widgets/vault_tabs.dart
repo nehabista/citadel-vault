@@ -551,7 +551,7 @@ class _AddVaultButton extends StatelessWidget {
               Icon(Icons.add, size: 18, color: Colors.grey.shade600),
               const SizedBox(width: 4),
               Text(
-                'New',
+                'New Vault',
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
                   fontSize: 13,
