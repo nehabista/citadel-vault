@@ -1,8 +1,9 @@
 // File: lib/presentation/pages/dashboard/widgets/vault_item_card.dart
-// Vault item card widget per D-20 design spec
+// Premium vault item card widget with colored type indicators
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../features/search/presentation/widgets/search_highlight.dart';
 import '../../../../features/vault/domain/entities/vault_item.dart';
@@ -20,6 +21,19 @@ IconData _itemTypeIcon(VaultItemType type) {
   };
 }
 
+/// Returns the color associated with a vault item type.
+Color _itemTypeColor(VaultItemType type) {
+  return switch (type) {
+    VaultItemType.password => const Color(0xFF4D4DCD),
+    VaultItemType.secureNote => const Color(0xFF43A047),
+    VaultItemType.bankAccount => const Color(0xFF1565C0),
+    VaultItemType.paymentCard => const Color(0xFFE65100),
+    VaultItemType.wifiPassword => const Color(0xFF00897B),
+    VaultItemType.contactInfo => const Color(0xFF5E35B1),
+    VaultItemType.softwareLicense => const Color(0xFF795548),
+  };
+}
+
 /// Formats a DateTime as a relative time string.
 String _relativeTime(DateTime dateTime) {
   final now = DateTime.now();
@@ -34,8 +48,9 @@ String _relativeTime(DateTime dateTime) {
   return '${diff.inDays ~/ 365}y ago';
 }
 
-/// Card widget for displaying a vault item.
-/// Shows type icon, name, username/url, favorite star, copy button, and modified time.
+/// Premium card widget for displaying a vault item.
+/// Features a colored left border, type-colored icon container,
+/// title/subtitle/modified text, and trailing copy + favorite actions.
 class VaultItemCard extends ConsumerWidget {
   final VaultItemEntity item;
   final String? searchQuery;
@@ -51,78 +66,119 @@ class VaultItemCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final subtitle = item.username ?? item.url;
+    final typeColor = _itemTypeColor(item.type);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      elevation: 0.5,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      color: Colors.white,
-      child: InkWell(
-        onTap: onTap ?? () {
-          debugPrint('Vault item tapped: ${item.name}');
-        },
-        onLongPress: () => _showContextMenu(context, ref),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              // Leading icon
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: const Color(0xFF4D4DCD).withValues(alpha: 0.12),
-                child: Icon(
-                  _itemTypeIcon(item.type),
-                  color: const Color(0xFF4D4DCD),
-                  size: 20,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap ?? () => context.push('/vault-item/${item.id}'),
+          onLongPress: () => _showContextMenu(context, ref),
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE8EDF5)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(8),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-              ),
-              const SizedBox(width: 12),
-              // Title and subtitle
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildTitle(),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      _buildSubtitle(subtitle),
-                    ],
-                    const SizedBox(height: 4),
-                    Text(
-                      'Modified: ${_relativeTime(item.updatedAt)}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade500,
-                        fontFamily: 'Poppins',
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Row(
+                children: [
+                  // Colored left border strip
+                  Container(
+                    width: 4,
+                    height: 76,
+                    color: typeColor,
+                  ),
+                  const SizedBox(width: 12),
+                  // Type icon in rounded square container
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: typeColor.withAlpha(25),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      _itemTypeIcon(item.type),
+                      color: typeColor,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Title, subtitle, modified
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildTitle(),
+                          if (subtitle != null) ...[
+                            const SizedBox(height: 2),
+                            _buildSubtitle(subtitle),
+                          ],
+                          const SizedBox(height: 4),
+                          Text(
+                            'Modified: ${_relativeTime(item.updatedAt)}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade400,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              // Trailing: favorite star + copy
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    item.isFavorite ? Icons.star : Icons.star_border,
-                    color: item.isFavorite ? Colors.amber : Colors.grey.shade400,
-                    size: 20,
                   ),
-                  const SizedBox(height: 4),
-                  GestureDetector(
-                    onTap: () => _copyPassword(context),
-                    child: Icon(
-                      Icons.copy_outlined,
-                      color: const Color(0xFF4D4DCD),
-                      size: 18,
+                  const SizedBox(width: 4),
+                  // Trailing actions: copy + favorite
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: () {},
+                          child: Icon(
+                            item.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
+                            color: item.isFavorite ? const Color(0xFFFFA726) : Colors.grey.shade300,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: () => _copyPassword(context),
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4D4DCD).withAlpha(15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.copy_rounded,
+                              color: Color(0xFF4D4DCD),
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -130,49 +186,42 @@ class VaultItemCard extends ConsumerWidget {
   }
 
   Widget _buildTitle() {
+    const baseStyle = TextStyle(
+      fontFamily: 'Poppins',
+      fontWeight: FontWeight.w600,
+      fontSize: 15,
+      color: Color(0xFF1A1A2E),
+    );
     if (searchQuery != null && searchQuery!.isNotEmpty) {
       return SearchHighlight(
         text: item.name,
         query: searchQuery!,
-        baseStyle: const TextStyle(
-          fontFamily: 'Poppins',
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-          color: Colors.black87,
-        ),
+        baseStyle: baseStyle,
       );
     }
     return Text(
       item.name,
-      style: const TextStyle(
-        fontFamily: 'Poppins',
-        fontWeight: FontWeight.w600,
-        fontSize: 14,
-        color: Colors.black87,
-      ),
+      style: baseStyle,
       overflow: TextOverflow.ellipsis,
     );
   }
 
   Widget _buildSubtitle(String subtitle) {
+    final baseStyle = TextStyle(
+      fontFamily: 'Poppins',
+      fontSize: 13,
+      color: Colors.grey.shade500,
+    );
     if (searchQuery != null && searchQuery!.isNotEmpty) {
       return SearchHighlight(
         text: subtitle,
         query: searchQuery!,
-        baseStyle: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 12,
-          color: Colors.grey.shade600,
-        ),
+        baseStyle: baseStyle,
       );
     }
     return Text(
       subtitle,
-      style: TextStyle(
-        fontFamily: 'Poppins',
-        fontSize: 12,
-        color: Colors.grey.shade600,
-      ),
+      style: baseStyle,
       overflow: TextOverflow.ellipsis,
     );
   }
@@ -182,8 +231,12 @@ class VaultItemCard extends ConsumerWidget {
       Clipboard.setData(ClipboardData(text: item.password!));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Password copied to clipboard'),
+          content: const Text(
+            'Password copied to clipboard',
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
           behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF4D4DCD),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -234,6 +287,7 @@ class VaultItemCard extends ConsumerWidget {
                       SnackBar(
                         content: const Text('Username copied'),
                         behavior: SnackBarBehavior.floating,
+                        backgroundColor: const Color(0xFF4D4DCD),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

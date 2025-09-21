@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icons_plus/icons_plus.dart';
 
+import '../../core/providers/core_providers.dart';
 import '../../features/password_generator/presentation/pages/generator_page.dart';
 import '../../features/security/presentation/pages/watchtower_page.dart';
 import '../../features/security/presentation/providers/expiry_provider.dart';
@@ -13,6 +14,7 @@ import '../../routing/app_router.dart';
 import '../widgets/bottom_nav_item.dart';
 import 'dashboard/dashboard_page.dart';
 import 'settings/settings_page.dart';
+import 'settings/pin_setup_page.dart';
 
 /// Notifier for the selected navigation index.
 class _NavIndexNotifier extends Notifier<int> {
@@ -25,9 +27,14 @@ class _NavIndexNotifier extends Notifier<int> {
 final selectedNavIndexProvider =
     NotifierProvider<_NavIndexNotifier, int>(_NavIndexNotifier.new);
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
+  @override
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
   static const _pages = <Widget>[
     DashBoardPage(),
     WatchtowerPage(),
@@ -35,8 +42,235 @@ class HomePage extends ConsumerWidget {
     SettingsScreen(),
   ];
 
+  bool _hasShownQuickUnlockDialog = false;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    // Check for quick unlock setup after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkQuickUnlockSetup();
+    });
+  }
+
+  Future<void> _checkQuickUnlockSetup() async {
+    if (_hasShownQuickUnlockDialog) return;
+    final localAuth = ref.read(localAuthServiceProvider);
+    final hasSetup = await localAuth.hasQuickUnlockSetup();
+    if (!hasSetup && mounted) {
+      _hasShownQuickUnlockDialog = true;
+      _showQuickUnlockSetupSheet();
+    }
+  }
+
+  void _showQuickUnlockSetupSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _QuickUnlockSetupSheet(
+        onSetupPin: () {
+          Navigator.of(context).pop();
+          _promptMasterPasswordForPin();
+        },
+        onSetupBiometrics: () {
+          Navigator.of(context).pop();
+          _promptMasterPasswordForBiometrics();
+        },
+        onSkip: () => Navigator.of(context).pop(),
+      ),
+    );
+  }
+
+  void _promptMasterPasswordForPin() {
+    _promptMasterPassword(
+      context: context,
+      onSubmit: (masterPassword) async {
+        final result = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(
+            builder: (_) => PinSetupPage(masterPassword: masterPassword),
+          ),
+        );
+        if (result == true && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('PIN unlock enabled',
+                  style: TextStyle(fontFamily: 'Poppins')),
+              backgroundColor: const Color(0xFF4D4DCD),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  void _promptMasterPasswordForBiometrics() {
+    _promptMasterPassword(
+      context: context,
+      onSubmit: (masterPassword) async {
+        final localAuth = ref.read(localAuthServiceProvider);
+        final success = await localAuth.enableBiometricUnlock(masterPassword);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                success
+                    ? 'Biometric unlock enabled'
+                    : 'Biometric setup failed',
+                style: const TextStyle(fontFamily: 'Poppins'),
+              ),
+              backgroundColor:
+                  success ? const Color(0xFF4D4DCD) : const Color(0xFFE53935),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  void _promptMasterPassword({
+    required BuildContext context,
+    required Future<void> Function(String masterPassword) onSubmit,
+  }) {
+    final controller = TextEditingController();
+    bool obscure = true;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0E0E0),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Enter Master Password',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      color: Color(0xFF1A1A2E),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Required to set up quick unlock',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 13,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: controller,
+                    obscureText: obscure,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: 'Master Password',
+                      labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide:
+                            const BorderSide(color: Color(0xFFE8EDF5)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF4D4DCD), width: 2),
+                      ),
+                      prefixIcon: const Icon(Icons.lock_outline,
+                          color: Color(0xFF4D4DCD)),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscure
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setSheetState(() => obscure = !obscure);
+                        },
+                      ),
+                    ),
+                    onSubmitted: (_) async {
+                      if (controller.text.trim().isEmpty) return;
+                      Navigator.of(ctx).pop();
+                      await onSubmit(controller.text.trim());
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (controller.text.trim().isEmpty) return;
+                        Navigator.of(ctx).pop();
+                        await onSubmit(controller.text.trim());
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4D4DCD),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Continue',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final selectedIndex = ref.watch(selectedNavIndexProvider);
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
@@ -187,7 +421,205 @@ class HomePage extends ConsumerWidget {
       body: _pages[selectedIndex],
     );
   }
+}
 
+/// Quick unlock setup bottom sheet shown after first login.
+class _QuickUnlockSetupSheet extends StatelessWidget {
+  final VoidCallback onSetupPin;
+  final VoidCallback onSetupBiometrics;
+  final VoidCallback onSkip;
+
+  const _QuickUnlockSetupSheet({
+    required this.onSetupPin,
+    required this.onSetupBiometrics,
+    required this.onSkip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          // Handle bar
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE0E0E0),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Shield icon
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: const Color(0xFF4D4DCD).withAlpha(20),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.speed_rounded,
+              size: 40,
+              color: Color(0xFF4D4DCD),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              'Secure Quick Unlock',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                color: Color(0xFF1A1A2E),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              'Set up PIN or biometrics so you don\'t need to type your master password every time',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                color: Colors.grey.shade500,
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 28),
+
+          // Option: Set up PIN
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _QuickUnlockOption(
+              icon: Icons.pin_outlined,
+              title: 'Set up PIN',
+              subtitle: 'Use a 6-digit PIN for quick access',
+              onTap: onSetupPin,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Option: Use Biometrics
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _QuickUnlockOption(
+              icon: Icons.fingerprint_rounded,
+              title: 'Use Biometrics',
+              subtitle: 'Unlock with fingerprint or face',
+              onTap: onSetupBiometrics,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Skip
+          TextButton(
+            onPressed: onSkip,
+            child: Text(
+              'Skip for now',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade500,
+              ),
+            ),
+          ),
+          SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+        ],
+      ),
+    );
+  }
+}
+
+/// A single option row in the quick unlock setup sheet.
+class _QuickUnlockOption extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _QuickUnlockOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFFF8FAFC),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE8EDF5)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4D4DCD).withAlpha(20),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 24, color: const Color(0xFF4D4DCD)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: Color(0xFF1A1A2E),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 12,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.grey.shade400,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Bottom sheet with grid of item types for creating new vault items.

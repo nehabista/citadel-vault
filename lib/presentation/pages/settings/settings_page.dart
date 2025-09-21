@@ -3,14 +3,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/core_providers.dart';
+import '../../../data/services/auth/local_auth_service.dart';
 import '../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../routing/app_router.dart';
+import 'pin_setup_page.dart';
+
+/// Provider that fetches the current unlock method from LocalAuthService.
+final _unlockMethodProvider = FutureProvider<UnlockMethod>((ref) async {
+  final localAuth = ref.watch(localAuthServiceProvider);
+  return localAuth.getSavedUnlockMethod();
+});
+
+/// Provider that checks if biometrics are available on device.
+final _biometricsAvailableProvider = FutureProvider<bool>((ref) async {
+  final localAuth = ref.watch(localAuthServiceProvider);
+  return localAuth.canUseBiometrics();
+});
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final unlockMethodAsync = ref.watch(_unlockMethodProvider);
+    final biometricsAvailableAsync = ref.watch(_biometricsAvailableProvider);
+
+    final currentMethod =
+        unlockMethodAsync.value ?? UnlockMethod.masterPassword;
+    final biometricsAvailable = biometricsAvailableAsync.value ?? false;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
@@ -23,23 +45,32 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 10),
           SwitchListTile(
             title: const Text('Unlock with Biometrics'),
-            value: false, // TODO: Wire to localAuthService provider
-            onChanged: (bool value) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content:
-                        Text('Biometric settings will be available soon')),
-              );
-            },
+            subtitle: !biometricsAvailable
+                ? const Text('Not available on this device',
+                    style: TextStyle(fontSize: 12, color: Colors.grey))
+                : null,
+            value: currentMethod == UnlockMethod.biometrics,
+            activeTrackColor: const Color(0xFF4D4DCD),
+            onChanged: biometricsAvailable
+                ? (bool value) {
+                    if (value) {
+                      _setupBiometrics(context, ref);
+                    } else {
+                      _disableQuickUnlock(context, ref);
+                    }
+                  }
+                : null,
           ),
           SwitchListTile(
             title: const Text('Unlock with PIN'),
-            value: false, // TODO: Wire to localAuthService provider
+            value: currentMethod == UnlockMethod.pin,
+            activeTrackColor: const Color(0xFF4D4DCD),
             onChanged: (bool value) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('PIN settings will be available soon')),
-              );
+              if (value) {
+                _setupPin(context, ref);
+              } else {
+                _disableQuickUnlock(context, ref);
+              }
             },
           ),
           const SizedBox(height: 20),
@@ -79,6 +110,238 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// Prompt for master password, then navigate to PIN setup page.
+  void _setupPin(BuildContext context, WidgetRef ref) {
+    _promptMasterPassword(
+      context: context,
+      title: 'Enter Master Password',
+      subtitle: 'Required to set up PIN unlock',
+      onSubmit: (masterPassword) async {
+        final result = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(
+            builder: (_) => PinSetupPage(masterPassword: masterPassword),
+          ),
+        );
+        if (result == true && context.mounted) {
+          ref.invalidate(_unlockMethodProvider);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('PIN unlock enabled',
+                  style: TextStyle(fontFamily: 'Poppins')),
+              backgroundColor: const Color(0xFF4D4DCD),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  /// Prompt for master password, then enable biometric unlock.
+  void _setupBiometrics(BuildContext context, WidgetRef ref) {
+    _promptMasterPassword(
+      context: context,
+      title: 'Enter Master Password',
+      subtitle: 'Required to set up biometric unlock',
+      onSubmit: (masterPassword) async {
+        final localAuth = ref.read(localAuthServiceProvider);
+        final success = await localAuth.enableBiometricUnlock(masterPassword);
+        if (context.mounted) {
+          ref.invalidate(_unlockMethodProvider);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                success
+                    ? 'Biometric unlock enabled'
+                    : 'Biometric setup failed',
+                style: const TextStyle(fontFamily: 'Poppins'),
+              ),
+              backgroundColor:
+                  success ? const Color(0xFF4D4DCD) : const Color(0xFFE53935),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  /// Disable quick unlock (PIN or biometrics).
+  void _disableQuickUnlock(BuildContext context, WidgetRef ref) async {
+    final localAuth = ref.read(localAuthServiceProvider);
+    await localAuth.disableQuickUnlock();
+    ref.invalidate(_unlockMethodProvider);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Quick unlock disabled',
+              style: TextStyle(fontFamily: 'Poppins')),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+  }
+
+  /// Shows a bottom sheet prompting for the master password.
+  void _promptMasterPassword({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required Future<void> Function(String masterPassword) onSubmit,
+  }) {
+    final controller = TextEditingController();
+    bool obscure = true;
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0E0E0),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      color: Color(0xFF1A1A2E),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 13,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: controller,
+                    obscureText: obscure,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: 'Master Password',
+                      labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide:
+                            const BorderSide(color: Color(0xFFE8EDF5)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF4D4DCD), width: 2),
+                      ),
+                      prefixIcon: const Icon(Icons.lock_outline,
+                          color: Color(0xFF4D4DCD)),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscure
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setSheetState(() => obscure = !obscure);
+                        },
+                      ),
+                    ),
+                    onSubmitted: isSubmitting
+                        ? null
+                        : (_) async {
+                            if (controller.text.trim().isEmpty) return;
+                            setSheetState(() => isSubmitting = true);
+                            Navigator.of(ctx).pop();
+                            await onSubmit(controller.text.trim());
+                          },
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              if (controller.text.trim().isEmpty) return;
+                              setSheetState(() => isSubmitting = true);
+                              Navigator.of(ctx).pop();
+                              await onSubmit(controller.text.trim());
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4D4DCD),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: isSubmitting
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text(
+                              'Continue',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
