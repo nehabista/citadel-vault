@@ -9,7 +9,6 @@ import '../../../features/search/presentation/providers/vault_search_provider.da
 import '../../../features/vault/domain/entities/vault_item.dart';
 import '../../../features/vault/presentation/providers/multi_vault_provider.dart';
 import 'widgets/vault_item_card.dart';
-import 'widgets/vault_tabs.dart';
 
 /// Provider for the selected item type filter tab index.
 class _TypeFilterNotifier extends Notifier<int> {
@@ -98,11 +97,14 @@ class _DashBoardPageState extends ConsumerState<DashBoardPage> {
             ),
           ),
 
-          // Vault tabs (D-08)
-          const VaultTabs(),
+          // Vault selector dropdown
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: _VaultSelector(vaultState: vaultState),
+          ),
           const SizedBox(height: 8),
 
-          // Type filter tabs (secondary)
+          // Type filter tabs
           _TypeFilterBar(
             selectedIndex: typeFilter,
             onSelected: (index) {
@@ -296,6 +298,192 @@ class _DashBoardPageState extends ConsumerState<DashBoardPage> {
     if (typeIndex == 0) return items; // "All"
     final type = VaultItemType.values[typeIndex - 1];
     return items.where((item) => item.type == type).toList();
+  }
+}
+
+/// Clean vault selector — dropdown showing current vault with option to switch/create.
+class _VaultSelector extends ConsumerWidget {
+  final MultiVaultState vaultState;
+  const _VaultSelector({required this.vaultState});
+
+  static const _primary = Color(0xFF4D4DCD);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedVault = vaultState.selectedVault;
+    final vaultName = selectedVault?.name ?? 'All Vaults';
+    final itemCount = vaultState.items.length;
+
+    return GestureDetector(
+      onTap: () => _showVaultPicker(context, ref),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE8EDF5)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.folder_rounded, size: 18, color: _primary.withAlpha(180)),
+            const SizedBox(width: 8),
+            Text(
+              vaultName,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1A1A2E),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '($itemCount)',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade500,
+              ),
+            ),
+            const Spacer(),
+            Icon(Icons.keyboard_arrow_down_rounded,
+                size: 20, color: Colors.grey.shade500),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showVaultPicker(BuildContext context, WidgetRef ref) {
+    final vaults = ref.read(multiVaultProvider).vaults;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE0E0E0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Switch Vault',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A2E),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...vaults.map((vault) => ListTile(
+                  leading: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: _primary.withAlpha(20),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(Icons.folder_rounded, size: 18, color: _primary),
+                  ),
+                  title: Text(vault.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  trailing: vaultState.selectedVault?.id == vault.id
+                      ? const Icon(Icons.check_rounded, color: _primary)
+                      : null,
+                  onTap: () {
+                    ref.read(multiVaultProvider.notifier).selectVault(vault.id);
+                    Navigator.pop(context);
+                  },
+                )),
+            const Divider(height: 1),
+            ListTile(
+              leading: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.green.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.add_rounded, size: 18, color: Colors.green),
+              ),
+              title: const Text('Create New Vault',
+                  style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green)),
+              onTap: () {
+                Navigator.pop(context);
+                _showCreateVaultDialog(context, ref);
+              },
+            ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+          ],
+        ),
+      ),
+    );
+  }
+  void _showCreateVaultDialog(BuildContext context, WidgetRef ref) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Create Vault',
+            style: TextStyle(fontWeight: FontWeight.w700)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: 'Vault Name',
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: _primary, width: 2),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child:
+                Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                ref.read(multiVaultProvider.notifier).createVault(name);
+                Navigator.pop(ctx);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
