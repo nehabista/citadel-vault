@@ -24,6 +24,9 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
   // Listen to connectivity changes -- trigger sync when coming online.
   final subscription = syncEngine.listenToConnectivity();
 
+  // Reset any entries that previously failed (e.g., before API rules were set).
+  syncEngine.resetFailedEntries();
+
   // Start periodic sync (30 seconds).
   syncEngine.startPeriodicSync();
 

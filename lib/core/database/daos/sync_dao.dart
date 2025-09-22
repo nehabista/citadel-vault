@@ -50,6 +50,16 @@ class SyncDao extends DatabaseAccessor<AppDatabase> with _$SyncDaoMixin {
     );
   }
 
+  /// Reset retry counts on all failed entries so they can be retried.
+  Future<void> resetRetries() {
+    return (update(syncQueue)..where((t) => t.completed.equals(false))).write(
+      const SyncQueueCompanion(
+        retryCount: Value(0),
+        lastError: Value(null),
+      ),
+    );
+  }
+
   /// Remove all completed entries from the queue.
   Future<void> clearCompleted() {
     return (delete(syncQueue)..where((t) => t.completed.equals(true))).go();

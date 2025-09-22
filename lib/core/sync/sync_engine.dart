@@ -110,8 +110,11 @@ class SyncEngine {
       });
 
     for (final entry in sorted) {
-      // Skip entries that exceeded max retries.
-      if (entry.retryCount > maxRetries) continue;
+      // Skip entries that exceeded max retries — but log it.
+      if (entry.retryCount > maxRetries) {
+        dev.log('[Sync] Skipping ${entry.entityTable}/${entry.itemId} — exceeded $maxRetries retries');
+        continue;
+      }
 
       try {
         dev.log('[Sync] Push ${entry.operation} ${entry.entityTable}/${entry.itemId}');
@@ -306,6 +309,13 @@ class SyncEngine {
   bool _localWins(DateTime localUpdated, DateTime remoteUpdated) {
     return localUpdated.isAfter(remoteUpdated) ||
         localUpdated.isAtSameMomentAs(remoteUpdated);
+  }
+
+  /// Reset all failed sync entries so they can be retried.
+  /// Call this after fixing the root cause (e.g., PB API rules updated).
+  Future<void> resetFailedEntries() async {
+    await _syncDao.resetRetries();
+    dev.log('[Sync] Reset all failed entries for retry');
   }
 
   /// Trigger an immediate sync attempt.
