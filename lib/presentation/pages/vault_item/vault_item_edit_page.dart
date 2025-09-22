@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/core_providers.dart';
 import '../../../core/providers/session_provider.dart';
+import '../../../core/providers/sync_providers.dart';
 import '../../../core/session/session_state.dart';
 import '../../../features/password_generator/presentation/providers/strength_provider.dart';
 import '../../../features/password_generator/presentation/widgets/entropy_gauge.dart';
@@ -429,6 +430,9 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
 
       // Refresh vault items.
       ref.read(multiVaultProvider.notifier).refreshItems();
+
+      // Trigger immediate sync to PocketBase (write-through).
+      ref.read(syncEngineProvider).syncNow();
 
       if (mounted) {
         context.pop();

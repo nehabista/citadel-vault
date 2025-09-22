@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as dev;
 
 import 'package:drift/drift.dart';
 import 'package:pocketbase/pocketbase.dart';
@@ -65,17 +66,31 @@ class SyncEngine {
   /// Per Pitfall 6: if already syncing, drops the request to prevent races.
   Future<void> sync() async {
     if (_isSyncing) return;
+
+    // Don't sync if not authenticated
+    if (!_pb.authStore.isValid || _currentUserId == null) {
+      return;
+    }
+
     _isSyncing = true;
 
     try {
       final pending = await _syncDao.getPending();
+      if (pending.isEmpty) {
+        _emitState(SyncIdle(lastSyncAt: DateTime.now()));
+        return;
+      }
+
       _emitState(Syncing(pendingCount: pending.length));
+      dev.log('[Sync] Pushing ${pending.length} entries for user $_currentUserId');
 
       await _push(pending);
       await _pull();
 
       _emitState(SyncIdle(lastSyncAt: DateTime.now()));
+      dev.log('[Sync] Complete');
     } catch (e) {
+      dev.log('[Sync] Error: $e');
       _emitState(SyncError(message: e.toString(), failedAt: DateTime.now()));
     } finally {
       _isSyncing = false;
@@ -99,6 +114,7 @@ class SyncEngine {
       if (entry.retryCount > maxRetries) continue;
 
       try {
+        dev.log('[Sync] Push ${entry.operation} ${entry.entityTable}/${entry.itemId}');
         switch (entry.operation) {
           case 'create':
             await _pushCreate(entry);
@@ -108,7 +124,9 @@ class SyncEngine {
             await _pushDelete(entry);
         }
         await _syncDao.markCompleted(entry.id);
+        dev.log('[Sync] ✓ Pushed ${entry.entityTable}/${entry.itemId}');
       } catch (e) {
+        dev.log('[Sync] ✗ Failed ${entry.entityTable}/${entry.itemId}: $e');
         await _syncDao.incrementRetry(entry.id, e.toString());
       }
     }
@@ -288,6 +306,15 @@ class SyncEngine {
   bool _localWins(DateTime localUpdated, DateTime remoteUpdated) {
     return localUpdated.isAfter(remoteUpdated) ||
         localUpdated.isAtSameMomentAs(remoteUpdated);
+  }
+
+  /// Trigger an immediate sync attempt.
+  /// Call this after creating/updating items for write-through behavior:
+  /// local save is instant, then we try to push to PocketBase immediately.
+  /// If it fails (offline), the periodic sync will retry.
+  Future<void> syncNow() async {
+    dev.log('[Sync] Immediate sync requested');
+    await sync();
   }
 
   /// Start periodic sync at the given interval.
