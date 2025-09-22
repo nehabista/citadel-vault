@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'core/providers/sync_providers.dart';
 import 'routing/app_router.dart';
 
 class CitadelApp extends ConsumerWidget {
@@ -11,6 +12,9 @@ class CitadelApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Eagerly initialize the sync engine so periodic sync starts immediately.
+    ref.watch(syncEngineProvider);
+
     final router = ref.watch(appRouterProvider);
     return MaterialApp.router(
       routerConfig: router,

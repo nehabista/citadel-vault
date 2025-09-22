@@ -76,14 +76,18 @@ class MultiVaultNotifier extends Notifier<MultiVaultState> {
   Future<void> _loadVaults() async {
     try {
       final repo = ref.read(vaultRepositoryProvider);
-      final vaults = await repo.getVaults();
+      var vaults = await repo.getVaults();
 
+      // Auto-create a default "Personal" vault on first login.
       if (vaults.isEmpty) {
-        state = state.copyWith(
-          vaults: [],
-          isLoading: false,
+        final defaultId = DateTime.now().millisecondsSinceEpoch.toString();
+        await repo.createVault(
+          id: defaultId,
+          name: 'Personal',
+          colorHex: '#4D4DCD',
+          iconName: 'shield',
         );
-        return;
+        vaults = await repo.getVaults();
       }
 
       final selectedId = state.selectedVaultId ?? vaults.first.id;

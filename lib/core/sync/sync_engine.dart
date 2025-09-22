@@ -83,8 +83,18 @@ class SyncEngine {
   }
 
   /// Push all pending local changes to PocketBase.
+  ///
+  /// Vaults are pushed before items so that PocketBase has valid vault
+  /// records when item relations reference them.
   Future<void> _push(List<SyncQueueData> pendingEntries) async {
-    for (final entry in pendingEntries) {
+    // Sort: vaults first, then vault_items (items reference vault IDs).
+    final sorted = List.of(pendingEntries)
+      ..sort((a, b) {
+        const order = {'vaults': 0, 'vault_items': 1};
+        return (order[a.entityTable] ?? 2).compareTo(order[b.entityTable] ?? 2);
+      });
+
+    for (final entry in sorted) {
       // Skip entries that exceeded max retries.
       if (entry.retryCount > maxRetries) continue;
 
