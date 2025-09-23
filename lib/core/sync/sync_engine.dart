@@ -153,7 +153,8 @@ class SyncEngine {
 
       final record = await _pb.collection('vault_items').create(
         body: {
-          'vaultId': localItem.vaultId,
+          'id': localItem.id, // Use local ID as PB record ID
+          'vaultId': localItem.vaultId, // Same as vault's PB ID (we use local IDs)
           'owner': userId,
           'encryptedData': base64Encode(localItem.encryptedData),
           'encryptionVersion': localItem.encryptionVersion,
@@ -168,18 +169,25 @@ class SyncEngine {
         ),
       );
     } else if (entry.entityTable == 'vaults') {
-      // Push vault collection creation.
+      // Push vault collection creation — use local ID as PB ID
+      // so vault_items can reference the same ID.
       final vault = await _vaultDao.getVaultById(entry.itemId);
       if (vault == null) return;
 
-      await _pb.collection('vault_collections').create(
-        body: {
-          'name': vault.name,
-          'owner': userId,
-          'colorHex': vault.colorHex,
-          'iconName': vault.iconName,
-        },
-      );
+      try {
+        await _pb.collection('vault_collections').create(
+          body: {
+            'id': vault.id, // Use local ID as PB record ID
+            'name': vault.name,
+            'owner': userId,
+            'colorHex': vault.colorHex ?? '#4D4DCD',
+            'iconName': vault.iconName ?? 'shield',
+          },
+        );
+      } on ClientException catch (e) {
+        // If record already exists (409), that's fine
+        if (e.statusCode != 409) rethrow;
+      }
     }
   }
 
