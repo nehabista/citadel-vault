@@ -320,10 +320,37 @@ class SyncEngine {
   }
 
   /// Reset all failed sync entries so they can be retried.
-  /// Call this after fixing the root cause (e.g., PB API rules updated).
   Future<void> resetFailedEntries() async {
     await _syncDao.resetRetries();
     dev.log('[Sync] Reset all failed entries for retry');
+  }
+
+  /// Force re-queue ALL local vaults and items for sync.
+  /// Use after clearing PB data or when sync is out of sync.
+  Future<void> forceFullResync() async {
+    dev.log('[Sync] Force full re-sync — re-queuing all local data');
+
+    // Clear completed entries
+    await _syncDao.clearCompleted();
+
+    // Re-queue all vaults
+    final vaults = await _vaultDao.getAllVaults();
+    for (final vault in vaults) {
+      await _syncDao.enqueue(vault.id, 'vaults', 'create');
+    }
+
+    // Re-queue all items across all vaults
+    for (final vault in vaults) {
+      final items = await _vaultDao.getItemsByVault(vault.id);
+      for (final item in items) {
+        await _syncDao.enqueue(item.id, 'vault_items', 'create');
+      }
+    }
+
+    dev.log('[Sync] Re-queued ${vaults.length} vaults and items');
+
+    // Push immediately
+    await syncNow();
   }
 
   /// Trigger an immediate sync attempt.
