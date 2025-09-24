@@ -151,17 +151,20 @@ class SyncEngine {
 
       if (localItem == null) return; // Item deleted before sync.
 
+      // Look up the vault's PB remote ID for the relation
+      final vault = await _vaultDao.getVaultById(localItem.vaultId);
+      final vaultRemoteId = vault?.remoteId ?? localItem.vaultId;
+
       final record = await _pb.collection('vault_items').create(
         body: {
-          'id': localItem.id, // Use local ID as PB record ID
-          'vaultId': localItem.vaultId, // Same as vault's PB ID (we use local IDs)
+          'vaultId': vaultRemoteId,
           'owner': userId,
           'encryptedData': base64Encode(localItem.encryptedData),
           'encryptionVersion': localItem.encryptionVersion,
         },
       );
 
-      // Store the remote ID in the local item for future updates.
+      // Store the PB-assigned ID back locally for future updates.
       await _vaultDao.updateVaultItem(
         VaultItemsCompanion(
           id: Value(localItem.id),
@@ -169,25 +172,28 @@ class SyncEngine {
         ),
       );
     } else if (entry.entityTable == 'vaults') {
-      // Push vault collection creation — use local ID as PB ID
-      // so vault_items can reference the same ID.
       final vault = await _vaultDao.getVaultById(entry.itemId);
       if (vault == null) return;
 
-      try {
-        await _pb.collection('vault_collections').create(
-          body: {
-            'id': vault.id, // Use local ID as PB record ID
-            'name': vault.name,
-            'owner': userId,
-            'colorHex': vault.colorHex ?? '#4D4DCD',
-            'iconName': vault.iconName ?? 'shield',
-          },
-        );
-      } on ClientException catch (e) {
-        // If record already exists (409), that's fine
-        if (e.statusCode != 409) rethrow;
-      }
+      // Skip if already synced (has remoteId)
+      if (vault.remoteId != null) return;
+
+      final record = await _pb.collection('vault_collections').create(
+        body: {
+          'name': vault.name,
+          'owner': userId,
+          'colorHex': vault.colorHex,
+          'iconName': vault.iconName,
+        },
+      );
+
+      // Store PB-assigned ID back locally for vault_items relation
+      await _vaultDao.updateVault(
+        VaultsCompanion(
+          id: Value(vault.id),
+          remoteId: Value(record.id),
+        ),
+      );
     }
   }
 
