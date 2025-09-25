@@ -163,7 +163,7 @@ class SyncEngine {
 
       final record = await _pb.collection('vault_items').create(
         body: {
-          'vaultId': vaultRemoteId, // PB relation field name
+          'vault_items': vaultRemoteId, // PB relation field name
           'owner': userId,
           'encryptedData': base64Encode(localItem.encryptedData),
           'encryptionVersion': localItem.encryptionVersion,
