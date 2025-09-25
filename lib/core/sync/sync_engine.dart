@@ -153,11 +153,17 @@ class SyncEngine {
 
       // Look up the vault's PB remote ID for the relation
       final vault = await _vaultDao.getVaultById(localItem.vaultId);
-      final vaultRemoteId = vault?.remoteId ?? localItem.vaultId;
+      final vaultRemoteId = vault?.remoteId;
+      dev.log('[Sync] Item vaultId=${localItem.vaultId}, vault remoteId=$vaultRemoteId');
+
+      if (vaultRemoteId == null) {
+        dev.log('[Sync] ✗ Vault not yet synced — skipping item ${entry.itemId}');
+        return; // Vault must sync first
+      }
 
       final record = await _pb.collection('vault_items').create(
         body: {
-          'vaultId': vaultRemoteId,
+          'vaultId': vaultRemoteId, // PB relation field name
           'owner': userId,
           'encryptedData': base64Encode(localItem.encryptedData),
           'encryptionVersion': localItem.encryptionVersion,
