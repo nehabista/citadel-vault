@@ -340,18 +340,34 @@ class SyncEngine {
   /// Force re-queue ALL local vaults and items for sync.
   /// Use after clearing PB data or when sync is out of sync.
   Future<void> forceFullResync() async {
-    dev.log('[Sync] Force full re-sync — re-queuing all local data');
+    dev.log('[Sync] Force full re-sync — clearing ALL queue, re-queuing all local data');
 
-    // Clear completed entries
-    await _syncDao.clearCompleted();
+    // Wipe the entire sync queue (completed + pending + failed)
+    await _syncDao.clearAll();
 
-    // Re-queue all vaults
+    // Also clear all remoteIds so vaults get new PB records
     final vaults = await _vaultDao.getAllVaults();
+    for (final vault in vaults) {
+      await _vaultDao.updateVault(
+        VaultsCompanion(id: Value(vault.id), remoteId: const Value(null)),
+      );
+    }
+    // Clear item remoteIds too
+    for (final vault in vaults) {
+      final items = await _vaultDao.getItemsByVault(vault.id);
+      for (final item in items) {
+        await _vaultDao.updateVaultItem(
+          VaultItemsCompanion(id: Value(item.id), remoteId: const Value(null)),
+        );
+      }
+    }
+
+    // Re-queue all vaults FIRST
     for (final vault in vaults) {
       await _syncDao.enqueue(vault.id, 'vaults', 'create');
     }
 
-    // Re-queue all items across all vaults
+    // Then re-queue all items
     for (final vault in vaults) {
       final items = await _vaultDao.getItemsByVault(vault.id);
       for (final item in items) {
@@ -359,7 +375,7 @@ class SyncEngine {
       }
     }
 
-    dev.log('[Sync] Re-queued ${vaults.length} vaults and items');
+    dev.log('[Sync] Re-queued ${vaults.length} vaults and items — all clean');
 
     // Push immediately
     await syncNow();

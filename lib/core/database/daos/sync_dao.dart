@@ -64,4 +64,9 @@ class SyncDao extends DatabaseAccessor<AppDatabase> with _$SyncDaoMixin {
   Future<void> clearCompleted() {
     return (delete(syncQueue)..where((t) => t.completed.equals(true))).go();
   }
+
+  /// Wipe the entire sync queue.
+  Future<void> clearAll() {
+    return delete(syncQueue).go();
+  }
 }
