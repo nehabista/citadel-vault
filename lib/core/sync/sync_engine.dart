@@ -163,7 +163,7 @@ class SyncEngine {
 
       final record = await _pb.collection('vault_items').create(
         body: {
-          'vault_items': vaultRemoteId, // PB relation field name
+          'vaultRef': vaultRemoteId, // PB relation field name
           'owner': userId,
           'encryptedData': base64Encode(localItem.encryptedData),
           'encryptionVersion': localItem.encryptionVersion,
@@ -286,7 +286,7 @@ class SyncEngine {
     // PocketBase stores encryptedData as base64 text.
     final encryptedDataB64 = record.getStringValue('encryptedData');
     final encryptedData = base64Decode(encryptedDataB64);
-    final vaultId = record.getStringValue('vaultId');
+    final vaultId = record.getStringValue('vaultRef');
 
     if (localItem == null) {
       // New remote item -- insert locally.
