@@ -1,12 +1,18 @@
 // File: lib/presentation/pages/dashboard/widgets/vault_item_card.dart
 // Premium vault item card widget with colored type indicators
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/providers/core_providers.dart';
+import '../../../../core/providers/session_provider.dart';
+import '../../../../core/session/session_state.dart';
 import '../../../../features/search/presentation/widgets/search_highlight.dart';
 import '../../../../features/vault/domain/entities/vault_item.dart';
+import '../../../../features/vault/presentation/providers/multi_vault_provider.dart';
+import '../../../../core/providers/sync_providers.dart';
 
 /// Returns the appropriate icon for a vault item type.
 IconData _itemTypeIcon(VaultItemType type) {
@@ -149,7 +155,7 @@ class VaultItemCard extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         GestureDetector(
-                          onTap: () {},
+                          onTap: () => _toggleFavorite(context, ref),
                           child: Icon(
                             item.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
                             color: item.isFavorite ? const Color(0xFFFFA726) : Colors.grey.shade300,
@@ -226,6 +232,98 @@ class VaultItemCard extends ConsumerWidget {
     );
   }
 
+  void _confirmDelete(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Item',
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600)),
+        content: Text('Are you sure you want to delete "${item.name}"?',
+            style: const TextStyle(fontFamily: 'Poppins')),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel',
+                style: TextStyle(fontFamily: 'Poppins')),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                final repo = ref.read(vaultRepositoryProvider);
+                await repo.deleteItem(item.id);
+                ref.read(multiVaultProvider.notifier).refreshItems();
+                ref.read(syncEngineProvider).syncNow();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Item deleted',
+                          style: TextStyle(fontFamily: 'Poppins')),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: const Color(0xFFE53935),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error deleting: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Delete',
+                style: TextStyle(
+                    fontFamily: 'Poppins',
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _toggleFavorite(BuildContext context, WidgetRef ref) async {
+    HapticFeedback.lightImpact();
+    final session = ref.read(sessionProvider);
+    if (session is! Unlocked) return;
+
+    try {
+      final repo = ref.read(vaultRepositoryProvider);
+      final vaultKey = SecretKey(session.vaultKey);
+      final updated = item.copyWith(isFavorite: !item.isFavorite);
+      await repo.updateItem(updated, vaultKey);
+      ref.read(multiVaultProvider.notifier).refreshItems();
+      ref.read(syncEngineProvider).syncNow();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              updated.isFavorite ? 'Added to favorites' : 'Removed from favorites',
+              style: const TextStyle(fontFamily: 'Poppins'),
+            ),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF4D4DCD),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
   void _copyPassword(BuildContext context) {
     if (item.password != null && item.password!.isNotEmpty) {
       Clipboard.setData(ClipboardData(text: item.password!));
@@ -296,11 +394,28 @@ class VaultItemCard extends ConsumerWidget {
                   },
                 ),
               ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push('/vault-item/${item.id}/edit');
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.drive_file_move_outlined),
                 title: const Text('Move to Vault...'),
                 onTap: () {
                   Navigator.pop(ctx);
                   // TODO: Implement move-to-vault dialog (Plan 04)
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('Delete',
+                    style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _confirmDelete(context, ref);
                 },
               ),
             ],

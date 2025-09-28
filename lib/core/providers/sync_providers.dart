@@ -24,9 +24,8 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
   // Listen to connectivity changes -- trigger sync when coming online.
   final subscription = syncEngine.listenToConnectivity();
 
-  // Force full re-sync to push all local data to PocketBase.
-  // This re-queues all vaults and items, then pushes immediately.
-  syncEngine.forceFullResync();
+  // Normal sync on startup (not forceFullResync which re-queues everything).
+  syncEngine.syncNow();
 
   // Start periodic sync (30 seconds).
   syncEngine.startPeriodicSync();

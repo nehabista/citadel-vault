@@ -455,6 +455,7 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
           _isCreateMode ? 'New Item' : 'Edit Item',

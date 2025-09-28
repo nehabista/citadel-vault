@@ -5,6 +5,7 @@ import '../../../../core/providers/core_providers.dart';
 import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
 import '../../../vault/domain/entities/vault_item.dart';
+import '../../../vault/presentation/providers/multi_vault_provider.dart';
 import '../../data/models/health_score.dart';
 
 /// Watchtower provider that computes the vault health score.
@@ -22,6 +23,10 @@ class WatchtowerNotifier extends AsyncNotifier<HealthScore> {
   @override
   Future<HealthScore> build() async {
     final session = ref.watch(sessionProvider);
+
+    // Watch vault items so watchtower refreshes when items change.
+    ref.watch(multiVaultProvider);
+
     return switch (session) {
       Locked() => HealthScore.empty(),
       Unlocked() => _computeScore(),

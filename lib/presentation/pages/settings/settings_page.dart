@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/core_providers.dart';
+import '../../../core/providers/sync_providers.dart';
+import '../../../core/sync/sync_state.dart';
 import '../../../data/services/auth/local_auth_service.dart';
 import '../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../routing/app_router.dart';
@@ -90,6 +92,53 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: const Text('Export vault as CSV or encrypted backup'),
             leading: const Icon(Icons.download),
             onTap: () => context.push(AppRoutes.exportPage),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Sync',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          const SizedBox(height: 10),
+          _SyncStatusTile(),
+          ListTile(
+            title: const Text('Sync Now'),
+            leading: const Icon(Icons.sync),
+            onTap: () {
+              ref.read(syncEngineProvider).syncNow();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Sync started',
+                      style: TextStyle(fontFamily: 'Poppins')),
+                  behavior: SnackBarBehavior.floating,
+                  backgroundColor: const Color(0xFF4D4DCD),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            title: const Text('Force Full Re-sync'),
+            subtitle: const Text('Re-queue all data (troubleshooting)',
+                style: TextStyle(fontSize: 12, color: Colors.grey)),
+            leading: const Icon(Icons.refresh),
+            onTap: () {
+              ref.read(syncEngineProvider).forceFullResync();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Full re-sync started',
+                      style: TextStyle(fontFamily: 'Poppins')),
+                  behavior: SnackBarBehavior.floating,
+                  backgroundColor: const Color(0xFF4D4DCD),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 20),
           const Text(
@@ -343,5 +392,40 @@ class SettingsScreen extends ConsumerWidget {
         );
       },
     );
+  }
+}
+
+/// Displays the last sync time from the sync state stream.
+class _SyncStatusTile extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final syncStateAsync = ref.watch(syncStateProvider);
+
+    final String statusText = syncStateAsync.when(
+      data: (state) => switch (state) {
+        SyncIdle(:final lastSyncAt) => lastSyncAt != null
+            ? 'Last synced: ${_formatSyncTime(lastSyncAt)}'
+            : 'Never synced',
+        Syncing(:final pendingCount) => 'Syncing ($pendingCount pending)...',
+        SyncError(:final message) => 'Sync error: $message',
+      },
+      loading: () => 'Checking sync status...',
+      error: (e, _) => 'Sync status unavailable',
+    );
+
+    return ListTile(
+      title: const Text('Sync Status'),
+      subtitle: Text(statusText,
+          style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      leading: const Icon(Icons.cloud_done_outlined),
+    );
+  }
+
+  String _formatSyncTime(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inSeconds < 60) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 }
