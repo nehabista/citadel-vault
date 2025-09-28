@@ -299,15 +299,17 @@ class _TotpAddDialogState extends ConsumerState<TotpAddDialog>
             children: [
               // Digits dropdown
               Expanded(
+                flex: 3,
                 child: DropdownButtonFormField<int>(
                   initialValue: _digits,
                   decoration: InputDecoration(
                     labelText: 'Digits',
-                    labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                    labelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
                     contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    isDense: true,
                   ),
                   items: const [
                     DropdownMenuItem(value: 6, child: Text('6')),
@@ -318,18 +320,20 @@ class _TotpAddDialogState extends ConsumerState<TotpAddDialog>
                   },
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               // Period dropdown
               Expanded(
+                flex: 3,
                 child: DropdownButtonFormField<int>(
                   initialValue: _period,
                   decoration: InputDecoration(
                     labelText: 'Period',
-                    labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                    labelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
                     contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    isDense: true,
                   ),
                   items: const [
                     DropdownMenuItem(value: 30, child: Text('30s')),
@@ -340,18 +344,20 @@ class _TotpAddDialogState extends ConsumerState<TotpAddDialog>
                   },
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               // Algorithm dropdown
               Expanded(
+                flex: 4,
                 child: DropdownButtonFormField<String>(
                   initialValue: _algorithm,
                   decoration: InputDecoration(
-                    labelText: 'Algorithm',
-                    labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                    labelText: 'Algo',
+                    labelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
                     contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    isDense: true,
                   ),
                   items: const [
                     DropdownMenuItem(value: 'SHA1', child: Text('SHA1')),
