@@ -170,6 +170,16 @@ class MultiVaultNotifier extends Notifier<MultiVaultState> {
     }
   }
 
+  Future<void> updateVault(String vaultId, {String? colorHex, String? iconName}) async {
+    try {
+      final repo = ref.read(vaultRepositoryProvider);
+      await repo.updateVault(id: vaultId, colorHex: colorHex, iconName: iconName);
+      await _loadVaults();
+    } catch (e) {
+      state = state.copyWith(error: () => e.toString());
+    }
+  }
+
   /// Refresh items for the currently selected vault.
   Future<void> refreshItems() async {
     final selectedId = state.selectedVaultId;

@@ -340,7 +340,7 @@ class VaultTabs extends ConsumerWidget {
                 title: const Text('Change Color'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  // TODO: Implement color change dialog
+                  _showColorPicker(context, ref, vault);
                 },
               ),
               ListTile(
@@ -348,7 +348,7 @@ class VaultTabs extends ConsumerWidget {
                 title: const Text('Change Icon'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  // TODO: Implement icon change dialog
+                  _showIconPicker(context, ref, vault);
                 },
               ),
               ListTile(
@@ -465,6 +465,91 @@ class VaultTabs extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+
+  static const _colors = [
+    '#4D4DCD', '#E53935', '#43A047', '#FB8C00',
+    '#00897B', '#8E24AA', '#3949AB', '#F4511E',
+  ];
+
+  void _showColorPicker(BuildContext context, WidgetRef ref, Vault vault) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Choose Color'),
+        content: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: _colors.map((hex) {
+            final color = Color(int.parse('FF${hex.substring(1)}', radix: 16));
+            final isSelected = vault.colorHex == hex;
+            return GestureDetector(
+              onTap: () {
+                ref.read(multiVaultProvider.notifier).updateVault(
+                  vault.id, colorHex: hex,
+                );
+                Navigator.pop(ctx);
+              },
+              child: Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: isSelected ? Border.all(color: Colors.black, width: 3) : null,
+                ),
+                child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  static const _icons = [
+    ('shield', Icons.shield_outlined),
+    ('folder', Icons.folder_outlined),
+    ('home', Icons.home_outlined),
+    ('star', Icons.star_outline),
+    ('lock', Icons.lock_outline),
+    ('person', Icons.person_outline),
+    ('work', Icons.work_outline),
+    ('cloud', Icons.cloud_outlined),
+  ];
+
+  void _showIconPicker(BuildContext context, WidgetRef ref, Vault vault) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Choose Icon'),
+        content: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: _icons.map((entry) {
+            final isSelected = vault.iconName == entry.$1;
+            return GestureDetector(
+              onTap: () {
+                ref.read(multiVaultProvider.notifier).updateVault(
+                  vault.id, iconName: entry.$1,
+                );
+                Navigator.pop(ctx);
+              },
+              child: Container(
+                width: 48, height: 48,
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF4D4DCD).withAlpha(20) : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                  border: isSelected ? Border.all(color: const Color(0xFF4D4DCD), width: 2) : null,
+                ),
+                child: Icon(entry.$2, color: isSelected ? const Color(0xFF4D4DCD) : Colors.grey.shade600),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 }

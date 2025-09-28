@@ -398,7 +398,7 @@ class VaultItemCard extends ConsumerWidget {
                 title: const Text('Edit'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  context.push('/vault-item/${item.id}/edit');
+                  context.push('/vault-item/${item.id}/edit', extra: item);
                 },
               ),
               ListTile(
