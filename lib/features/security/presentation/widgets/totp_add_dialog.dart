@@ -1,3 +1,4 @@
+import '../../../presentation/widgets/citadel_snackbar.dart';
 import 'dart:math';
 
 import 'package:cryptography/cryptography.dart';
