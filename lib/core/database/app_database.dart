@@ -15,6 +15,7 @@ import 'daos/sync_dao.dart';
 import 'daos/settings_dao.dart';
 import 'daos/password_history_dao.dart';
 import 'daos/totp_dao.dart';
+import '../../features/autofill/data/daos/autofill_index_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -34,7 +35,7 @@ part 'app_database.g.dart';
     AutofillIndex,
     Settings,
   ],
-  daos: [VaultDao, SyncDao, SettingsDao, PasswordHistoryDao, TotpDao],
+  daos: [VaultDao, SyncDao, SettingsDao, PasswordHistoryDao, TotpDao, AutofillIndexDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
