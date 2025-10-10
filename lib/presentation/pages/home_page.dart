@@ -35,11 +35,11 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  static const _pages = <Widget>[
-    DashBoardPage(),
-    WatchtowerPage(),
-    GeneratorPage(),
-    SettingsScreen(),
+  static final _pages = <Widget>[
+    const DashBoardPage(),
+    const WatchtowerPage(),
+    const GeneratorPage(),
+    const SettingsScreen(),
   ];
 
   bool _hasShownQuickUnlockDialog = false;
