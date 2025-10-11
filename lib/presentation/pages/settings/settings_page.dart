@@ -116,18 +116,7 @@ class SettingsScreen extends ConsumerWidget {
             leading: const Icon(Icons.sync),
             onTap: () {
               ref.read(syncEngineProvider).syncNow();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Sync started',
-                      style: TextStyle(fontFamily: 'Poppins')),
-                  behavior: SnackBarBehavior.floating,
-                  backgroundColor: const Color(0xFF4D4DCD),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
+              showCitadelSnackBar(context, 'Sync started');
             },
           ),
           ListTile(
@@ -137,18 +126,7 @@ class SettingsScreen extends ConsumerWidget {
             leading: const Icon(Icons.refresh),
             onTap: () {
               ref.read(syncEngineProvider).forceFullResync();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Full re-sync started',
-                      style: TextStyle(fontFamily: 'Poppins')),
-                  behavior: SnackBarBehavior.floating,
-                  backgroundColor: const Color(0xFF4D4DCD),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
+              showCitadelSnackBar(context, 'Full re-sync started');
             },
           ),
           const SizedBox(height: 20),
@@ -187,17 +165,8 @@ class SettingsScreen extends ConsumerWidget {
         );
         if (result == true && context.mounted) {
           ref.invalidate(_unlockMethodProvider);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('PIN unlock enabled',
-                  style: TextStyle(fontFamily: 'Poppins')),
-              backgroundColor: const Color(0xFF4D4DCD),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          showCitadelSnackBar(context, 'PIN unlock enabled',
+              type: SnackBarType.success);
         }
       },
     );
@@ -214,21 +183,10 @@ class SettingsScreen extends ConsumerWidget {
         final success = await localAuth.enableBiometricUnlock(masterPassword);
         if (context.mounted) {
           ref.invalidate(_unlockMethodProvider);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                success
-                    ? 'Biometric unlock enabled'
-                    : 'Biometric setup failed',
-                style: const TextStyle(fontFamily: 'Poppins'),
-              ),
-              backgroundColor:
-                  success ? const Color(0xFF4D4DCD) : const Color(0xFFE53935),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
+          showCitadelSnackBar(
+            context,
+            success ? 'Biometric unlock enabled' : 'Biometric setup failed',
+            type: success ? SnackBarType.success : SnackBarType.error,
           );
         }
       },
@@ -241,16 +199,7 @@ class SettingsScreen extends ConsumerWidget {
     await localAuth.disableQuickUnlock();
     ref.invalidate(_unlockMethodProvider);
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Quick unlock disabled',
-              style: TextStyle(fontFamily: 'Poppins')),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      showCitadelSnackBar(context, 'Quick unlock disabled');
     }
   }
 

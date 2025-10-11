@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../../data/models/breach_record.dart';
 
 /// Breach detail page showing all information about a specific breach.
@@ -268,12 +269,8 @@ class BreachDetailPage extends StatelessWidget {
               Navigator.of(dialogContext).pop();
               final email = emailController.text.trim();
               if (email.isNotEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Checking $email against breach database...'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                showCitadelSnackBar(
+                    context, 'Checking $email against breach database...');
               }
             },
             child: const Text('Check'),

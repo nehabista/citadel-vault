@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../widgets/citadel_snackbar.dart';
+
 import '../../../core/providers/core_providers.dart';
 import '../../../core/providers/session_provider.dart';
 import '../../../core/providers/sync_providers.dart';
@@ -369,9 +371,8 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
     final session = ref.read(sessionProvider);
     if (session is! Unlocked) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vault is locked')),
-        );
+        showCitadelSnackBar(context, 'Vault is locked',
+            type: SnackBarType.error);
       }
       return;
     }
@@ -439,9 +440,8 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving item: $e')),
-        );
+        showCitadelSnackBar(context, 'Error saving item: $e',
+            type: SnackBarType.error);
       }
     } finally {
       if (mounted) {

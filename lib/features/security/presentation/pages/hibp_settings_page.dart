@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/providers/core_providers.dart';
+import '../../../../presentation/widgets/citadel_snackbar.dart';
 
 /// Provider that loads the current HIBP API key from SettingsDao.
 final _hibpApiKeyProvider = FutureProvider<String?>((ref) async {
@@ -45,9 +46,8 @@ class _HibpSettingsPageState extends ConsumerState<HibpSettingsPage> {
       await db.settingsDao.setSetting('hibp_api_key', key);
       ref.invalidate(_hibpApiKeyProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('API key saved')),
-        );
+        showCitadelSnackBar(context, 'API key saved',
+            type: SnackBarType.success);
         setState(() => _hasExistingKey = true);
       }
     } finally {
@@ -84,9 +84,8 @@ class _HibpSettingsPageState extends ConsumerState<HibpSettingsPage> {
     _controller.clear();
     if (mounted) {
       setState(() => _hasExistingKey = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('API key deleted')),
-      );
+      showCitadelSnackBar(context, 'API key deleted',
+          type: SnackBarType.error);
     }
   }
 

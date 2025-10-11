@@ -94,12 +94,8 @@ class _TotpAddDialogState extends ConsumerState<TotpAddDialog>
       _tabController.animateTo(0);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('QR code scanned successfully'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        showCitadelSnackBar(context, 'QR code scanned successfully',
+            type: SnackBarType.success);
       }
     } on FormatException catch (e) {
       setState(() => _scanError = e.message);
@@ -135,9 +131,8 @@ class _TotpAddDialogState extends ConsumerState<TotpAddDialog>
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving TOTP: $e')),
-        );
+        showCitadelSnackBar(context, 'Error saving TOTP: $e',
+            type: SnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

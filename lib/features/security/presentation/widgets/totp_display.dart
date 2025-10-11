@@ -57,12 +57,8 @@ class TotpDisplay extends ConsumerWidget {
     return InkWell(
       onTap: () {
         Clipboard.setData(ClipboardData(text: code));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('TOTP code copied'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        showCitadelSnackBar(context, 'TOTP code copied',
+            type: SnackBarType.success);
       },
       borderRadius: BorderRadius.circular(12),
       child: Padding(

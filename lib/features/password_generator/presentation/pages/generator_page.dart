@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../../../../presentation/widgets/hyper_text.dart';
 import '../../domain/entities/password_strength.dart';
 import '../providers/generator_provider.dart';
@@ -24,8 +25,6 @@ class GeneratorPage extends ConsumerStatefulWidget {
 }
 
 class _GeneratorPageState extends ConsumerState<GeneratorPage> {
-  static const _primary = Color(0xFF4D4DCD);
-
   @override
   void initState() {
     super.initState();
@@ -140,21 +139,8 @@ class _GeneratorPageState extends ConsumerState<GeneratorPage> {
   void _copyPassword(String password) {
     Clipboard.setData(ClipboardData(text: password));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
-            SizedBox(width: 8),
-            Text('Copied to clipboard'),
-          ],
-        ),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(milliseconds: 1200),
-        backgroundColor: _primary,
-      ),
-    );
+    showCitadelSnackBar(context, 'Copied to clipboard',
+        type: SnackBarType.success);
   }
 }
 

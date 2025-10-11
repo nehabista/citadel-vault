@@ -9,6 +9,7 @@ import '../../../utils/validator.dart';
 import '../../widgets/custom_button_with_splash.dart';
 import '../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../routing/app_router.dart';
+import '../../widgets/citadel_snackbar.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -187,9 +188,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                               context.go(AppRoutes.verification,
                                   extra: result.email);
                             } else if (result.error != null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(result.error!)),
-                              );
+                              showCitadelSnackBar(
+                                  context, result.error!,
+                                  type: SnackBarType.error);
                             }
                           }
                         },

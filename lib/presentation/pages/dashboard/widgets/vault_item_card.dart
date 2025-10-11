@@ -13,6 +13,7 @@ import '../../../../features/search/presentation/widgets/search_highlight.dart';
 import '../../../../features/vault/domain/entities/vault_item.dart';
 import '../../../../features/vault/presentation/providers/multi_vault_provider.dart';
 import '../../../../core/providers/sync_providers.dart';
+import '../../../widgets/citadel_snackbar.dart';
 
 /// Returns the appropriate icon for a vault item type.
 IconData _itemTypeIcon(VaultItemType type) {
@@ -256,23 +257,13 @@ class VaultItemCard extends ConsumerWidget {
                 ref.read(multiVaultProvider.notifier).refreshItems();
                 ref.read(syncEngineProvider).syncNow();
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Item deleted',
-                          style: TextStyle(fontFamily: 'Poppins')),
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: const Color(0xFFE53935),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  );
+                  showCitadelSnackBar(context, 'Item deleted',
+                      type: SnackBarType.error);
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error deleting: $e')),
-                  );
+                  showCitadelSnackBar(context, 'Error deleting: $e',
+                      type: SnackBarType.error);
                 }
               }
             },
@@ -300,26 +291,15 @@ class VaultItemCard extends ConsumerWidget {
       ref.read(multiVaultProvider.notifier).refreshItems();
       ref.read(syncEngineProvider).syncNow();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              updated.isFavorite ? 'Added to favorites' : 'Removed from favorites',
-              style: const TextStyle(fontFamily: 'Poppins'),
-            ),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: const Color(0xFF4D4DCD),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 2),
-          ),
+        showCitadelSnackBar(
+          context,
+          updated.isFavorite ? 'Added to favorites' : 'Removed from favorites',
+          type: SnackBarType.success,
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        showCitadelSnackBar(context, 'Error: $e', type: SnackBarType.error);
       }
     }
   }
@@ -327,20 +307,8 @@ class VaultItemCard extends ConsumerWidget {
   void _copyPassword(BuildContext context) {
     if (item.password != null && item.password!.isNotEmpty) {
       Clipboard.setData(ClipboardData(text: item.password!));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Password copied to clipboard',
-            style: TextStyle(fontFamily: 'Poppins'),
-          ),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF4D4DCD),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      showCitadelSnackBar(context, 'Password copied to clipboard',
+          type: SnackBarType.success);
     }
   }
 
@@ -381,16 +349,8 @@ class VaultItemCard extends ConsumerWidget {
                   onTap: () {
                     Navigator.pop(ctx);
                     Clipboard.setData(ClipboardData(text: item.username!));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Username copied'),
-                        behavior: SnackBarBehavior.floating,
-                        backgroundColor: const Color(0xFF4D4DCD),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    );
+                    showCitadelSnackBar(context, 'Username copied',
+                        type: SnackBarType.success);
                   },
                 ),
               ListTile(

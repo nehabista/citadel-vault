@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../providers/export_provider.dart';
 
 /// Export page with two modes: plain CSV and encrypted backup.
@@ -170,12 +171,9 @@ class _ExportPageState extends ConsumerState<ExportPage> {
                     onPressed: () {
                       final password = _passwordController.text;
                       if (password.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content:
-                                Text('Please enter a backup password'),
-                          ),
-                        );
+                        showCitadelSnackBar(
+                            context, 'Please enter a backup password',
+                            type: SnackBarType.error);
                         return;
                       }
                       ref

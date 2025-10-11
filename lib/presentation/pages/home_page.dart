@@ -12,6 +12,7 @@ import '../../features/vault/domain/entities/vault_item.dart';
 import '../../gen/assets.gen.dart';
 import '../../routing/app_router.dart';
 import '../widgets/bottom_nav_item.dart';
+import '../widgets/citadel_snackbar.dart';
 import 'dashboard/dashboard_page.dart';
 import 'settings/settings_page.dart';
 import 'settings/pin_setup_page.dart';
@@ -92,17 +93,8 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         );
         if (result == true && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('PIN unlock enabled',
-                  style: TextStyle(fontFamily: 'Poppins')),
-              backgroundColor: const Color(0xFF4D4DCD),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          showCitadelSnackBar(context, 'PIN unlock enabled',
+              type: SnackBarType.success);
         }
       },
     );
@@ -115,21 +107,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         final localAuth = ref.read(localAuthServiceProvider);
         final success = await localAuth.enableBiometricUnlock(masterPassword);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                success
-                    ? 'Biometric unlock enabled'
-                    : 'Biometric setup failed',
-                style: const TextStyle(fontFamily: 'Poppins'),
-              ),
-              backgroundColor:
-                  success ? const Color(0xFF4D4DCD) : const Color(0xFFE53935),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
+          showCitadelSnackBar(
+            context,
+            success ? 'Biometric unlock enabled' : 'Biometric setup failed',
+            type: success ? SnackBarType.success : SnackBarType.error,
           );
         }
       },

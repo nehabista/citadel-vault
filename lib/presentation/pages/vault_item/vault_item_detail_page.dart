@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../widgets/citadel_snackbar.dart';
+
 import '../../../core/providers/core_providers.dart';
 import '../../../core/providers/session_provider.dart';
 import '../../../core/session/session_state.dart';
@@ -323,9 +325,8 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
       GoRouter.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting item: $e')),
-      );
+      showCitadelSnackBar(context, 'Error deleting item: $e',
+          type: SnackBarType.error);
     }
   }
 
@@ -370,12 +371,7 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
   }
 
   void _showCopiedSnackbar(BuildContext context, String what) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$what copied'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    showCitadelSnackBar(context, '$what copied', type: SnackBarType.success);
   }
 
   Widget _buildExpiryWarning(ThemeData theme, VaultItemEntity item) {

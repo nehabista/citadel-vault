@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../widgets/citadel_snackbar.dart';
+
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
@@ -152,12 +154,8 @@ class _HistoryEntryTileState extends State<_HistoryEntryTile> {
                 Clipboard.setData(
                   ClipboardData(text: widget.entry.password),
                 );
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Password copied'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+                showCitadelSnackBar(context, 'Password copied',
+                    type: SnackBarType.success);
               },
               icon: const Icon(Icons.copy_rounded, size: 18),
               tooltip: 'Copy',

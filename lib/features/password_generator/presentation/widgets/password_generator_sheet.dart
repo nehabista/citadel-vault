@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../providers/generator_provider.dart';
 import '../providers/strength_provider.dart';
 import 'entropy_gauge.dart';
@@ -104,12 +105,8 @@ class PasswordGeneratorSheet extends ConsumerWidget {
                         Clipboard.setData(
                           ClipboardData(text: genState.generatedPassword),
                         );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Password copied'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
+                        showCitadelSnackBar(context, 'Password copied',
+                            type: SnackBarType.success);
                       }
                     },
                     icon: const Icon(Icons.copy_rounded, size: 20),

@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../widgets/citadel_snackbar.dart';
+
 class SetupQuickUnlockScreen extends ConsumerWidget {
   const SetupQuickUnlockScreen({super.key});
 
@@ -38,9 +40,7 @@ class SetupQuickUnlockScreen extends ConsumerWidget {
                 label: const Text('Enable Biometric Unlock'),
                 onPressed: () {
                   // TODO: Implement biometric setup via LocalAuthService provider
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Biometric setup coming soon')),
-                  );
+                  showCitadelSnackBar(context, 'Biometric setup coming soon');
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -52,9 +52,7 @@ class SetupQuickUnlockScreen extends ConsumerWidget {
                 label: const Text('Set a 6-Digit PIN'),
                 onPressed: () {
                   // TODO: Implement PIN setup
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('PIN setup coming soon')),
-                  );
+                  showCitadelSnackBar(context, 'PIN setup coming soon');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey.shade200,
