@@ -2987,6 +2987,2190 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   }
 }
 
+class $SharedItemsTable extends SharedItems
+    with TableInfo<$SharedItemsTable, SharedItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SharedItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _senderIdMeta = const VerificationMeta(
+    'senderId',
+  );
+  @override
+  late final GeneratedColumn<String> senderId = GeneratedColumn<String>(
+    'sender_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _recipientIdMeta = const VerificationMeta(
+    'recipientId',
+  );
+  @override
+  late final GeneratedColumn<String> recipientId = GeneratedColumn<String>(
+    'recipient_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _encryptedDataMeta = const VerificationMeta(
+    'encryptedData',
+  );
+  @override
+  late final GeneratedColumn<String> encryptedData = GeneratedColumn<String>(
+    'encrypted_data',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _senderPublicKeyMeta = const VerificationMeta(
+    'senderPublicKey',
+  );
+  @override
+  late final GeneratedColumn<String> senderPublicKey = GeneratedColumn<String>(
+    'sender_public_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _expiresAtMeta = const VerificationMeta(
+    'expiresAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+    'expires_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    senderId,
+    recipientId,
+    encryptedData,
+    senderPublicKey,
+    createdAt,
+    expiresAt,
+    status,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'shared_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SharedItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('sender_id')) {
+      context.handle(
+        _senderIdMeta,
+        senderId.isAcceptableOrUnknown(data['sender_id']!, _senderIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_senderIdMeta);
+    }
+    if (data.containsKey('recipient_id')) {
+      context.handle(
+        _recipientIdMeta,
+        recipientId.isAcceptableOrUnknown(
+          data['recipient_id']!,
+          _recipientIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recipientIdMeta);
+    }
+    if (data.containsKey('encrypted_data')) {
+      context.handle(
+        _encryptedDataMeta,
+        encryptedData.isAcceptableOrUnknown(
+          data['encrypted_data']!,
+          _encryptedDataMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_encryptedDataMeta);
+    }
+    if (data.containsKey('sender_public_key')) {
+      context.handle(
+        _senderPublicKeyMeta,
+        senderPublicKey.isAcceptableOrUnknown(
+          data['sender_public_key']!,
+          _senderPublicKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_senderPublicKeyMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(
+        _expiresAtMeta,
+        expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SharedItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SharedItem(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      senderId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}sender_id'],
+          )!,
+      recipientId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}recipient_id'],
+          )!,
+      encryptedData:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}encrypted_data'],
+          )!,
+      senderPublicKey:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}sender_public_key'],
+          )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      expiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}expires_at'],
+      ),
+      status:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}status'],
+          )!,
+    );
+  }
+
+  @override
+  $SharedItemsTable createAlias(String alias) {
+    return $SharedItemsTable(attachedDatabase, alias);
+  }
+}
+
+class SharedItem extends DataClass implements Insertable<SharedItem> {
+  /// PocketBase record ID
+  final String id;
+
+  /// ID of the user who shared the item
+  final String senderId;
+
+  /// ID of the user receiving the shared item
+  final String recipientId;
+
+  /// Base64-encoded AES-256-GCM encrypted item data
+  final String encryptedData;
+
+  /// Base64-encoded X25519 public key of the sender
+  final String senderPublicKey;
+
+  /// When the share was created
+  final DateTime createdAt;
+
+  /// Optional expiration time
+  final DateTime? expiresAt;
+
+  /// Share status: pending, accepted, declined
+  final String status;
+  const SharedItem({
+    required this.id,
+    required this.senderId,
+    required this.recipientId,
+    required this.encryptedData,
+    required this.senderPublicKey,
+    required this.createdAt,
+    this.expiresAt,
+    required this.status,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['sender_id'] = Variable<String>(senderId);
+    map['recipient_id'] = Variable<String>(recipientId);
+    map['encrypted_data'] = Variable<String>(encryptedData);
+    map['sender_public_key'] = Variable<String>(senderPublicKey);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || expiresAt != null) {
+      map['expires_at'] = Variable<DateTime>(expiresAt);
+    }
+    map['status'] = Variable<String>(status);
+    return map;
+  }
+
+  SharedItemsCompanion toCompanion(bool nullToAbsent) {
+    return SharedItemsCompanion(
+      id: Value(id),
+      senderId: Value(senderId),
+      recipientId: Value(recipientId),
+      encryptedData: Value(encryptedData),
+      senderPublicKey: Value(senderPublicKey),
+      createdAt: Value(createdAt),
+      expiresAt:
+          expiresAt == null && nullToAbsent
+              ? const Value.absent()
+              : Value(expiresAt),
+      status: Value(status),
+    );
+  }
+
+  factory SharedItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SharedItem(
+      id: serializer.fromJson<String>(json['id']),
+      senderId: serializer.fromJson<String>(json['senderId']),
+      recipientId: serializer.fromJson<String>(json['recipientId']),
+      encryptedData: serializer.fromJson<String>(json['encryptedData']),
+      senderPublicKey: serializer.fromJson<String>(json['senderPublicKey']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      expiresAt: serializer.fromJson<DateTime?>(json['expiresAt']),
+      status: serializer.fromJson<String>(json['status']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'senderId': serializer.toJson<String>(senderId),
+      'recipientId': serializer.toJson<String>(recipientId),
+      'encryptedData': serializer.toJson<String>(encryptedData),
+      'senderPublicKey': serializer.toJson<String>(senderPublicKey),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'expiresAt': serializer.toJson<DateTime?>(expiresAt),
+      'status': serializer.toJson<String>(status),
+    };
+  }
+
+  SharedItem copyWith({
+    String? id,
+    String? senderId,
+    String? recipientId,
+    String? encryptedData,
+    String? senderPublicKey,
+    DateTime? createdAt,
+    Value<DateTime?> expiresAt = const Value.absent(),
+    String? status,
+  }) => SharedItem(
+    id: id ?? this.id,
+    senderId: senderId ?? this.senderId,
+    recipientId: recipientId ?? this.recipientId,
+    encryptedData: encryptedData ?? this.encryptedData,
+    senderPublicKey: senderPublicKey ?? this.senderPublicKey,
+    createdAt: createdAt ?? this.createdAt,
+    expiresAt: expiresAt.present ? expiresAt.value : this.expiresAt,
+    status: status ?? this.status,
+  );
+  SharedItem copyWithCompanion(SharedItemsCompanion data) {
+    return SharedItem(
+      id: data.id.present ? data.id.value : this.id,
+      senderId: data.senderId.present ? data.senderId.value : this.senderId,
+      recipientId:
+          data.recipientId.present ? data.recipientId.value : this.recipientId,
+      encryptedData:
+          data.encryptedData.present
+              ? data.encryptedData.value
+              : this.encryptedData,
+      senderPublicKey:
+          data.senderPublicKey.present
+              ? data.senderPublicKey.value
+              : this.senderPublicKey,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+      status: data.status.present ? data.status.value : this.status,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SharedItem(')
+          ..write('id: $id, ')
+          ..write('senderId: $senderId, ')
+          ..write('recipientId: $recipientId, ')
+          ..write('encryptedData: $encryptedData, ')
+          ..write('senderPublicKey: $senderPublicKey, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('status: $status')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    senderId,
+    recipientId,
+    encryptedData,
+    senderPublicKey,
+    createdAt,
+    expiresAt,
+    status,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SharedItem &&
+          other.id == this.id &&
+          other.senderId == this.senderId &&
+          other.recipientId == this.recipientId &&
+          other.encryptedData == this.encryptedData &&
+          other.senderPublicKey == this.senderPublicKey &&
+          other.createdAt == this.createdAt &&
+          other.expiresAt == this.expiresAt &&
+          other.status == this.status);
+}
+
+class SharedItemsCompanion extends UpdateCompanion<SharedItem> {
+  final Value<String> id;
+  final Value<String> senderId;
+  final Value<String> recipientId;
+  final Value<String> encryptedData;
+  final Value<String> senderPublicKey;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> expiresAt;
+  final Value<String> status;
+  final Value<int> rowid;
+  const SharedItemsCompanion({
+    this.id = const Value.absent(),
+    this.senderId = const Value.absent(),
+    this.recipientId = const Value.absent(),
+    this.encryptedData = const Value.absent(),
+    this.senderPublicKey = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.status = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SharedItemsCompanion.insert({
+    required String id,
+    required String senderId,
+    required String recipientId,
+    required String encryptedData,
+    required String senderPublicKey,
+    required DateTime createdAt,
+    this.expiresAt = const Value.absent(),
+    this.status = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       senderId = Value(senderId),
+       recipientId = Value(recipientId),
+       encryptedData = Value(encryptedData),
+       senderPublicKey = Value(senderPublicKey),
+       createdAt = Value(createdAt);
+  static Insertable<SharedItem> custom({
+    Expression<String>? id,
+    Expression<String>? senderId,
+    Expression<String>? recipientId,
+    Expression<String>? encryptedData,
+    Expression<String>? senderPublicKey,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? expiresAt,
+    Expression<String>? status,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (senderId != null) 'sender_id': senderId,
+      if (recipientId != null) 'recipient_id': recipientId,
+      if (encryptedData != null) 'encrypted_data': encryptedData,
+      if (senderPublicKey != null) 'sender_public_key': senderPublicKey,
+      if (createdAt != null) 'created_at': createdAt,
+      if (expiresAt != null) 'expires_at': expiresAt,
+      if (status != null) 'status': status,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SharedItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? senderId,
+    Value<String>? recipientId,
+    Value<String>? encryptedData,
+    Value<String>? senderPublicKey,
+    Value<DateTime>? createdAt,
+    Value<DateTime?>? expiresAt,
+    Value<String>? status,
+    Value<int>? rowid,
+  }) {
+    return SharedItemsCompanion(
+      id: id ?? this.id,
+      senderId: senderId ?? this.senderId,
+      recipientId: recipientId ?? this.recipientId,
+      encryptedData: encryptedData ?? this.encryptedData,
+      senderPublicKey: senderPublicKey ?? this.senderPublicKey,
+      createdAt: createdAt ?? this.createdAt,
+      expiresAt: expiresAt ?? this.expiresAt,
+      status: status ?? this.status,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (senderId.present) {
+      map['sender_id'] = Variable<String>(senderId.value);
+    }
+    if (recipientId.present) {
+      map['recipient_id'] = Variable<String>(recipientId.value);
+    }
+    if (encryptedData.present) {
+      map['encrypted_data'] = Variable<String>(encryptedData.value);
+    }
+    if (senderPublicKey.present) {
+      map['sender_public_key'] = Variable<String>(senderPublicKey.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SharedItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('senderId: $senderId, ')
+          ..write('recipientId: $recipientId, ')
+          ..write('encryptedData: $encryptedData, ')
+          ..write('senderPublicKey: $senderPublicKey, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('status: $status, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $VaultMembersTable extends VaultMembers
+    with TableInfo<$VaultMembersTable, VaultMember> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VaultMembersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _vaultIdMeta = const VerificationMeta(
+    'vaultId',
+  );
+  @override
+  late final GeneratedColumn<String> vaultId = GeneratedColumn<String>(
+    'vault_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('viewer'),
+  );
+  static const VerificationMeta _encryptedVaultKeyMeta = const VerificationMeta(
+    'encryptedVaultKey',
+  );
+  @override
+  late final GeneratedColumn<String> encryptedVaultKey =
+      GeneratedColumn<String>(
+        'encrypted_vault_key',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _ownerPublicKeyMeta = const VerificationMeta(
+    'ownerPublicKey',
+  );
+  @override
+  late final GeneratedColumn<String> ownerPublicKey = GeneratedColumn<String>(
+    'owner_public_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _invitedAtMeta = const VerificationMeta(
+    'invitedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> invitedAt = GeneratedColumn<DateTime>(
+    'invited_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _acceptedAtMeta = const VerificationMeta(
+    'acceptedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> acceptedAt = GeneratedColumn<DateTime>(
+    'accepted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    vaultId,
+    userId,
+    role,
+    encryptedVaultKey,
+    ownerPublicKey,
+    invitedAt,
+    acceptedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'vault_members';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VaultMember> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('vault_id')) {
+      context.handle(
+        _vaultIdMeta,
+        vaultId.isAcceptableOrUnknown(data['vault_id']!, _vaultIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_vaultIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
+    }
+    if (data.containsKey('encrypted_vault_key')) {
+      context.handle(
+        _encryptedVaultKeyMeta,
+        encryptedVaultKey.isAcceptableOrUnknown(
+          data['encrypted_vault_key']!,
+          _encryptedVaultKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_encryptedVaultKeyMeta);
+    }
+    if (data.containsKey('owner_public_key')) {
+      context.handle(
+        _ownerPublicKeyMeta,
+        ownerPublicKey.isAcceptableOrUnknown(
+          data['owner_public_key']!,
+          _ownerPublicKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerPublicKeyMeta);
+    }
+    if (data.containsKey('invited_at')) {
+      context.handle(
+        _invitedAtMeta,
+        invitedAt.isAcceptableOrUnknown(data['invited_at']!, _invitedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_invitedAtMeta);
+    }
+    if (data.containsKey('accepted_at')) {
+      context.handle(
+        _acceptedAtMeta,
+        acceptedAt.isAcceptableOrUnknown(data['accepted_at']!, _acceptedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VaultMember map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VaultMember(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      vaultId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}vault_id'],
+          )!,
+      userId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}user_id'],
+          )!,
+      role:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}role'],
+          )!,
+      encryptedVaultKey:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}encrypted_vault_key'],
+          )!,
+      ownerPublicKey:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}owner_public_key'],
+          )!,
+      invitedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}invited_at'],
+          )!,
+      acceptedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}accepted_at'],
+      ),
+    );
+  }
+
+  @override
+  $VaultMembersTable createAlias(String alias) {
+    return $VaultMembersTable(attachedDatabase, alias);
+  }
+}
+
+class VaultMember extends DataClass implements Insertable<VaultMember> {
+  /// PocketBase record ID
+  final String id;
+
+  /// ID of the shared vault
+  final String vaultId;
+
+  /// ID of the member user
+  final String userId;
+
+  /// Role in the vault: owner, editor, viewer
+  final String role;
+
+  /// Base64-encoded vault key encrypted with X25519 shared secret
+  final String encryptedVaultKey;
+
+  /// Base64-encoded X25519 public key of the vault owner
+  final String ownerPublicKey;
+
+  /// When the invitation was sent
+  final DateTime invitedAt;
+
+  /// When the member accepted (null if pending)
+  final DateTime? acceptedAt;
+  const VaultMember({
+    required this.id,
+    required this.vaultId,
+    required this.userId,
+    required this.role,
+    required this.encryptedVaultKey,
+    required this.ownerPublicKey,
+    required this.invitedAt,
+    this.acceptedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['vault_id'] = Variable<String>(vaultId);
+    map['user_id'] = Variable<String>(userId);
+    map['role'] = Variable<String>(role);
+    map['encrypted_vault_key'] = Variable<String>(encryptedVaultKey);
+    map['owner_public_key'] = Variable<String>(ownerPublicKey);
+    map['invited_at'] = Variable<DateTime>(invitedAt);
+    if (!nullToAbsent || acceptedAt != null) {
+      map['accepted_at'] = Variable<DateTime>(acceptedAt);
+    }
+    return map;
+  }
+
+  VaultMembersCompanion toCompanion(bool nullToAbsent) {
+    return VaultMembersCompanion(
+      id: Value(id),
+      vaultId: Value(vaultId),
+      userId: Value(userId),
+      role: Value(role),
+      encryptedVaultKey: Value(encryptedVaultKey),
+      ownerPublicKey: Value(ownerPublicKey),
+      invitedAt: Value(invitedAt),
+      acceptedAt:
+          acceptedAt == null && nullToAbsent
+              ? const Value.absent()
+              : Value(acceptedAt),
+    );
+  }
+
+  factory VaultMember.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VaultMember(
+      id: serializer.fromJson<String>(json['id']),
+      vaultId: serializer.fromJson<String>(json['vaultId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      role: serializer.fromJson<String>(json['role']),
+      encryptedVaultKey: serializer.fromJson<String>(json['encryptedVaultKey']),
+      ownerPublicKey: serializer.fromJson<String>(json['ownerPublicKey']),
+      invitedAt: serializer.fromJson<DateTime>(json['invitedAt']),
+      acceptedAt: serializer.fromJson<DateTime?>(json['acceptedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'vaultId': serializer.toJson<String>(vaultId),
+      'userId': serializer.toJson<String>(userId),
+      'role': serializer.toJson<String>(role),
+      'encryptedVaultKey': serializer.toJson<String>(encryptedVaultKey),
+      'ownerPublicKey': serializer.toJson<String>(ownerPublicKey),
+      'invitedAt': serializer.toJson<DateTime>(invitedAt),
+      'acceptedAt': serializer.toJson<DateTime?>(acceptedAt),
+    };
+  }
+
+  VaultMember copyWith({
+    String? id,
+    String? vaultId,
+    String? userId,
+    String? role,
+    String? encryptedVaultKey,
+    String? ownerPublicKey,
+    DateTime? invitedAt,
+    Value<DateTime?> acceptedAt = const Value.absent(),
+  }) => VaultMember(
+    id: id ?? this.id,
+    vaultId: vaultId ?? this.vaultId,
+    userId: userId ?? this.userId,
+    role: role ?? this.role,
+    encryptedVaultKey: encryptedVaultKey ?? this.encryptedVaultKey,
+    ownerPublicKey: ownerPublicKey ?? this.ownerPublicKey,
+    invitedAt: invitedAt ?? this.invitedAt,
+    acceptedAt: acceptedAt.present ? acceptedAt.value : this.acceptedAt,
+  );
+  VaultMember copyWithCompanion(VaultMembersCompanion data) {
+    return VaultMember(
+      id: data.id.present ? data.id.value : this.id,
+      vaultId: data.vaultId.present ? data.vaultId.value : this.vaultId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      role: data.role.present ? data.role.value : this.role,
+      encryptedVaultKey:
+          data.encryptedVaultKey.present
+              ? data.encryptedVaultKey.value
+              : this.encryptedVaultKey,
+      ownerPublicKey:
+          data.ownerPublicKey.present
+              ? data.ownerPublicKey.value
+              : this.ownerPublicKey,
+      invitedAt: data.invitedAt.present ? data.invitedAt.value : this.invitedAt,
+      acceptedAt:
+          data.acceptedAt.present ? data.acceptedAt.value : this.acceptedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VaultMember(')
+          ..write('id: $id, ')
+          ..write('vaultId: $vaultId, ')
+          ..write('userId: $userId, ')
+          ..write('role: $role, ')
+          ..write('encryptedVaultKey: $encryptedVaultKey, ')
+          ..write('ownerPublicKey: $ownerPublicKey, ')
+          ..write('invitedAt: $invitedAt, ')
+          ..write('acceptedAt: $acceptedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    vaultId,
+    userId,
+    role,
+    encryptedVaultKey,
+    ownerPublicKey,
+    invitedAt,
+    acceptedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VaultMember &&
+          other.id == this.id &&
+          other.vaultId == this.vaultId &&
+          other.userId == this.userId &&
+          other.role == this.role &&
+          other.encryptedVaultKey == this.encryptedVaultKey &&
+          other.ownerPublicKey == this.ownerPublicKey &&
+          other.invitedAt == this.invitedAt &&
+          other.acceptedAt == this.acceptedAt);
+}
+
+class VaultMembersCompanion extends UpdateCompanion<VaultMember> {
+  final Value<String> id;
+  final Value<String> vaultId;
+  final Value<String> userId;
+  final Value<String> role;
+  final Value<String> encryptedVaultKey;
+  final Value<String> ownerPublicKey;
+  final Value<DateTime> invitedAt;
+  final Value<DateTime?> acceptedAt;
+  final Value<int> rowid;
+  const VaultMembersCompanion({
+    this.id = const Value.absent(),
+    this.vaultId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.role = const Value.absent(),
+    this.encryptedVaultKey = const Value.absent(),
+    this.ownerPublicKey = const Value.absent(),
+    this.invitedAt = const Value.absent(),
+    this.acceptedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VaultMembersCompanion.insert({
+    required String id,
+    required String vaultId,
+    required String userId,
+    this.role = const Value.absent(),
+    required String encryptedVaultKey,
+    required String ownerPublicKey,
+    required DateTime invitedAt,
+    this.acceptedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       vaultId = Value(vaultId),
+       userId = Value(userId),
+       encryptedVaultKey = Value(encryptedVaultKey),
+       ownerPublicKey = Value(ownerPublicKey),
+       invitedAt = Value(invitedAt);
+  static Insertable<VaultMember> custom({
+    Expression<String>? id,
+    Expression<String>? vaultId,
+    Expression<String>? userId,
+    Expression<String>? role,
+    Expression<String>? encryptedVaultKey,
+    Expression<String>? ownerPublicKey,
+    Expression<DateTime>? invitedAt,
+    Expression<DateTime>? acceptedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (vaultId != null) 'vault_id': vaultId,
+      if (userId != null) 'user_id': userId,
+      if (role != null) 'role': role,
+      if (encryptedVaultKey != null) 'encrypted_vault_key': encryptedVaultKey,
+      if (ownerPublicKey != null) 'owner_public_key': ownerPublicKey,
+      if (invitedAt != null) 'invited_at': invitedAt,
+      if (acceptedAt != null) 'accepted_at': acceptedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VaultMembersCompanion copyWith({
+    Value<String>? id,
+    Value<String>? vaultId,
+    Value<String>? userId,
+    Value<String>? role,
+    Value<String>? encryptedVaultKey,
+    Value<String>? ownerPublicKey,
+    Value<DateTime>? invitedAt,
+    Value<DateTime?>? acceptedAt,
+    Value<int>? rowid,
+  }) {
+    return VaultMembersCompanion(
+      id: id ?? this.id,
+      vaultId: vaultId ?? this.vaultId,
+      userId: userId ?? this.userId,
+      role: role ?? this.role,
+      encryptedVaultKey: encryptedVaultKey ?? this.encryptedVaultKey,
+      ownerPublicKey: ownerPublicKey ?? this.ownerPublicKey,
+      invitedAt: invitedAt ?? this.invitedAt,
+      acceptedAt: acceptedAt ?? this.acceptedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (vaultId.present) {
+      map['vault_id'] = Variable<String>(vaultId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (encryptedVaultKey.present) {
+      map['encrypted_vault_key'] = Variable<String>(encryptedVaultKey.value);
+    }
+    if (ownerPublicKey.present) {
+      map['owner_public_key'] = Variable<String>(ownerPublicKey.value);
+    }
+    if (invitedAt.present) {
+      map['invited_at'] = Variable<DateTime>(invitedAt.value);
+    }
+    if (acceptedAt.present) {
+      map['accepted_at'] = Variable<DateTime>(acceptedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VaultMembersCompanion(')
+          ..write('id: $id, ')
+          ..write('vaultId: $vaultId, ')
+          ..write('userId: $userId, ')
+          ..write('role: $role, ')
+          ..write('encryptedVaultKey: $encryptedVaultKey, ')
+          ..write('ownerPublicKey: $ownerPublicKey, ')
+          ..write('invitedAt: $invitedAt, ')
+          ..write('acceptedAt: $acceptedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $EmergencyContactsTable extends EmergencyContacts
+    with TableInfo<$EmergencyContactsTable, EmergencyContact> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EmergencyContactsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _grantorIdMeta = const VerificationMeta(
+    'grantorId',
+  );
+  @override
+  late final GeneratedColumn<String> grantorId = GeneratedColumn<String>(
+    'grantor_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _granteeIdMeta = const VerificationMeta(
+    'granteeId',
+  );
+  @override
+  late final GeneratedColumn<String> granteeId = GeneratedColumn<String>(
+    'grantee_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _waitingPeriodDaysMeta = const VerificationMeta(
+    'waitingPeriodDays',
+  );
+  @override
+  late final GeneratedColumn<int> waitingPeriodDays = GeneratedColumn<int>(
+    'waiting_period_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(7),
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _encryptedVaultKeyMeta = const VerificationMeta(
+    'encryptedVaultKey',
+  );
+  @override
+  late final GeneratedColumn<String> encryptedVaultKey =
+      GeneratedColumn<String>(
+        'encrypted_vault_key',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _granteePublicKeyMeta = const VerificationMeta(
+    'granteePublicKey',
+  );
+  @override
+  late final GeneratedColumn<String> granteePublicKey = GeneratedColumn<String>(
+    'grantee_public_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _requestedAtMeta = const VerificationMeta(
+    'requestedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> requestedAt = GeneratedColumn<DateTime>(
+    'requested_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    grantorId,
+    granteeId,
+    waitingPeriodDays,
+    status,
+    encryptedVaultKey,
+    granteePublicKey,
+    requestedAt,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'emergency_contacts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EmergencyContact> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('grantor_id')) {
+      context.handle(
+        _grantorIdMeta,
+        grantorId.isAcceptableOrUnknown(data['grantor_id']!, _grantorIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_grantorIdMeta);
+    }
+    if (data.containsKey('grantee_id')) {
+      context.handle(
+        _granteeIdMeta,
+        granteeId.isAcceptableOrUnknown(data['grantee_id']!, _granteeIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_granteeIdMeta);
+    }
+    if (data.containsKey('waiting_period_days')) {
+      context.handle(
+        _waitingPeriodDaysMeta,
+        waitingPeriodDays.isAcceptableOrUnknown(
+          data['waiting_period_days']!,
+          _waitingPeriodDaysMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('encrypted_vault_key')) {
+      context.handle(
+        _encryptedVaultKeyMeta,
+        encryptedVaultKey.isAcceptableOrUnknown(
+          data['encrypted_vault_key']!,
+          _encryptedVaultKeyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('grantee_public_key')) {
+      context.handle(
+        _granteePublicKeyMeta,
+        granteePublicKey.isAcceptableOrUnknown(
+          data['grantee_public_key']!,
+          _granteePublicKeyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('requested_at')) {
+      context.handle(
+        _requestedAtMeta,
+        requestedAt.isAcceptableOrUnknown(
+          data['requested_at']!,
+          _requestedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  EmergencyContact map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EmergencyContact(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      grantorId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}grantor_id'],
+          )!,
+      granteeId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}grantee_id'],
+          )!,
+      waitingPeriodDays:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}waiting_period_days'],
+          )!,
+      status:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}status'],
+          )!,
+      encryptedVaultKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}encrypted_vault_key'],
+      ),
+      granteePublicKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}grantee_public_key'],
+      ),
+      requestedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}requested_at'],
+      ),
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+    );
+  }
+
+  @override
+  $EmergencyContactsTable createAlias(String alias) {
+    return $EmergencyContactsTable(attachedDatabase, alias);
+  }
+}
+
+class EmergencyContact extends DataClass
+    implements Insertable<EmergencyContact> {
+  /// PocketBase record ID
+  final String id;
+
+  /// ID of the user granting emergency access
+  final String grantorId;
+
+  /// ID of the trusted person who can request access
+  final String granteeId;
+
+  /// Days the grantor has to reject before access is granted (1-30)
+  final int waitingPeriodDays;
+
+  /// Status: pending, active, waiting, rejected, revoked
+  final String status;
+
+  /// Base64-encoded vault key (only populated after waiting period elapses)
+  final String? encryptedVaultKey;
+
+  /// Base64-encoded X25519 public key of the grantee
+  final String? granteePublicKey;
+
+  /// When the grantee requested emergency access
+  final DateTime? requestedAt;
+
+  /// When the emergency contact relationship was created
+  final DateTime createdAt;
+  const EmergencyContact({
+    required this.id,
+    required this.grantorId,
+    required this.granteeId,
+    required this.waitingPeriodDays,
+    required this.status,
+    this.encryptedVaultKey,
+    this.granteePublicKey,
+    this.requestedAt,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['grantor_id'] = Variable<String>(grantorId);
+    map['grantee_id'] = Variable<String>(granteeId);
+    map['waiting_period_days'] = Variable<int>(waitingPeriodDays);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || encryptedVaultKey != null) {
+      map['encrypted_vault_key'] = Variable<String>(encryptedVaultKey);
+    }
+    if (!nullToAbsent || granteePublicKey != null) {
+      map['grantee_public_key'] = Variable<String>(granteePublicKey);
+    }
+    if (!nullToAbsent || requestedAt != null) {
+      map['requested_at'] = Variable<DateTime>(requestedAt);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  EmergencyContactsCompanion toCompanion(bool nullToAbsent) {
+    return EmergencyContactsCompanion(
+      id: Value(id),
+      grantorId: Value(grantorId),
+      granteeId: Value(granteeId),
+      waitingPeriodDays: Value(waitingPeriodDays),
+      status: Value(status),
+      encryptedVaultKey:
+          encryptedVaultKey == null && nullToAbsent
+              ? const Value.absent()
+              : Value(encryptedVaultKey),
+      granteePublicKey:
+          granteePublicKey == null && nullToAbsent
+              ? const Value.absent()
+              : Value(granteePublicKey),
+      requestedAt:
+          requestedAt == null && nullToAbsent
+              ? const Value.absent()
+              : Value(requestedAt),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory EmergencyContact.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EmergencyContact(
+      id: serializer.fromJson<String>(json['id']),
+      grantorId: serializer.fromJson<String>(json['grantorId']),
+      granteeId: serializer.fromJson<String>(json['granteeId']),
+      waitingPeriodDays: serializer.fromJson<int>(json['waitingPeriodDays']),
+      status: serializer.fromJson<String>(json['status']),
+      encryptedVaultKey: serializer.fromJson<String?>(
+        json['encryptedVaultKey'],
+      ),
+      granteePublicKey: serializer.fromJson<String?>(json['granteePublicKey']),
+      requestedAt: serializer.fromJson<DateTime?>(json['requestedAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'grantorId': serializer.toJson<String>(grantorId),
+      'granteeId': serializer.toJson<String>(granteeId),
+      'waitingPeriodDays': serializer.toJson<int>(waitingPeriodDays),
+      'status': serializer.toJson<String>(status),
+      'encryptedVaultKey': serializer.toJson<String?>(encryptedVaultKey),
+      'granteePublicKey': serializer.toJson<String?>(granteePublicKey),
+      'requestedAt': serializer.toJson<DateTime?>(requestedAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  EmergencyContact copyWith({
+    String? id,
+    String? grantorId,
+    String? granteeId,
+    int? waitingPeriodDays,
+    String? status,
+    Value<String?> encryptedVaultKey = const Value.absent(),
+    Value<String?> granteePublicKey = const Value.absent(),
+    Value<DateTime?> requestedAt = const Value.absent(),
+    DateTime? createdAt,
+  }) => EmergencyContact(
+    id: id ?? this.id,
+    grantorId: grantorId ?? this.grantorId,
+    granteeId: granteeId ?? this.granteeId,
+    waitingPeriodDays: waitingPeriodDays ?? this.waitingPeriodDays,
+    status: status ?? this.status,
+    encryptedVaultKey:
+        encryptedVaultKey.present
+            ? encryptedVaultKey.value
+            : this.encryptedVaultKey,
+    granteePublicKey:
+        granteePublicKey.present
+            ? granteePublicKey.value
+            : this.granteePublicKey,
+    requestedAt: requestedAt.present ? requestedAt.value : this.requestedAt,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  EmergencyContact copyWithCompanion(EmergencyContactsCompanion data) {
+    return EmergencyContact(
+      id: data.id.present ? data.id.value : this.id,
+      grantorId: data.grantorId.present ? data.grantorId.value : this.grantorId,
+      granteeId: data.granteeId.present ? data.granteeId.value : this.granteeId,
+      waitingPeriodDays:
+          data.waitingPeriodDays.present
+              ? data.waitingPeriodDays.value
+              : this.waitingPeriodDays,
+      status: data.status.present ? data.status.value : this.status,
+      encryptedVaultKey:
+          data.encryptedVaultKey.present
+              ? data.encryptedVaultKey.value
+              : this.encryptedVaultKey,
+      granteePublicKey:
+          data.granteePublicKey.present
+              ? data.granteePublicKey.value
+              : this.granteePublicKey,
+      requestedAt:
+          data.requestedAt.present ? data.requestedAt.value : this.requestedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EmergencyContact(')
+          ..write('id: $id, ')
+          ..write('grantorId: $grantorId, ')
+          ..write('granteeId: $granteeId, ')
+          ..write('waitingPeriodDays: $waitingPeriodDays, ')
+          ..write('status: $status, ')
+          ..write('encryptedVaultKey: $encryptedVaultKey, ')
+          ..write('granteePublicKey: $granteePublicKey, ')
+          ..write('requestedAt: $requestedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    grantorId,
+    granteeId,
+    waitingPeriodDays,
+    status,
+    encryptedVaultKey,
+    granteePublicKey,
+    requestedAt,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EmergencyContact &&
+          other.id == this.id &&
+          other.grantorId == this.grantorId &&
+          other.granteeId == this.granteeId &&
+          other.waitingPeriodDays == this.waitingPeriodDays &&
+          other.status == this.status &&
+          other.encryptedVaultKey == this.encryptedVaultKey &&
+          other.granteePublicKey == this.granteePublicKey &&
+          other.requestedAt == this.requestedAt &&
+          other.createdAt == this.createdAt);
+}
+
+class EmergencyContactsCompanion extends UpdateCompanion<EmergencyContact> {
+  final Value<String> id;
+  final Value<String> grantorId;
+  final Value<String> granteeId;
+  final Value<int> waitingPeriodDays;
+  final Value<String> status;
+  final Value<String?> encryptedVaultKey;
+  final Value<String?> granteePublicKey;
+  final Value<DateTime?> requestedAt;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const EmergencyContactsCompanion({
+    this.id = const Value.absent(),
+    this.grantorId = const Value.absent(),
+    this.granteeId = const Value.absent(),
+    this.waitingPeriodDays = const Value.absent(),
+    this.status = const Value.absent(),
+    this.encryptedVaultKey = const Value.absent(),
+    this.granteePublicKey = const Value.absent(),
+    this.requestedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EmergencyContactsCompanion.insert({
+    required String id,
+    required String grantorId,
+    required String granteeId,
+    this.waitingPeriodDays = const Value.absent(),
+    this.status = const Value.absent(),
+    this.encryptedVaultKey = const Value.absent(),
+    this.granteePublicKey = const Value.absent(),
+    this.requestedAt = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       grantorId = Value(grantorId),
+       granteeId = Value(granteeId),
+       createdAt = Value(createdAt);
+  static Insertable<EmergencyContact> custom({
+    Expression<String>? id,
+    Expression<String>? grantorId,
+    Expression<String>? granteeId,
+    Expression<int>? waitingPeriodDays,
+    Expression<String>? status,
+    Expression<String>? encryptedVaultKey,
+    Expression<String>? granteePublicKey,
+    Expression<DateTime>? requestedAt,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (grantorId != null) 'grantor_id': grantorId,
+      if (granteeId != null) 'grantee_id': granteeId,
+      if (waitingPeriodDays != null) 'waiting_period_days': waitingPeriodDays,
+      if (status != null) 'status': status,
+      if (encryptedVaultKey != null) 'encrypted_vault_key': encryptedVaultKey,
+      if (granteePublicKey != null) 'grantee_public_key': granteePublicKey,
+      if (requestedAt != null) 'requested_at': requestedAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EmergencyContactsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? grantorId,
+    Value<String>? granteeId,
+    Value<int>? waitingPeriodDays,
+    Value<String>? status,
+    Value<String?>? encryptedVaultKey,
+    Value<String?>? granteePublicKey,
+    Value<DateTime?>? requestedAt,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return EmergencyContactsCompanion(
+      id: id ?? this.id,
+      grantorId: grantorId ?? this.grantorId,
+      granteeId: granteeId ?? this.granteeId,
+      waitingPeriodDays: waitingPeriodDays ?? this.waitingPeriodDays,
+      status: status ?? this.status,
+      encryptedVaultKey: encryptedVaultKey ?? this.encryptedVaultKey,
+      granteePublicKey: granteePublicKey ?? this.granteePublicKey,
+      requestedAt: requestedAt ?? this.requestedAt,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (grantorId.present) {
+      map['grantor_id'] = Variable<String>(grantorId.value);
+    }
+    if (granteeId.present) {
+      map['grantee_id'] = Variable<String>(granteeId.value);
+    }
+    if (waitingPeriodDays.present) {
+      map['waiting_period_days'] = Variable<int>(waitingPeriodDays.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (encryptedVaultKey.present) {
+      map['encrypted_vault_key'] = Variable<String>(encryptedVaultKey.value);
+    }
+    if (granteePublicKey.present) {
+      map['grantee_public_key'] = Variable<String>(granteePublicKey.value);
+    }
+    if (requestedAt.present) {
+      map['requested_at'] = Variable<DateTime>(requestedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EmergencyContactsCompanion(')
+          ..write('id: $id, ')
+          ..write('grantorId: $grantorId, ')
+          ..write('granteeId: $granteeId, ')
+          ..write('waitingPeriodDays: $waitingPeriodDays, ')
+          ..write('status: $status, ')
+          ..write('encryptedVaultKey: $encryptedVaultKey, ')
+          ..write('granteePublicKey: $granteePublicKey, ')
+          ..write('requestedAt: $requestedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $NotificationRecordsTable extends NotificationRecords
+    with TableInfo<$NotificationRecordsTable, NotificationRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NotificationRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _referenceIdMeta = const VerificationMeta(
+    'referenceId',
+  );
+  @override
+  late final GeneratedColumn<String> referenceId = GeneratedColumn<String>(
+    'reference_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _readMeta = const VerificationMeta('read');
+  @override
+  late final GeneratedColumn<bool> read = GeneratedColumn<bool>(
+    'read',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("read" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    type,
+    title,
+    body,
+    referenceId,
+    read,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'notification_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NotificationRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('reference_id')) {
+      context.handle(
+        _referenceIdMeta,
+        referenceId.isAcceptableOrUnknown(
+          data['reference_id']!,
+          _referenceIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('read')) {
+      context.handle(
+        _readMeta,
+        read.isAcceptableOrUnknown(data['read']!, _readMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NotificationRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NotificationRecord(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      type:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}type'],
+          )!,
+      title:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}title'],
+          )!,
+      body:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}body'],
+          )!,
+      referenceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reference_id'],
+      ),
+      read:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}read'],
+          )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+    );
+  }
+
+  @override
+  $NotificationRecordsTable createAlias(String alias) {
+    return $NotificationRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class NotificationRecord extends DataClass
+    implements Insertable<NotificationRecord> {
+  /// Unique notification ID
+  final String id;
+
+  /// Notification type: breach_alert, emergency_request, emergency_approved,
+  /// emergency_rejected, shared_item, expiry_reminder
+  final String type;
+
+  /// Human-readable notification title
+  final String title;
+
+  /// Human-readable notification body
+  final String body;
+
+  /// Optional reference to a source record (shared item ID, breach ID, etc.)
+  final String? referenceId;
+
+  /// Whether the user has read this notification
+  final bool read;
+
+  /// When the notification was created
+  final DateTime createdAt;
+  const NotificationRecord({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.body,
+    this.referenceId,
+    required this.read,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['type'] = Variable<String>(type);
+    map['title'] = Variable<String>(title);
+    map['body'] = Variable<String>(body);
+    if (!nullToAbsent || referenceId != null) {
+      map['reference_id'] = Variable<String>(referenceId);
+    }
+    map['read'] = Variable<bool>(read);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  NotificationRecordsCompanion toCompanion(bool nullToAbsent) {
+    return NotificationRecordsCompanion(
+      id: Value(id),
+      type: Value(type),
+      title: Value(title),
+      body: Value(body),
+      referenceId:
+          referenceId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(referenceId),
+      read: Value(read),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory NotificationRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NotificationRecord(
+      id: serializer.fromJson<String>(json['id']),
+      type: serializer.fromJson<String>(json['type']),
+      title: serializer.fromJson<String>(json['title']),
+      body: serializer.fromJson<String>(json['body']),
+      referenceId: serializer.fromJson<String?>(json['referenceId']),
+      read: serializer.fromJson<bool>(json['read']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'type': serializer.toJson<String>(type),
+      'title': serializer.toJson<String>(title),
+      'body': serializer.toJson<String>(body),
+      'referenceId': serializer.toJson<String?>(referenceId),
+      'read': serializer.toJson<bool>(read),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  NotificationRecord copyWith({
+    String? id,
+    String? type,
+    String? title,
+    String? body,
+    Value<String?> referenceId = const Value.absent(),
+    bool? read,
+    DateTime? createdAt,
+  }) => NotificationRecord(
+    id: id ?? this.id,
+    type: type ?? this.type,
+    title: title ?? this.title,
+    body: body ?? this.body,
+    referenceId: referenceId.present ? referenceId.value : this.referenceId,
+    read: read ?? this.read,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  NotificationRecord copyWithCompanion(NotificationRecordsCompanion data) {
+    return NotificationRecord(
+      id: data.id.present ? data.id.value : this.id,
+      type: data.type.present ? data.type.value : this.type,
+      title: data.title.present ? data.title.value : this.title,
+      body: data.body.present ? data.body.value : this.body,
+      referenceId:
+          data.referenceId.present ? data.referenceId.value : this.referenceId,
+      read: data.read.present ? data.read.value : this.read,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotificationRecord(')
+          ..write('id: $id, ')
+          ..write('type: $type, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('referenceId: $referenceId, ')
+          ..write('read: $read, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, type, title, body, referenceId, read, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NotificationRecord &&
+          other.id == this.id &&
+          other.type == this.type &&
+          other.title == this.title &&
+          other.body == this.body &&
+          other.referenceId == this.referenceId &&
+          other.read == this.read &&
+          other.createdAt == this.createdAt);
+}
+
+class NotificationRecordsCompanion extends UpdateCompanion<NotificationRecord> {
+  final Value<String> id;
+  final Value<String> type;
+  final Value<String> title;
+  final Value<String> body;
+  final Value<String?> referenceId;
+  final Value<bool> read;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const NotificationRecordsCompanion({
+    this.id = const Value.absent(),
+    this.type = const Value.absent(),
+    this.title = const Value.absent(),
+    this.body = const Value.absent(),
+    this.referenceId = const Value.absent(),
+    this.read = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NotificationRecordsCompanion.insert({
+    required String id,
+    required String type,
+    required String title,
+    required String body,
+    this.referenceId = const Value.absent(),
+    this.read = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       type = Value(type),
+       title = Value(title),
+       body = Value(body),
+       createdAt = Value(createdAt);
+  static Insertable<NotificationRecord> custom({
+    Expression<String>? id,
+    Expression<String>? type,
+    Expression<String>? title,
+    Expression<String>? body,
+    Expression<String>? referenceId,
+    Expression<bool>? read,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (type != null) 'type': type,
+      if (title != null) 'title': title,
+      if (body != null) 'body': body,
+      if (referenceId != null) 'reference_id': referenceId,
+      if (read != null) 'read': read,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NotificationRecordsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? type,
+    Value<String>? title,
+    Value<String>? body,
+    Value<String?>? referenceId,
+    Value<bool>? read,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return NotificationRecordsCompanion(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      referenceId: referenceId ?? this.referenceId,
+      read: read ?? this.read,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (referenceId.present) {
+      map['reference_id'] = Variable<String>(referenceId.value);
+    }
+    if (read.present) {
+      map['read'] = Variable<bool>(read.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotificationRecordsCompanion(')
+          ..write('id: $id, ')
+          ..write('type: $type, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('referenceId: $referenceId, ')
+          ..write('read: $read, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2999,6 +5183,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $AutofillIndexTable autofillIndex = $AutofillIndexTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
+  late final $SharedItemsTable sharedItems = $SharedItemsTable(this);
+  late final $VaultMembersTable vaultMembers = $VaultMembersTable(this);
+  late final $EmergencyContactsTable emergencyContacts =
+      $EmergencyContactsTable(this);
+  late final $NotificationRecordsTable notificationRecords =
+      $NotificationRecordsTable(this);
   late final VaultDao vaultDao = VaultDao(this as AppDatabase);
   late final SyncDao syncDao = SyncDao(this as AppDatabase);
   late final SettingsDao settingsDao = SettingsDao(this as AppDatabase);
@@ -3007,6 +5197,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final TotpDao totpDao = TotpDao(this as AppDatabase);
   late final AutofillIndexDao autofillIndexDao = AutofillIndexDao(
+    this as AppDatabase,
+  );
+  late final SharingDao sharingDao = SharingDao(this as AppDatabase);
+  late final NotificationDao notificationDao = NotificationDao(
     this as AppDatabase,
   );
   @override
@@ -3021,6 +5215,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     passwordHistory,
     autofillIndex,
     settings,
+    sharedItems,
+    vaultMembers,
+    emergencyContacts,
+    notificationRecords,
   ];
 }
 
@@ -5456,6 +7654,1124 @@ typedef $$SettingsTableProcessedTableManager =
       Setting,
       PrefetchHooks Function()
     >;
+typedef $$SharedItemsTableCreateCompanionBuilder =
+    SharedItemsCompanion Function({
+      required String id,
+      required String senderId,
+      required String recipientId,
+      required String encryptedData,
+      required String senderPublicKey,
+      required DateTime createdAt,
+      Value<DateTime?> expiresAt,
+      Value<String> status,
+      Value<int> rowid,
+    });
+typedef $$SharedItemsTableUpdateCompanionBuilder =
+    SharedItemsCompanion Function({
+      Value<String> id,
+      Value<String> senderId,
+      Value<String> recipientId,
+      Value<String> encryptedData,
+      Value<String> senderPublicKey,
+      Value<DateTime> createdAt,
+      Value<DateTime?> expiresAt,
+      Value<String> status,
+      Value<int> rowid,
+    });
+
+class $$SharedItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $SharedItemsTable> {
+  $$SharedItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get senderId => $composableBuilder(
+    column: $table.senderId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recipientId => $composableBuilder(
+    column: $table.recipientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get encryptedData => $composableBuilder(
+    column: $table.encryptedData,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get senderPublicKey => $composableBuilder(
+    column: $table.senderPublicKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SharedItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SharedItemsTable> {
+  $$SharedItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get senderId => $composableBuilder(
+    column: $table.senderId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recipientId => $composableBuilder(
+    column: $table.recipientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get encryptedData => $composableBuilder(
+    column: $table.encryptedData,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get senderPublicKey => $composableBuilder(
+    column: $table.senderPublicKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SharedItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SharedItemsTable> {
+  $$SharedItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get senderId =>
+      $composableBuilder(column: $table.senderId, builder: (column) => column);
+
+  GeneratedColumn<String> get recipientId => $composableBuilder(
+    column: $table.recipientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get encryptedData => $composableBuilder(
+    column: $table.encryptedData,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get senderPublicKey => $composableBuilder(
+    column: $table.senderPublicKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+}
+
+class $$SharedItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SharedItemsTable,
+          SharedItem,
+          $$SharedItemsTableFilterComposer,
+          $$SharedItemsTableOrderingComposer,
+          $$SharedItemsTableAnnotationComposer,
+          $$SharedItemsTableCreateCompanionBuilder,
+          $$SharedItemsTableUpdateCompanionBuilder,
+          (
+            SharedItem,
+            BaseReferences<_$AppDatabase, $SharedItemsTable, SharedItem>,
+          ),
+          SharedItem,
+          PrefetchHooks Function()
+        > {
+  $$SharedItemsTableTableManager(_$AppDatabase db, $SharedItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$SharedItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$SharedItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () =>
+                  $$SharedItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> senderId = const Value.absent(),
+                Value<String> recipientId = const Value.absent(),
+                Value<String> encryptedData = const Value.absent(),
+                Value<String> senderPublicKey = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> expiresAt = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SharedItemsCompanion(
+                id: id,
+                senderId: senderId,
+                recipientId: recipientId,
+                encryptedData: encryptedData,
+                senderPublicKey: senderPublicKey,
+                createdAt: createdAt,
+                expiresAt: expiresAt,
+                status: status,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String senderId,
+                required String recipientId,
+                required String encryptedData,
+                required String senderPublicKey,
+                required DateTime createdAt,
+                Value<DateTime?> expiresAt = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SharedItemsCompanion.insert(
+                id: id,
+                senderId: senderId,
+                recipientId: recipientId,
+                encryptedData: encryptedData,
+                senderPublicKey: senderPublicKey,
+                createdAt: createdAt,
+                expiresAt: expiresAt,
+                status: status,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SharedItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SharedItemsTable,
+      SharedItem,
+      $$SharedItemsTableFilterComposer,
+      $$SharedItemsTableOrderingComposer,
+      $$SharedItemsTableAnnotationComposer,
+      $$SharedItemsTableCreateCompanionBuilder,
+      $$SharedItemsTableUpdateCompanionBuilder,
+      (
+        SharedItem,
+        BaseReferences<_$AppDatabase, $SharedItemsTable, SharedItem>,
+      ),
+      SharedItem,
+      PrefetchHooks Function()
+    >;
+typedef $$VaultMembersTableCreateCompanionBuilder =
+    VaultMembersCompanion Function({
+      required String id,
+      required String vaultId,
+      required String userId,
+      Value<String> role,
+      required String encryptedVaultKey,
+      required String ownerPublicKey,
+      required DateTime invitedAt,
+      Value<DateTime?> acceptedAt,
+      Value<int> rowid,
+    });
+typedef $$VaultMembersTableUpdateCompanionBuilder =
+    VaultMembersCompanion Function({
+      Value<String> id,
+      Value<String> vaultId,
+      Value<String> userId,
+      Value<String> role,
+      Value<String> encryptedVaultKey,
+      Value<String> ownerPublicKey,
+      Value<DateTime> invitedAt,
+      Value<DateTime?> acceptedAt,
+      Value<int> rowid,
+    });
+
+class $$VaultMembersTableFilterComposer
+    extends Composer<_$AppDatabase, $VaultMembersTable> {
+  $$VaultMembersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get vaultId => $composableBuilder(
+    column: $table.vaultId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get encryptedVaultKey => $composableBuilder(
+    column: $table.encryptedVaultKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerPublicKey => $composableBuilder(
+    column: $table.ownerPublicKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get invitedAt => $composableBuilder(
+    column: $table.invitedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get acceptedAt => $composableBuilder(
+    column: $table.acceptedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$VaultMembersTableOrderingComposer
+    extends Composer<_$AppDatabase, $VaultMembersTable> {
+  $$VaultMembersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get vaultId => $composableBuilder(
+    column: $table.vaultId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get encryptedVaultKey => $composableBuilder(
+    column: $table.encryptedVaultKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerPublicKey => $composableBuilder(
+    column: $table.ownerPublicKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get invitedAt => $composableBuilder(
+    column: $table.invitedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get acceptedAt => $composableBuilder(
+    column: $table.acceptedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$VaultMembersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VaultMembersTable> {
+  $$VaultMembersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get vaultId =>
+      $composableBuilder(column: $table.vaultId, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<String> get encryptedVaultKey => $composableBuilder(
+    column: $table.encryptedVaultKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ownerPublicKey => $composableBuilder(
+    column: $table.ownerPublicKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get invitedAt =>
+      $composableBuilder(column: $table.invitedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get acceptedAt => $composableBuilder(
+    column: $table.acceptedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$VaultMembersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VaultMembersTable,
+          VaultMember,
+          $$VaultMembersTableFilterComposer,
+          $$VaultMembersTableOrderingComposer,
+          $$VaultMembersTableAnnotationComposer,
+          $$VaultMembersTableCreateCompanionBuilder,
+          $$VaultMembersTableUpdateCompanionBuilder,
+          (
+            VaultMember,
+            BaseReferences<_$AppDatabase, $VaultMembersTable, VaultMember>,
+          ),
+          VaultMember,
+          PrefetchHooks Function()
+        > {
+  $$VaultMembersTableTableManager(_$AppDatabase db, $VaultMembersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$VaultMembersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$VaultMembersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () =>
+                  $$VaultMembersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> vaultId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> role = const Value.absent(),
+                Value<String> encryptedVaultKey = const Value.absent(),
+                Value<String> ownerPublicKey = const Value.absent(),
+                Value<DateTime> invitedAt = const Value.absent(),
+                Value<DateTime?> acceptedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VaultMembersCompanion(
+                id: id,
+                vaultId: vaultId,
+                userId: userId,
+                role: role,
+                encryptedVaultKey: encryptedVaultKey,
+                ownerPublicKey: ownerPublicKey,
+                invitedAt: invitedAt,
+                acceptedAt: acceptedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String vaultId,
+                required String userId,
+                Value<String> role = const Value.absent(),
+                required String encryptedVaultKey,
+                required String ownerPublicKey,
+                required DateTime invitedAt,
+                Value<DateTime?> acceptedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VaultMembersCompanion.insert(
+                id: id,
+                vaultId: vaultId,
+                userId: userId,
+                role: role,
+                encryptedVaultKey: encryptedVaultKey,
+                ownerPublicKey: ownerPublicKey,
+                invitedAt: invitedAt,
+                acceptedAt: acceptedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$VaultMembersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VaultMembersTable,
+      VaultMember,
+      $$VaultMembersTableFilterComposer,
+      $$VaultMembersTableOrderingComposer,
+      $$VaultMembersTableAnnotationComposer,
+      $$VaultMembersTableCreateCompanionBuilder,
+      $$VaultMembersTableUpdateCompanionBuilder,
+      (
+        VaultMember,
+        BaseReferences<_$AppDatabase, $VaultMembersTable, VaultMember>,
+      ),
+      VaultMember,
+      PrefetchHooks Function()
+    >;
+typedef $$EmergencyContactsTableCreateCompanionBuilder =
+    EmergencyContactsCompanion Function({
+      required String id,
+      required String grantorId,
+      required String granteeId,
+      Value<int> waitingPeriodDays,
+      Value<String> status,
+      Value<String?> encryptedVaultKey,
+      Value<String?> granteePublicKey,
+      Value<DateTime?> requestedAt,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$EmergencyContactsTableUpdateCompanionBuilder =
+    EmergencyContactsCompanion Function({
+      Value<String> id,
+      Value<String> grantorId,
+      Value<String> granteeId,
+      Value<int> waitingPeriodDays,
+      Value<String> status,
+      Value<String?> encryptedVaultKey,
+      Value<String?> granteePublicKey,
+      Value<DateTime?> requestedAt,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$EmergencyContactsTableFilterComposer
+    extends Composer<_$AppDatabase, $EmergencyContactsTable> {
+  $$EmergencyContactsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get grantorId => $composableBuilder(
+    column: $table.grantorId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get granteeId => $composableBuilder(
+    column: $table.granteeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get waitingPeriodDays => $composableBuilder(
+    column: $table.waitingPeriodDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get encryptedVaultKey => $composableBuilder(
+    column: $table.encryptedVaultKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get granteePublicKey => $composableBuilder(
+    column: $table.granteePublicKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get requestedAt => $composableBuilder(
+    column: $table.requestedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$EmergencyContactsTableOrderingComposer
+    extends Composer<_$AppDatabase, $EmergencyContactsTable> {
+  $$EmergencyContactsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get grantorId => $composableBuilder(
+    column: $table.grantorId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get granteeId => $composableBuilder(
+    column: $table.granteeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get waitingPeriodDays => $composableBuilder(
+    column: $table.waitingPeriodDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get encryptedVaultKey => $composableBuilder(
+    column: $table.encryptedVaultKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get granteePublicKey => $composableBuilder(
+    column: $table.granteePublicKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get requestedAt => $composableBuilder(
+    column: $table.requestedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$EmergencyContactsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $EmergencyContactsTable> {
+  $$EmergencyContactsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get grantorId =>
+      $composableBuilder(column: $table.grantorId, builder: (column) => column);
+
+  GeneratedColumn<String> get granteeId =>
+      $composableBuilder(column: $table.granteeId, builder: (column) => column);
+
+  GeneratedColumn<int> get waitingPeriodDays => $composableBuilder(
+    column: $table.waitingPeriodDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get encryptedVaultKey => $composableBuilder(
+    column: $table.encryptedVaultKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get granteePublicKey => $composableBuilder(
+    column: $table.granteePublicKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get requestedAt => $composableBuilder(
+    column: $table.requestedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$EmergencyContactsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $EmergencyContactsTable,
+          EmergencyContact,
+          $$EmergencyContactsTableFilterComposer,
+          $$EmergencyContactsTableOrderingComposer,
+          $$EmergencyContactsTableAnnotationComposer,
+          $$EmergencyContactsTableCreateCompanionBuilder,
+          $$EmergencyContactsTableUpdateCompanionBuilder,
+          (
+            EmergencyContact,
+            BaseReferences<
+              _$AppDatabase,
+              $EmergencyContactsTable,
+              EmergencyContact
+            >,
+          ),
+          EmergencyContact,
+          PrefetchHooks Function()
+        > {
+  $$EmergencyContactsTableTableManager(
+    _$AppDatabase db,
+    $EmergencyContactsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$EmergencyContactsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer:
+              () => $$EmergencyContactsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$EmergencyContactsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> grantorId = const Value.absent(),
+                Value<String> granteeId = const Value.absent(),
+                Value<int> waitingPeriodDays = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> encryptedVaultKey = const Value.absent(),
+                Value<String?> granteePublicKey = const Value.absent(),
+                Value<DateTime?> requestedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EmergencyContactsCompanion(
+                id: id,
+                grantorId: grantorId,
+                granteeId: granteeId,
+                waitingPeriodDays: waitingPeriodDays,
+                status: status,
+                encryptedVaultKey: encryptedVaultKey,
+                granteePublicKey: granteePublicKey,
+                requestedAt: requestedAt,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String grantorId,
+                required String granteeId,
+                Value<int> waitingPeriodDays = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> encryptedVaultKey = const Value.absent(),
+                Value<String?> granteePublicKey = const Value.absent(),
+                Value<DateTime?> requestedAt = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => EmergencyContactsCompanion.insert(
+                id: id,
+                grantorId: grantorId,
+                granteeId: granteeId,
+                waitingPeriodDays: waitingPeriodDays,
+                status: status,
+                encryptedVaultKey: encryptedVaultKey,
+                granteePublicKey: granteePublicKey,
+                requestedAt: requestedAt,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$EmergencyContactsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $EmergencyContactsTable,
+      EmergencyContact,
+      $$EmergencyContactsTableFilterComposer,
+      $$EmergencyContactsTableOrderingComposer,
+      $$EmergencyContactsTableAnnotationComposer,
+      $$EmergencyContactsTableCreateCompanionBuilder,
+      $$EmergencyContactsTableUpdateCompanionBuilder,
+      (
+        EmergencyContact,
+        BaseReferences<
+          _$AppDatabase,
+          $EmergencyContactsTable,
+          EmergencyContact
+        >,
+      ),
+      EmergencyContact,
+      PrefetchHooks Function()
+    >;
+typedef $$NotificationRecordsTableCreateCompanionBuilder =
+    NotificationRecordsCompanion Function({
+      required String id,
+      required String type,
+      required String title,
+      required String body,
+      Value<String?> referenceId,
+      Value<bool> read,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$NotificationRecordsTableUpdateCompanionBuilder =
+    NotificationRecordsCompanion Function({
+      Value<String> id,
+      Value<String> type,
+      Value<String> title,
+      Value<String> body,
+      Value<String?> referenceId,
+      Value<bool> read,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$NotificationRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $NotificationRecordsTable> {
+  $$NotificationRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get referenceId => $composableBuilder(
+    column: $table.referenceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get read => $composableBuilder(
+    column: $table.read,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$NotificationRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $NotificationRecordsTable> {
+  $$NotificationRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get referenceId => $composableBuilder(
+    column: $table.referenceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get read => $composableBuilder(
+    column: $table.read,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$NotificationRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NotificationRecordsTable> {
+  $$NotificationRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get referenceId => $composableBuilder(
+    column: $table.referenceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get read =>
+      $composableBuilder(column: $table.read, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$NotificationRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NotificationRecordsTable,
+          NotificationRecord,
+          $$NotificationRecordsTableFilterComposer,
+          $$NotificationRecordsTableOrderingComposer,
+          $$NotificationRecordsTableAnnotationComposer,
+          $$NotificationRecordsTableCreateCompanionBuilder,
+          $$NotificationRecordsTableUpdateCompanionBuilder,
+          (
+            NotificationRecord,
+            BaseReferences<
+              _$AppDatabase,
+              $NotificationRecordsTable,
+              NotificationRecord
+            >,
+          ),
+          NotificationRecord,
+          PrefetchHooks Function()
+        > {
+  $$NotificationRecordsTableTableManager(
+    _$AppDatabase db,
+    $NotificationRecordsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$NotificationRecordsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer:
+              () => $$NotificationRecordsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$NotificationRecordsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<String?> referenceId = const Value.absent(),
+                Value<bool> read = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NotificationRecordsCompanion(
+                id: id,
+                type: type,
+                title: title,
+                body: body,
+                referenceId: referenceId,
+                read: read,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String type,
+                required String title,
+                required String body,
+                Value<String?> referenceId = const Value.absent(),
+                Value<bool> read = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => NotificationRecordsCompanion.insert(
+                id: id,
+                type: type,
+                title: title,
+                body: body,
+                referenceId: referenceId,
+                read: read,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$NotificationRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NotificationRecordsTable,
+      NotificationRecord,
+      $$NotificationRecordsTableFilterComposer,
+      $$NotificationRecordsTableOrderingComposer,
+      $$NotificationRecordsTableAnnotationComposer,
+      $$NotificationRecordsTableCreateCompanionBuilder,
+      $$NotificationRecordsTableUpdateCompanionBuilder,
+      (
+        NotificationRecord,
+        BaseReferences<
+          _$AppDatabase,
+          $NotificationRecordsTable,
+          NotificationRecord
+        >,
+      ),
+      NotificationRecord,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5474,4 +8790,12 @@ class $AppDatabaseManager {
       $$AutofillIndexTableTableManager(_db, _db.autofillIndex);
   $$SettingsTableTableManager get settings =>
       $$SettingsTableTableManager(_db, _db.settings);
+  $$SharedItemsTableTableManager get sharedItems =>
+      $$SharedItemsTableTableManager(_db, _db.sharedItems);
+  $$VaultMembersTableTableManager get vaultMembers =>
+      $$VaultMembersTableTableManager(_db, _db.vaultMembers);
+  $$EmergencyContactsTableTableManager get emergencyContacts =>
+      $$EmergencyContactsTableTableManager(_db, _db.emergencyContacts);
+  $$NotificationRecordsTableTableManager get notificationRecords =>
+      $$NotificationRecordsTableTableManager(_db, _db.notificationRecords);
 }

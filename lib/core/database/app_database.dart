@@ -10,11 +10,17 @@ import 'tables/totp_entries_table.dart';
 import 'tables/password_history_table.dart';
 import 'tables/autofill_index_table.dart';
 import 'tables/settings_table.dart';
+import 'tables/shared_items_table.dart';
+import 'tables/vault_members_table.dart';
+import 'tables/emergency_contacts_table.dart';
+import 'tables/notifications_table.dart';
 import 'daos/vault_dao.dart';
 import 'daos/sync_dao.dart';
 import 'daos/settings_dao.dart';
 import 'daos/password_history_dao.dart';
 import 'daos/totp_dao.dart';
+import 'daos/sharing_dao.dart';
+import 'daos/notification_dao.dart';
 import '../../features/autofill/data/daos/autofill_index_dao.dart';
 
 part 'app_database.g.dart';
@@ -34,14 +40,18 @@ part 'app_database.g.dart';
     PasswordHistory,
     AutofillIndex,
     Settings,
+    SharedItems,
+    VaultMembers,
+    EmergencyContacts,
+    NotificationRecords,
   ],
-  daos: [VaultDao, SyncDao, SettingsDao, PasswordHistoryDao, TotpDao, AutofillIndexDao],
+  daos: [VaultDao, SyncDao, SettingsDao, PasswordHistoryDao, TotpDao, AutofillIndexDao, SharingDao, NotificationDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -51,6 +61,13 @@ class AppDatabase extends _$AppDatabase {
           // Add colorHex and iconName columns to vaults table.
           await migrator.addColumn(vaults, vaults.colorHex);
           await migrator.addColumn(vaults, vaults.iconName);
+        }
+        if (from < 3) {
+          // Add sharing, emergency contacts, and notifications tables.
+          await migrator.createTable(sharedItems);
+          await migrator.createTable(vaultMembers);
+          await migrator.createTable(emergencyContacts);
+          await migrator.createTable(notificationRecords);
         }
       },
     );
