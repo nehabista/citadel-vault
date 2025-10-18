@@ -8,6 +8,8 @@ import '../../data/services/auth/auth_service.dart';
 import '../../data/services/auth/local_auth_service.dart';
 import '../crypto/crypto_engine.dart';
 import '../database/app_database.dart';
+import '../database/daos/sharing_dao.dart';
+import '../database/daos/notification_dao.dart';
 import '../../features/security/data/repositories/totp_repository.dart';
 import '../../features/security/data/services/totp_service.dart';
 import '../../features/vault/data/repositories/vault_repository_impl.dart';
@@ -90,4 +92,14 @@ final totpRepositoryProvider = Provider<TotpRepository>((ref) {
     totpDao: db.totpDao,
     cryptoEngine: ref.watch(cryptoEngineProvider),
   );
+});
+
+/// Provides the SharingDao from the database.
+final sharingDaoProvider = Provider<SharingDao>((ref) {
+  return ref.watch(appDatabaseProvider).sharingDao;
+});
+
+/// Provides the NotificationDao from the database.
+final notificationDaoProvider = Provider<NotificationDao>((ref) {
+  return ref.watch(appDatabaseProvider).notificationDao;
 });
