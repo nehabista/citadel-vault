@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../../data/models/emergency_contact.dart';
+import '../../data/repositories/emergency_repository.dart';
 import '../providers/emergency_providers.dart';
 
 /// Displays an emergency contact with status badge and context-specific actions.

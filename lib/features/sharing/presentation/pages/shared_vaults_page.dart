@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/providers/core_providers.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../../data/models/vault_member.dart';
 import '../providers/sharing_providers.dart';

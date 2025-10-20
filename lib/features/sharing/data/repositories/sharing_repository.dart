@@ -57,8 +57,8 @@ class SharingRepository {
     final keyPair = await _crypto.generateKeyPair();
 
     // Extract and store private key bytes.
-    final privateKeyData = await keyPair.extract();
-    final privateKeyBytes = privateKeyData.d;
+    final privateKeyData = await keyPair.extractPrivateKeyBytes();
+    final privateKeyBytes = privateKeyData;
     await _secureStorage.write(
       key: 'x25519_private_key',
       value: base64Encode(privateKeyBytes),

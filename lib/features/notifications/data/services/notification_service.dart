@@ -83,7 +83,7 @@ class NotificationService {
     );
 
     await _plugin.initialize(
-      settings,
+      settings: settings,
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
 
@@ -109,10 +109,10 @@ class NotificationService {
     String? payload,
   }) async {
     await _plugin.show(
-      title.hashCode,
-      title,
-      body,
-      const NotificationDetails(
+      id: title.hashCode,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           NotificationChannels.breachAlerts,
           'Breach Alerts',
@@ -138,10 +138,10 @@ class NotificationService {
     String? payload,
   }) async {
     await _plugin.show(
-      title.hashCode,
-      title,
-      body,
-      const NotificationDetails(
+      id: title.hashCode,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           NotificationChannels.expiryReminders,
           'Expiry Reminders',
@@ -167,10 +167,10 @@ class NotificationService {
     String? payload,
   }) async {
     await _plugin.show(
-      title.hashCode,
-      title,
-      body,
-      const NotificationDetails(
+      id: title.hashCode,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           NotificationChannels.sharing,
           'Sharing',
@@ -197,10 +197,10 @@ class NotificationService {
     String? payload,
   }) async {
     await _plugin.show(
-      title.hashCode,
-      title,
-      body,
-      const NotificationDetails(
+      id: title.hashCode,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           NotificationChannels.emergencyAccess,
           'Emergency Access',
@@ -227,11 +227,11 @@ class NotificationService {
     required DateTime scheduledDate,
   }) async {
     await _plugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledDate, tz.local),
-      const NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           NotificationChannels.expiryReminders,
           'Expiry Reminders',

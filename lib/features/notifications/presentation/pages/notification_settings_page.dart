@@ -84,7 +84,7 @@ class _NotificationSettingsPageState
     required String notificationType,
   }) {
     final enabledAsync = ref.watch(enabledProvider);
-    final isEnabled = enabledAsync.valueOrNull ?? true;
+    final isEnabled = enabledAsync.value ?? true;
 
     return Card(
       shape: RoundedRectangleBorder(
