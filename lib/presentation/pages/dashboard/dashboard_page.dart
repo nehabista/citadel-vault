@@ -5,7 +5,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../features/notifications/presentation/widgets/alert_banner_widget.dart';
 import '../../../features/search/presentation/providers/vault_search_provider.dart';
+import '../../../features/sharing/presentation/widgets/shared_vault_selector.dart';
 import '../../../features/vault/domain/entities/vault_item.dart';
 import '../../../features/vault/presentation/providers/multi_vault_provider.dart';
 import 'widgets/vault_item_card.dart';
@@ -49,6 +51,9 @@ class _DashBoardPageState extends ConsumerState<DashBoardPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Alert banner for breach/emergency alerts (D-17)
+          const AlertBannerWidget(),
+
           // Always-visible search bar (D-03)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -100,6 +105,12 @@ class _DashBoardPageState extends ConsumerState<DashBoardPage> {
 
           // Vault tabs with color-coded pills and create dialog
           const VaultTabs(),
+
+          // Shared vault selector (D-21)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: SharedVaultSelector(),
+          ),
           const SizedBox(height: 8),
 
           // Type filter tabs

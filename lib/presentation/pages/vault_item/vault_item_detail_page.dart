@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../widgets/citadel_snackbar.dart';
+import '../../../features/sharing/presentation/pages/share_bottom_sheet.dart';
 
 import '../../../core/providers/core_providers.dart';
 import '../../../core/providers/session_provider.dart';
@@ -91,6 +92,11 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
           ),
         ),
         actions: [
+          IconButton(
+            onPressed: () => _shareItem(context, item),
+            icon: const Icon(Icons.share_rounded, color: Color(0xFF4D4DCD)),
+            tooltip: 'Share',
+          ),
           IconButton(
             onPressed: () => _navigateToEdit(item),
             icon: const Icon(Icons.edit_rounded),
@@ -275,6 +281,19 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
         ],
       ),
     );
+  }
+
+  void _shareItem(BuildContext context, VaultItemEntity item) {
+    final itemData = <String, dynamic>{
+      'id': item.id,
+      'name': item.name,
+      'type': item.type.name,
+      'username': item.username,
+      'password': item.password,
+      'url': item.url,
+      'notes': item.notes,
+    };
+    ShareBottomSheet.show(context, itemData: itemData);
   }
 
   void _navigateToEdit(VaultItemEntity item) {

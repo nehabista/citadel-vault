@@ -131,6 +131,51 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           const Text(
+            'Sharing & Access',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          const SizedBox(height: 10),
+          ListTile(
+            leading: const Icon(Icons.health_and_safety, color: Color(0xFF4D4DCD)),
+            title: const Text(
+              'Emergency Access',
+              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500),
+            ),
+            subtitle: const Text(
+              'Manage trusted contacts',
+              style: TextStyle(fontFamily: 'Poppins', fontSize: 12),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/emergency-access'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.notifications_outlined, color: Color(0xFF4D4DCD)),
+            title: const Text(
+              'Notifications',
+              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500),
+            ),
+            subtitle: const Text(
+              'Configure alert preferences',
+              style: TextStyle(fontFamily: 'Poppins', fontSize: 12),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/notification-settings'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.group, color: Color(0xFF26A69A)),
+            title: const Text(
+              'Shared Vaults',
+              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500),
+            ),
+            subtitle: const Text(
+              'Manage family and team vaults',
+              style: TextStyle(fontFamily: 'Poppins', fontSize: 12),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/shared-vaults'),
+          ),
+          const SizedBox(height: 20),
+          const Text(
             'Account',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),

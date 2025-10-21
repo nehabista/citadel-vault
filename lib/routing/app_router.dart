@@ -8,7 +8,10 @@ import '../core/providers/session_provider.dart';
 import '../core/session/session_state.dart';
 import '../features/import_export/presentation/pages/export_page.dart';
 import '../features/import_export/presentation/pages/import_page.dart';
+import '../features/notifications/presentation/pages/notification_settings_page.dart';
 import '../features/security/data/models/breach_record.dart';
+import '../features/sharing/presentation/pages/emergency_access_page.dart';
+import '../features/sharing/presentation/pages/shared_vaults_page.dart';
 import '../features/security/presentation/pages/breach_catalog_page.dart';
 import '../features/security/presentation/pages/breach_detail_page.dart';
 import '../features/security/presentation/pages/breach_timeline_page.dart';
@@ -43,6 +46,9 @@ abstract class AppRoutes {
   static const breachDetail = '/breach-detail';
   static const breachTimeline = '/breach-timeline';
   static const hibpSettings = '/settings/hibp-api-key';
+  static const emergencyAccess = '/emergency-access';
+  static const notificationSettings = '/notification-settings';
+  static const sharedVaults = '/shared-vaults';
 
   /// Routes that don't require authentication.
   static const publicRoutes = [splash, onboarding, login, signup, verification, unlock];
@@ -175,6 +181,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.hibpSettings,
         builder: (context, state) => const HibpSettingsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.emergencyAccess,
+        builder: (context, state) => const EmergencyAccessPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.notificationSettings,
+        builder: (context, state) => const NotificationSettingsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.sharedVaults,
+        builder: (context, state) => const SharedVaultsPage(),
       ),
     ],
   );
