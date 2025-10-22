@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart';
+import '../../../sharing/presentation/providers/emergency_providers.dart';
 import '../../../vault/domain/entities/vault_item.dart';
 
 /// Provides the list of vault items whose passwords have expired.
@@ -38,4 +40,16 @@ final expiredItemsProvider =
 final expiryBadgeCountProvider = Provider<int>((ref) {
   final expired = ref.watch(expiredItemsProvider);
   return expired.whenOrNull(data: (items) => items.length) ?? 0;
+});
+
+/// Combined badge count for Watchtower tab including expiry, emergency, and
+/// unread notification counts.
+///
+/// Per D-18: Watchtower badge aggregates breach alerts, emergency pending,
+/// and expiry count into a single badge number.
+final combinedBadgeCountProvider = Provider<int>((ref) {
+  final expiry = ref.watch(expiryBadgeCountProvider);
+  final emergency = ref.watch(pendingEmergencyCountProvider);
+  final unread = ref.watch(unreadCountProvider);
+  return expiry + emergency + unread;
 });

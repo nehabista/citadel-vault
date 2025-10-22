@@ -772,7 +772,7 @@ class _WatchtowerNavItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final badgeCount = ref.watch(expiryBadgeCountProvider);
+    final badgeCount = ref.watch(combinedBadgeCountProvider);
     final color = isSelected ? _selectedColor : _unselectedColor;
 
     return GestureDetector(

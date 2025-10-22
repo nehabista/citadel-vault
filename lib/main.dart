@@ -15,6 +15,8 @@ import 'app.dart';
 import 'core/database/app_database.dart';
 import 'core/providers/core_providers.dart';
 import 'data/services/api/pocketbase_service.dart';
+import 'features/notifications/data/services/notification_service.dart';
+import 'features/notifications/presentation/providers/notification_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,11 +40,16 @@ Future<void> main() async {
   // Initialize encrypted database
   final db = await _openDatabase();
 
+  // Initialize local notification service (local-only per D-13)
+  final notificationService = NotificationService();
+  await notificationService.initialize();
+
   runApp(
     ProviderScope(
       overrides: [
         pocketBaseServiceProvider.overrideWithValue(pbService),
         appDatabaseProvider.overrideWithValue(db),
+        notificationServiceProvider.overrideWithValue(notificationService),
       ],
       child: const CitadelApp(),
     ),
