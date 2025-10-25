@@ -106,6 +106,21 @@ class $VaultsTable extends Vaults with TableInfo<$VaultsTable, Vault> {
     requiredDuringInsert: false,
     defaultValue: const Constant('shield'),
   );
+  static const VerificationMeta _isTravelSafeMeta = const VerificationMeta(
+    'isTravelSafe',
+  );
+  @override
+  late final GeneratedColumn<bool> isTravelSafe = GeneratedColumn<bool>(
+    'is_travel_safe',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_travel_safe" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -117,6 +132,7 @@ class $VaultsTable extends Vaults with TableInfo<$VaultsTable, Vault> {
     remoteId,
     colorHex,
     iconName,
+    isTravelSafe,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -192,6 +208,15 @@ class $VaultsTable extends Vaults with TableInfo<$VaultsTable, Vault> {
         iconName.isAcceptableOrUnknown(data['icon_name']!, _iconNameMeta),
       );
     }
+    if (data.containsKey('is_travel_safe')) {
+      context.handle(
+        _isTravelSafeMeta,
+        isTravelSafe.isAcceptableOrUnknown(
+          data['is_travel_safe']!,
+          _isTravelSafeMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -244,6 +269,11 @@ class $VaultsTable extends Vaults with TableInfo<$VaultsTable, Vault> {
             DriftSqlType.string,
             data['${effectivePrefix}icon_name'],
           )!,
+      isTravelSafe:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_travel_safe'],
+          )!,
     );
   }
 
@@ -280,6 +310,11 @@ class Vault extends DataClass implements Insertable<Vault> {
 
   /// Icon name for vault display (default: shield)
   final String iconName;
+
+  /// Whether this vault is visible in travel mode. Default: true (visible).
+  /// Per D-01: stored encrypted in metadata blob as source of truth.
+  /// This plaintext column is a mirror for query filtering per D-04.
+  final bool isTravelSafe;
   const Vault({
     required this.id,
     required this.name,
@@ -290,6 +325,7 @@ class Vault extends DataClass implements Insertable<Vault> {
     this.remoteId,
     required this.colorHex,
     required this.iconName,
+    required this.isTravelSafe,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -307,6 +343,7 @@ class Vault extends DataClass implements Insertable<Vault> {
     }
     map['color_hex'] = Variable<String>(colorHex);
     map['icon_name'] = Variable<String>(iconName);
+    map['is_travel_safe'] = Variable<bool>(isTravelSafe);
     return map;
   }
 
@@ -327,6 +364,7 @@ class Vault extends DataClass implements Insertable<Vault> {
               : Value(remoteId),
       colorHex: Value(colorHex),
       iconName: Value(iconName),
+      isTravelSafe: Value(isTravelSafe),
     );
   }
 
@@ -345,6 +383,7 @@ class Vault extends DataClass implements Insertable<Vault> {
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       colorHex: serializer.fromJson<String>(json['colorHex']),
       iconName: serializer.fromJson<String>(json['iconName']),
+      isTravelSafe: serializer.fromJson<bool>(json['isTravelSafe']),
     );
   }
   @override
@@ -360,6 +399,7 @@ class Vault extends DataClass implements Insertable<Vault> {
       'remoteId': serializer.toJson<String?>(remoteId),
       'colorHex': serializer.toJson<String>(colorHex),
       'iconName': serializer.toJson<String>(iconName),
+      'isTravelSafe': serializer.toJson<bool>(isTravelSafe),
     };
   }
 
@@ -373,6 +413,7 @@ class Vault extends DataClass implements Insertable<Vault> {
     Value<String?> remoteId = const Value.absent(),
     String? colorHex,
     String? iconName,
+    bool? isTravelSafe,
   }) => Vault(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -383,6 +424,7 @@ class Vault extends DataClass implements Insertable<Vault> {
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
     colorHex: colorHex ?? this.colorHex,
     iconName: iconName ?? this.iconName,
+    isTravelSafe: isTravelSafe ?? this.isTravelSafe,
   );
   Vault copyWithCompanion(VaultsCompanion data) {
     return Vault(
@@ -396,6 +438,10 @@ class Vault extends DataClass implements Insertable<Vault> {
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
       iconName: data.iconName.present ? data.iconName.value : this.iconName,
+      isTravelSafe:
+          data.isTravelSafe.present
+              ? data.isTravelSafe.value
+              : this.isTravelSafe,
     );
   }
 
@@ -410,7 +456,8 @@ class Vault extends DataClass implements Insertable<Vault> {
           ..write('updatedAt: $updatedAt, ')
           ..write('remoteId: $remoteId, ')
           ..write('colorHex: $colorHex, ')
-          ..write('iconName: $iconName')
+          ..write('iconName: $iconName, ')
+          ..write('isTravelSafe: $isTravelSafe')
           ..write(')'))
         .toString();
   }
@@ -426,6 +473,7 @@ class Vault extends DataClass implements Insertable<Vault> {
     remoteId,
     colorHex,
     iconName,
+    isTravelSafe,
   );
   @override
   bool operator ==(Object other) =>
@@ -439,7 +487,8 @@ class Vault extends DataClass implements Insertable<Vault> {
           other.updatedAt == this.updatedAt &&
           other.remoteId == this.remoteId &&
           other.colorHex == this.colorHex &&
-          other.iconName == this.iconName);
+          other.iconName == this.iconName &&
+          other.isTravelSafe == this.isTravelSafe);
 }
 
 class VaultsCompanion extends UpdateCompanion<Vault> {
@@ -452,6 +501,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
   final Value<String?> remoteId;
   final Value<String> colorHex;
   final Value<String> iconName;
+  final Value<bool> isTravelSafe;
   final Value<int> rowid;
   const VaultsCompanion({
     this.id = const Value.absent(),
@@ -463,6 +513,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     this.remoteId = const Value.absent(),
     this.colorHex = const Value.absent(),
     this.iconName = const Value.absent(),
+    this.isTravelSafe = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VaultsCompanion.insert({
@@ -475,6 +526,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     this.remoteId = const Value.absent(),
     this.colorHex = const Value.absent(),
     this.iconName = const Value.absent(),
+    this.isTravelSafe = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -490,6 +542,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     Expression<String>? remoteId,
     Expression<String>? colorHex,
     Expression<String>? iconName,
+    Expression<bool>? isTravelSafe,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -502,6 +555,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
       if (remoteId != null) 'remote_id': remoteId,
       if (colorHex != null) 'color_hex': colorHex,
       if (iconName != null) 'icon_name': iconName,
+      if (isTravelSafe != null) 'is_travel_safe': isTravelSafe,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -516,6 +570,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     Value<String?>? remoteId,
     Value<String>? colorHex,
     Value<String>? iconName,
+    Value<bool>? isTravelSafe,
     Value<int>? rowid,
   }) {
     return VaultsCompanion(
@@ -528,6 +583,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
       remoteId: remoteId ?? this.remoteId,
       colorHex: colorHex ?? this.colorHex,
       iconName: iconName ?? this.iconName,
+      isTravelSafe: isTravelSafe ?? this.isTravelSafe,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -562,6 +618,9 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     if (iconName.present) {
       map['icon_name'] = Variable<String>(iconName.value);
     }
+    if (isTravelSafe.present) {
+      map['is_travel_safe'] = Variable<bool>(isTravelSafe.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -580,6 +639,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
           ..write('remoteId: $remoteId, ')
           ..write('colorHex: $colorHex, ')
           ..write('iconName: $iconName, ')
+          ..write('isTravelSafe: $isTravelSafe, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5171,6 +5231,496 @@ class NotificationRecordsCompanion extends UpdateCompanion<NotificationRecord> {
   }
 }
 
+class $FileAttachmentsTable extends FileAttachments
+    with TableInfo<$FileAttachmentsTable, FileAttachment> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FileAttachmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _vaultIdMeta = const VerificationMeta(
+    'vaultId',
+  );
+  @override
+  late final GeneratedColumn<String> vaultId = GeneratedColumn<String>(
+    'vault_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fileNameMeta = const VerificationMeta(
+    'fileName',
+  );
+  @override
+  late final GeneratedColumn<String> fileName = GeneratedColumn<String>(
+    'file_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mimeTypeMeta = const VerificationMeta(
+    'mimeType',
+  );
+  @override
+  late final GeneratedColumn<String> mimeType = GeneratedColumn<String>(
+    'mime_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sizeBytesMeta = const VerificationMeta(
+    'sizeBytes',
+  );
+  @override
+  late final GeneratedColumn<int> sizeBytes = GeneratedColumn<int>(
+    'size_bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _encryptedPathMeta = const VerificationMeta(
+    'encryptedPath',
+  );
+  @override
+  late final GeneratedColumn<String> encryptedPath = GeneratedColumn<String>(
+    'encrypted_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    vaultId,
+    fileName,
+    mimeType,
+    sizeBytes,
+    encryptedPath,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'file_attachments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FileAttachment> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('vault_id')) {
+      context.handle(
+        _vaultIdMeta,
+        vaultId.isAcceptableOrUnknown(data['vault_id']!, _vaultIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_vaultIdMeta);
+    }
+    if (data.containsKey('file_name')) {
+      context.handle(
+        _fileNameMeta,
+        fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fileNameMeta);
+    }
+    if (data.containsKey('mime_type')) {
+      context.handle(
+        _mimeTypeMeta,
+        mimeType.isAcceptableOrUnknown(data['mime_type']!, _mimeTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mimeTypeMeta);
+    }
+    if (data.containsKey('size_bytes')) {
+      context.handle(
+        _sizeBytesMeta,
+        sizeBytes.isAcceptableOrUnknown(data['size_bytes']!, _sizeBytesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sizeBytesMeta);
+    }
+    if (data.containsKey('encrypted_path')) {
+      context.handle(
+        _encryptedPathMeta,
+        encryptedPath.isAcceptableOrUnknown(
+          data['encrypted_path']!,
+          _encryptedPathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_encryptedPathMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FileAttachment map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FileAttachment(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      vaultId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}vault_id'],
+          )!,
+      fileName:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}file_name'],
+          )!,
+      mimeType:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}mime_type'],
+          )!,
+      sizeBytes:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}size_bytes'],
+          )!,
+      encryptedPath:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}encrypted_path'],
+          )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+    );
+  }
+
+  @override
+  $FileAttachmentsTable createAlias(String alias) {
+    return $FileAttachmentsTable(attachedDatabase, alias);
+  }
+}
+
+class FileAttachment extends DataClass implements Insertable<FileAttachment> {
+  /// UUID primary key
+  final String id;
+
+  /// The vault this attachment belongs to
+  final String vaultId;
+
+  /// Original file name (encrypted at rest in the vault blob)
+  final String fileName;
+
+  /// MIME type of the original file (e.g., 'application/pdf')
+  final String mimeType;
+
+  /// Size of the original file in bytes
+  final int sizeBytes;
+
+  /// Path to the encrypted file on local storage
+  final String encryptedPath;
+
+  /// When the attachment was added
+  final DateTime createdAt;
+  const FileAttachment({
+    required this.id,
+    required this.vaultId,
+    required this.fileName,
+    required this.mimeType,
+    required this.sizeBytes,
+    required this.encryptedPath,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['vault_id'] = Variable<String>(vaultId);
+    map['file_name'] = Variable<String>(fileName);
+    map['mime_type'] = Variable<String>(mimeType);
+    map['size_bytes'] = Variable<int>(sizeBytes);
+    map['encrypted_path'] = Variable<String>(encryptedPath);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  FileAttachmentsCompanion toCompanion(bool nullToAbsent) {
+    return FileAttachmentsCompanion(
+      id: Value(id),
+      vaultId: Value(vaultId),
+      fileName: Value(fileName),
+      mimeType: Value(mimeType),
+      sizeBytes: Value(sizeBytes),
+      encryptedPath: Value(encryptedPath),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory FileAttachment.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FileAttachment(
+      id: serializer.fromJson<String>(json['id']),
+      vaultId: serializer.fromJson<String>(json['vaultId']),
+      fileName: serializer.fromJson<String>(json['fileName']),
+      mimeType: serializer.fromJson<String>(json['mimeType']),
+      sizeBytes: serializer.fromJson<int>(json['sizeBytes']),
+      encryptedPath: serializer.fromJson<String>(json['encryptedPath']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'vaultId': serializer.toJson<String>(vaultId),
+      'fileName': serializer.toJson<String>(fileName),
+      'mimeType': serializer.toJson<String>(mimeType),
+      'sizeBytes': serializer.toJson<int>(sizeBytes),
+      'encryptedPath': serializer.toJson<String>(encryptedPath),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  FileAttachment copyWith({
+    String? id,
+    String? vaultId,
+    String? fileName,
+    String? mimeType,
+    int? sizeBytes,
+    String? encryptedPath,
+    DateTime? createdAt,
+  }) => FileAttachment(
+    id: id ?? this.id,
+    vaultId: vaultId ?? this.vaultId,
+    fileName: fileName ?? this.fileName,
+    mimeType: mimeType ?? this.mimeType,
+    sizeBytes: sizeBytes ?? this.sizeBytes,
+    encryptedPath: encryptedPath ?? this.encryptedPath,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  FileAttachment copyWithCompanion(FileAttachmentsCompanion data) {
+    return FileAttachment(
+      id: data.id.present ? data.id.value : this.id,
+      vaultId: data.vaultId.present ? data.vaultId.value : this.vaultId,
+      fileName: data.fileName.present ? data.fileName.value : this.fileName,
+      mimeType: data.mimeType.present ? data.mimeType.value : this.mimeType,
+      sizeBytes: data.sizeBytes.present ? data.sizeBytes.value : this.sizeBytes,
+      encryptedPath:
+          data.encryptedPath.present
+              ? data.encryptedPath.value
+              : this.encryptedPath,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FileAttachment(')
+          ..write('id: $id, ')
+          ..write('vaultId: $vaultId, ')
+          ..write('fileName: $fileName, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('sizeBytes: $sizeBytes, ')
+          ..write('encryptedPath: $encryptedPath, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    vaultId,
+    fileName,
+    mimeType,
+    sizeBytes,
+    encryptedPath,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FileAttachment &&
+          other.id == this.id &&
+          other.vaultId == this.vaultId &&
+          other.fileName == this.fileName &&
+          other.mimeType == this.mimeType &&
+          other.sizeBytes == this.sizeBytes &&
+          other.encryptedPath == this.encryptedPath &&
+          other.createdAt == this.createdAt);
+}
+
+class FileAttachmentsCompanion extends UpdateCompanion<FileAttachment> {
+  final Value<String> id;
+  final Value<String> vaultId;
+  final Value<String> fileName;
+  final Value<String> mimeType;
+  final Value<int> sizeBytes;
+  final Value<String> encryptedPath;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const FileAttachmentsCompanion({
+    this.id = const Value.absent(),
+    this.vaultId = const Value.absent(),
+    this.fileName = const Value.absent(),
+    this.mimeType = const Value.absent(),
+    this.sizeBytes = const Value.absent(),
+    this.encryptedPath = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FileAttachmentsCompanion.insert({
+    required String id,
+    required String vaultId,
+    required String fileName,
+    required String mimeType,
+    required int sizeBytes,
+    required String encryptedPath,
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       vaultId = Value(vaultId),
+       fileName = Value(fileName),
+       mimeType = Value(mimeType),
+       sizeBytes = Value(sizeBytes),
+       encryptedPath = Value(encryptedPath),
+       createdAt = Value(createdAt);
+  static Insertable<FileAttachment> custom({
+    Expression<String>? id,
+    Expression<String>? vaultId,
+    Expression<String>? fileName,
+    Expression<String>? mimeType,
+    Expression<int>? sizeBytes,
+    Expression<String>? encryptedPath,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (vaultId != null) 'vault_id': vaultId,
+      if (fileName != null) 'file_name': fileName,
+      if (mimeType != null) 'mime_type': mimeType,
+      if (sizeBytes != null) 'size_bytes': sizeBytes,
+      if (encryptedPath != null) 'encrypted_path': encryptedPath,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FileAttachmentsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? vaultId,
+    Value<String>? fileName,
+    Value<String>? mimeType,
+    Value<int>? sizeBytes,
+    Value<String>? encryptedPath,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return FileAttachmentsCompanion(
+      id: id ?? this.id,
+      vaultId: vaultId ?? this.vaultId,
+      fileName: fileName ?? this.fileName,
+      mimeType: mimeType ?? this.mimeType,
+      sizeBytes: sizeBytes ?? this.sizeBytes,
+      encryptedPath: encryptedPath ?? this.encryptedPath,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (vaultId.present) {
+      map['vault_id'] = Variable<String>(vaultId.value);
+    }
+    if (fileName.present) {
+      map['file_name'] = Variable<String>(fileName.value);
+    }
+    if (mimeType.present) {
+      map['mime_type'] = Variable<String>(mimeType.value);
+    }
+    if (sizeBytes.present) {
+      map['size_bytes'] = Variable<int>(sizeBytes.value);
+    }
+    if (encryptedPath.present) {
+      map['encrypted_path'] = Variable<String>(encryptedPath.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FileAttachmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('vaultId: $vaultId, ')
+          ..write('fileName: $fileName, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('sizeBytes: $sizeBytes, ')
+          ..write('encryptedPath: $encryptedPath, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5189,6 +5739,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $EmergencyContactsTable(this);
   late final $NotificationRecordsTable notificationRecords =
       $NotificationRecordsTable(this);
+  late final $FileAttachmentsTable fileAttachments = $FileAttachmentsTable(
+    this,
+  );
   late final VaultDao vaultDao = VaultDao(this as AppDatabase);
   late final SyncDao syncDao = SyncDao(this as AppDatabase);
   late final SettingsDao settingsDao = SettingsDao(this as AppDatabase);
@@ -5201,6 +5754,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final SharingDao sharingDao = SharingDao(this as AppDatabase);
   late final NotificationDao notificationDao = NotificationDao(
+    this as AppDatabase,
+  );
+  late final FileAttachmentDao fileAttachmentDao = FileAttachmentDao(
     this as AppDatabase,
   );
   @override
@@ -5219,6 +5775,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     vaultMembers,
     emergencyContacts,
     notificationRecords,
+    fileAttachments,
   ];
 }
 
@@ -5233,6 +5790,7 @@ typedef $$VaultsTableCreateCompanionBuilder =
       Value<String?> remoteId,
       Value<String> colorHex,
       Value<String> iconName,
+      Value<bool> isTravelSafe,
       Value<int> rowid,
     });
 typedef $$VaultsTableUpdateCompanionBuilder =
@@ -5246,6 +5804,7 @@ typedef $$VaultsTableUpdateCompanionBuilder =
       Value<String?> remoteId,
       Value<String> colorHex,
       Value<String> iconName,
+      Value<bool> isTravelSafe,
       Value<int> rowid,
     });
 
@@ -5323,6 +5882,11 @@ class $$VaultsTableFilterComposer
 
   ColumnFilters<String> get iconName => $composableBuilder(
     column: $table.iconName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isTravelSafe => $composableBuilder(
+    column: $table.isTravelSafe,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5405,6 +5969,11 @@ class $$VaultsTableOrderingComposer
     column: $table.iconName,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isTravelSafe => $composableBuilder(
+    column: $table.isTravelSafe,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$VaultsTableAnnotationComposer
@@ -5444,6 +6013,11 @@ class $$VaultsTableAnnotationComposer
 
   GeneratedColumn<String> get iconName =>
       $composableBuilder(column: $table.iconName, builder: (column) => column);
+
+  GeneratedColumn<bool> get isTravelSafe => $composableBuilder(
+    column: $table.isTravelSafe,
+    builder: (column) => column,
+  );
 
   Expression<T> vaultItemsRefs<T extends Object>(
     Expression<T> Function($$VaultItemsTableAnnotationComposer a) f,
@@ -5508,6 +6082,7 @@ class $$VaultsTableTableManager
                 Value<String?> remoteId = const Value.absent(),
                 Value<String> colorHex = const Value.absent(),
                 Value<String> iconName = const Value.absent(),
+                Value<bool> isTravelSafe = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VaultsCompanion(
                 id: id,
@@ -5519,6 +6094,7 @@ class $$VaultsTableTableManager
                 remoteId: remoteId,
                 colorHex: colorHex,
                 iconName: iconName,
+                isTravelSafe: isTravelSafe,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5532,6 +6108,7 @@ class $$VaultsTableTableManager
                 Value<String?> remoteId = const Value.absent(),
                 Value<String> colorHex = const Value.absent(),
                 Value<String> iconName = const Value.absent(),
+                Value<bool> isTravelSafe = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VaultsCompanion.insert(
                 id: id,
@@ -5543,6 +6120,7 @@ class $$VaultsTableTableManager
                 remoteId: remoteId,
                 colorHex: colorHex,
                 iconName: iconName,
+                isTravelSafe: isTravelSafe,
                 rowid: rowid,
               ),
           withReferenceMapper:
@@ -8772,6 +9350,266 @@ typedef $$NotificationRecordsTableProcessedTableManager =
       NotificationRecord,
       PrefetchHooks Function()
     >;
+typedef $$FileAttachmentsTableCreateCompanionBuilder =
+    FileAttachmentsCompanion Function({
+      required String id,
+      required String vaultId,
+      required String fileName,
+      required String mimeType,
+      required int sizeBytes,
+      required String encryptedPath,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$FileAttachmentsTableUpdateCompanionBuilder =
+    FileAttachmentsCompanion Function({
+      Value<String> id,
+      Value<String> vaultId,
+      Value<String> fileName,
+      Value<String> mimeType,
+      Value<int> sizeBytes,
+      Value<String> encryptedPath,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$FileAttachmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $FileAttachmentsTable> {
+  $$FileAttachmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get vaultId => $composableBuilder(
+    column: $table.vaultId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get encryptedPath => $composableBuilder(
+    column: $table.encryptedPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FileAttachmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FileAttachmentsTable> {
+  $$FileAttachmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get vaultId => $composableBuilder(
+    column: $table.vaultId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get encryptedPath => $composableBuilder(
+    column: $table.encryptedPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FileAttachmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FileAttachmentsTable> {
+  $$FileAttachmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get vaultId =>
+      $composableBuilder(column: $table.vaultId, builder: (column) => column);
+
+  GeneratedColumn<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => column);
+
+  GeneratedColumn<String> get mimeType =>
+      $composableBuilder(column: $table.mimeType, builder: (column) => column);
+
+  GeneratedColumn<int> get sizeBytes =>
+      $composableBuilder(column: $table.sizeBytes, builder: (column) => column);
+
+  GeneratedColumn<String> get encryptedPath => $composableBuilder(
+    column: $table.encryptedPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$FileAttachmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FileAttachmentsTable,
+          FileAttachment,
+          $$FileAttachmentsTableFilterComposer,
+          $$FileAttachmentsTableOrderingComposer,
+          $$FileAttachmentsTableAnnotationComposer,
+          $$FileAttachmentsTableCreateCompanionBuilder,
+          $$FileAttachmentsTableUpdateCompanionBuilder,
+          (
+            FileAttachment,
+            BaseReferences<
+              _$AppDatabase,
+              $FileAttachmentsTable,
+              FileAttachment
+            >,
+          ),
+          FileAttachment,
+          PrefetchHooks Function()
+        > {
+  $$FileAttachmentsTableTableManager(
+    _$AppDatabase db,
+    $FileAttachmentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () =>
+                  $$FileAttachmentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$FileAttachmentsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$FileAttachmentsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> vaultId = const Value.absent(),
+                Value<String> fileName = const Value.absent(),
+                Value<String> mimeType = const Value.absent(),
+                Value<int> sizeBytes = const Value.absent(),
+                Value<String> encryptedPath = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FileAttachmentsCompanion(
+                id: id,
+                vaultId: vaultId,
+                fileName: fileName,
+                mimeType: mimeType,
+                sizeBytes: sizeBytes,
+                encryptedPath: encryptedPath,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String vaultId,
+                required String fileName,
+                required String mimeType,
+                required int sizeBytes,
+                required String encryptedPath,
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => FileAttachmentsCompanion.insert(
+                id: id,
+                vaultId: vaultId,
+                fileName: fileName,
+                mimeType: mimeType,
+                sizeBytes: sizeBytes,
+                encryptedPath: encryptedPath,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FileAttachmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FileAttachmentsTable,
+      FileAttachment,
+      $$FileAttachmentsTableFilterComposer,
+      $$FileAttachmentsTableOrderingComposer,
+      $$FileAttachmentsTableAnnotationComposer,
+      $$FileAttachmentsTableCreateCompanionBuilder,
+      $$FileAttachmentsTableUpdateCompanionBuilder,
+      (
+        FileAttachment,
+        BaseReferences<_$AppDatabase, $FileAttachmentsTable, FileAttachment>,
+      ),
+      FileAttachment,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8798,4 +9636,6 @@ class $AppDatabaseManager {
       $$EmergencyContactsTableTableManager(_db, _db.emergencyContacts);
   $$NotificationRecordsTableTableManager get notificationRecords =>
       $$NotificationRecordsTableTableManager(_db, _db.notificationRecords);
+  $$FileAttachmentsTableTableManager get fileAttachments =>
+      $$FileAttachmentsTableTableManager(_db, _db.fileAttachments);
 }

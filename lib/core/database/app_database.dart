@@ -14,6 +14,7 @@ import 'tables/shared_items_table.dart';
 import 'tables/vault_members_table.dart';
 import 'tables/emergency_contacts_table.dart';
 import 'tables/notifications_table.dart';
+import 'tables/file_attachments_table.dart';
 import 'daos/vault_dao.dart';
 import 'daos/sync_dao.dart';
 import 'daos/settings_dao.dart';
@@ -21,6 +22,7 @@ import 'daos/password_history_dao.dart';
 import 'daos/totp_dao.dart';
 import 'daos/sharing_dao.dart';
 import 'daos/notification_dao.dart';
+import 'daos/file_attachment_dao.dart';
 import '../../features/autofill/data/daos/autofill_index_dao.dart';
 
 part 'app_database.g.dart';
@@ -44,14 +46,15 @@ part 'app_database.g.dart';
     VaultMembers,
     EmergencyContacts,
     NotificationRecords,
+    FileAttachments,
   ],
-  daos: [VaultDao, SyncDao, SettingsDao, PasswordHistoryDao, TotpDao, AutofillIndexDao, SharingDao, NotificationDao],
+  daos: [VaultDao, SyncDao, SettingsDao, PasswordHistoryDao, TotpDao, AutofillIndexDao, SharingDao, NotificationDao, FileAttachmentDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -68,6 +71,11 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createTable(vaultMembers);
           await migrator.createTable(emergencyContacts);
           await migrator.createTable(notificationRecords);
+        }
+        if (from < 4) {
+          // Add travel mode column and file attachments table.
+          await migrator.addColumn(vaults, vaults.isTravelSafe);
+          await migrator.createTable(fileAttachments);
         }
       },
     );

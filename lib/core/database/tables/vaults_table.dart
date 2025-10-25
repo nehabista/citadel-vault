@@ -32,6 +32,12 @@ class Vaults extends Table {
   TextColumn get iconName =>
       text().withDefault(const Constant('shield'))();
 
+  /// Whether this vault is visible in travel mode. Default: true (visible).
+  /// Per D-01: stored encrypted in metadata blob as source of truth.
+  /// This plaintext column is a mirror for query filtering per D-04.
+  BoolColumn get isTravelSafe =>
+      boolean().withDefault(const Constant(true))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
