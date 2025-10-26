@@ -83,4 +83,15 @@ class VaultDao extends DatabaseAccessor<AppDatabase> with _$VaultDaoMixin {
     // Then delete the vault itself.
     await (delete(vaults)..where((t) => t.id.equals(vaultId))).go();
   }
+
+  /// Get all vaults where isTravelSafe is false (hidden during travel mode).
+  Future<List<Vault>> getNonTravelSafeVaults() {
+    return (select(vaults)..where((t) => t.isTravelSafe.equals(false))).get();
+  }
+
+  /// Update the travel-safe flag for a specific vault.
+  Future<void> updateTravelSafe(String vaultId, bool isSafe) {
+    return (update(vaults)..where((t) => t.id.equals(vaultId)))
+        .write(VaultsCompanion(isTravelSafe: Value(isSafe)));
+  }
 }
