@@ -1,4 +1,5 @@
 import 'custom_field.dart';
+import '../../../ssh_keys/data/models/ssh_key_data.dart';
 
 /// Plaintext domain entity representing a vault item.
 ///
@@ -23,6 +24,9 @@ class VaultItemEntity {
   /// Null means no expiry configured. Per D-18.
   final int? expiryDays;
 
+  /// SSH key data for items of type [VaultItemType.sshKey].
+  final SshKeyData? sshKeyData;
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -39,6 +43,7 @@ class VaultItemEntity {
     this.folder,
     this.customFields,
     this.expiryDays,
+    this.sshKeyData,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -56,6 +61,7 @@ class VaultItemEntity {
       'folder': folder,
       'customFields': customFields?.map((f) => f.toJson()).toList(),
       'expiryDays': expiryDays,
+      if (sshKeyData != null) 'sshKeyData': sshKeyData!.toJson(),
     };
   }
 
@@ -85,6 +91,10 @@ class VaultItemEntity {
           ?.map((f) => CustomField.fromJson(f as Map<String, dynamic>))
           .toList(),
       expiryDays: fields['expiryDays'] as int?,
+      sshKeyData: fields['sshKeyData'] != null
+          ? SshKeyData.fromJson(
+              fields['sshKeyData'] as Map<String, dynamic>)
+          : null,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -103,6 +113,7 @@ class VaultItemEntity {
     String? folder,
     List<CustomField>? customFields,
     int? expiryDays,
+    SshKeyData? sshKeyData,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -119,6 +130,7 @@ class VaultItemEntity {
       folder: folder ?? this.folder,
       customFields: customFields ?? this.customFields,
       expiryDays: expiryDays ?? this.expiryDays,
+      sshKeyData: sshKeyData ?? this.sshKeyData,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -134,4 +146,5 @@ enum VaultItemType {
   paymentCard,
   wifiPassword,
   softwareLicense,
+  sshKey,
 }
