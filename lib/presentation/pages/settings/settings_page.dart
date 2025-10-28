@@ -11,6 +11,7 @@ import '../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../features/autofill/presentation/widgets/autofill_settings_tile.dart';
 import '../../../features/autofill/presentation/widgets/clipboard_settings_tile.dart';
 import '../../../routing/app_router.dart';
+import '../../../features/travel_mode/presentation/widgets/travel_mode_toggle.dart';
 import '../../widgets/citadel_snackbar.dart';
 import 'pin_setup_page.dart';
 
@@ -78,6 +79,13 @@ class SettingsScreen extends ConsumerWidget {
               }
             },
           ),
+          const SizedBox(height: 20),
+          const Text(
+            'Travel Mode',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          const SizedBox(height: 10),
+          const TravelModeToggle(),
           const SizedBox(height: 20),
           const Text(
             'Autofill',
