@@ -8,6 +8,7 @@ import '../core/providers/session_provider.dart';
 import '../core/session/session_state.dart';
 import '../features/import_export/presentation/pages/export_page.dart';
 import '../features/import_export/presentation/pages/import_page.dart';
+import '../features/email_alias/presentation/pages/alias_list_page.dart';
 import '../features/notifications/presentation/pages/notification_settings_page.dart';
 import '../features/security/data/models/breach_record.dart';
 import '../features/sharing/presentation/pages/emergency_access_page.dart';
@@ -49,6 +50,7 @@ abstract class AppRoutes {
   static const emergencyAccess = '/emergency-access';
   static const notificationSettings = '/notification-settings';
   static const sharedVaults = '/shared-vaults';
+  static const emailAliases = '/email-aliases';
 
   /// Routes that don't require authentication.
   static const publicRoutes = [splash, onboarding, login, signup, verification, unlock];
@@ -193,6 +195,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.sharedVaults,
         builder: (context, state) => const SharedVaultsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.emailAliases,
+        builder: (context, state) => const AliasListPage(),
       ),
     ],
   );

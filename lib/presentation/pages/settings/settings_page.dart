@@ -131,6 +131,25 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           const Text(
+            'Privacy',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          const SizedBox(height: 10),
+          ListTile(
+            leading: const Icon(Icons.alternate_email, color: Color(0xFF4D4DCD)),
+            title: const Text(
+              'Email Aliases',
+              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500),
+            ),
+            subtitle: const Text(
+              'SimpleLogin integration',
+              style: TextStyle(fontFamily: 'Poppins', fontSize: 12),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AppRoutes.emailAliases),
+          ),
+          const SizedBox(height: 20),
+          const Text(
             'Sharing & Access',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
