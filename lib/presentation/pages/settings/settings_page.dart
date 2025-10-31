@@ -131,6 +131,25 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           const Text(
+            'Developer Tools',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          const SizedBox(height: 10),
+          ListTile(
+            leading: const Icon(Icons.vpn_key, color: Color(0xFF4D4DCD)),
+            title: const Text(
+              'SSH Keys',
+              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500),
+            ),
+            subtitle: const Text(
+              'Store and generate SSH keys',
+              style: TextStyle(fontFamily: 'Poppins', fontSize: 12),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AppRoutes.sshKeys),
+          ),
+          const SizedBox(height: 20),
+          const Text(
             'Sharing & Access',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
