@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../widgets/citadel_snackbar.dart';
+import '../../../features/file_vault/presentation/pages/file_vault_page.dart';
 import '../../../features/sharing/presentation/pages/share_bottom_sheet.dart';
 
 import '../../../core/providers/core_providers.dart';
@@ -231,6 +232,10 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+
+          // Encrypted files section per D-19
+          FileVaultSection(vaultId: item.vaultId),
           const SizedBox(height: 16),
 
           // Custom fields section
@@ -459,6 +464,8 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
         return 'WiFi Password';
       case VaultItemType.softwareLicense:
         return 'Software License';
+      case VaultItemType.sshKey:
+        return 'SSH Key';
     }
   }
 }
