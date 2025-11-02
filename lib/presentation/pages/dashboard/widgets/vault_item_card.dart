@@ -25,6 +25,7 @@ IconData _itemTypeIcon(VaultItemType type) {
     VaultItemType.paymentCard => Icons.credit_card_outlined,
     VaultItemType.wifiPassword => Icons.wifi_outlined,
     VaultItemType.softwareLicense => Icons.code_outlined,
+    VaultItemType.sshKey => Icons.vpn_key_outlined,
   };
 }
 
@@ -38,6 +39,7 @@ Color _itemTypeColor(VaultItemType type) {
     VaultItemType.wifiPassword => const Color(0xFF00897B),
     VaultItemType.contactInfo => const Color(0xFF5E35B1),
     VaultItemType.softwareLicense => const Color(0xFF795548),
+    VaultItemType.sshKey => const Color(0xFF37474F),
   };
 }
 

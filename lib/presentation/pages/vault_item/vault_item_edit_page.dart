@@ -291,6 +291,8 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
         return _contactNameController.text.trim();
       case VaultItemType.softwareLicense:
         return _softwareNameController.text.trim();
+      case VaultItemType.sshKey:
+        return _nameController.text.trim();
     }
   }
 
@@ -357,6 +359,9 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
         addText('version', _versionController.text.trim());
         addText('licensedTo', _licensedToController.text.trim());
         addText('licenseExpiry', _licenseExpiryController.text.trim());
+        break;
+      case VaultItemType.sshKey:
+        // SSH keys are managed via dedicated SSH key pages, not the generic editor.
         break;
     }
 
@@ -591,6 +596,8 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
         return _buildContactFields();
       case VaultItemType.softwareLicense:
         return _buildSoftwareLicenseFields();
+      case VaultItemType.sshKey:
+        return [const Text('SSH keys are managed in Settings → SSH Keys')];
     }
   }
 
@@ -924,6 +931,8 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
         return 'WiFi Password';
       case VaultItemType.softwareLicense:
         return 'Software License';
+      case VaultItemType.sshKey:
+        return 'SSH Key';
     }
   }
 }
