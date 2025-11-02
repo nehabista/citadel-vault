@@ -11,7 +11,6 @@ import '../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../features/autofill/presentation/widgets/autofill_settings_tile.dart';
 import '../../../features/autofill/presentation/widgets/clipboard_settings_tile.dart';
 import '../../../routing/app_router.dart';
-import '../../../features/travel_mode/presentation/widgets/travel_mode_toggle.dart';
 import '../../widgets/citadel_snackbar.dart';
 import 'pin_setup_page.dart';
 
@@ -81,13 +80,6 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           const Text(
-            'Travel Mode',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-          const SizedBox(height: 10),
-          const TravelModeToggle(),
-          const SizedBox(height: 20),
-          const Text(
             'Autofill',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
@@ -139,22 +131,22 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           const Text(
-            'Developer Tools',
+            'Privacy',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
           const SizedBox(height: 10),
           ListTile(
-            leading: const Icon(Icons.vpn_key, color: Color(0xFF4D4DCD)),
+            leading: const Icon(Icons.alternate_email, color: Color(0xFF4D4DCD)),
             title: const Text(
-              'SSH Keys',
+              'Email Aliases',
               style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500),
             ),
             subtitle: const Text(
-              'Store and generate SSH keys',
+              'SimpleLogin integration',
               style: TextStyle(fontFamily: 'Poppins', fontSize: 12),
             ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(AppRoutes.sshKeys),
+            onTap: () => context.push(AppRoutes.emailAliases),
           ),
           const SizedBox(height: 20),
           const Text(
