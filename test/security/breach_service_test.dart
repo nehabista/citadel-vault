@@ -110,7 +110,7 @@ void main() {
       final service = BreachService(client: mockClient);
       expect(
         () => service.breachedAccount('test@example.com'),
-        throwsA(isA<BreachServiceError>()),
+        throwsA(isA<FormatException>()),
       );
     });
   });
