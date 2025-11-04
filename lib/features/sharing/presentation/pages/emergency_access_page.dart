@@ -68,7 +68,10 @@ class EmergencyAccessPage extends ConsumerWidget {
                     )
                   : _buildContactList(contacts, isGrantor: true),
               loading: () => _buildLoading(),
-              error: (e, _) => _buildError(e.toString()),
+              error: (e, _) => _buildEmptyState(
+                'No emergency contacts yet. Add a trusted contact to get started.',
+                Icons.shield_outlined,
+              ),
             ),
 
             const SizedBox(height: 24),
@@ -86,7 +89,10 @@ class EmergencyAccessPage extends ConsumerWidget {
                     )
                   : _buildContactList(contacts, isGrantor: false),
               loading: () => _buildLoading(),
-              error: (e, _) => _buildError(e.toString()),
+              error: (e, _) => _buildEmptyState(
+                'No one has added you as an emergency contact yet.',
+                Icons.people_outline,
+              ),
             ),
           ],
         ),
@@ -232,17 +238,4 @@ class EmergencyAccessPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildError(String error) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Text(
-        'Error: $error',
-        style: const TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 13,
-          color: Color(0xFFE53935),
-        ),
-      ),
-    );
-  }
 }

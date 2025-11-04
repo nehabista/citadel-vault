@@ -39,9 +39,8 @@ class SettingsScreen extends ConsumerWidget {
     final biometricsAvailable = biometricsAvailableAsync.value ?? false;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         children: [
           const Text(
             'Security',

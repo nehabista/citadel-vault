@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../providers/breach_provider.dart';
 import '../providers/watchtower_provider.dart';
 import '../widgets/category_card.dart';
 import '../widgets/health_score_ring.dart';
@@ -17,6 +18,9 @@ class WatchtowerPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Trigger background breach check on Watchtower load
+    ref.watch(backgroundBreachCheckProvider);
+
     final scoreAsync = ref.watch(watchtowerProvider);
     final theme = Theme.of(context);
 

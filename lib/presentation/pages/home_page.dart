@@ -277,8 +277,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             Builder(builder: (context) {
               final title = switch (selectedIndex) {
                 1 => 'Watchtower',
-                2 => 'Locksmith',
-                3 => 'Settings',
+                2 => 'Keys',
+                3 => 'More',
                 _ => 'Vault',
               };
               return Text(
@@ -380,7 +380,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               Expanded(
                 child: BottomNavItem(
                   icon: Bootstrap.file_lock,
-                  label: 'Locksmith',
+                  label: 'Keys',
                   isSelected: selectedIndex == 2,
                   onTap: () =>
                       ref.read(selectedNavIndexProvider.notifier).select(2),
@@ -389,7 +389,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               Expanded(
                 child: BottomNavItem(
                   icon: Bootstrap.gear,
-                  label: 'Settings',
+                  label: 'More',
                   isSelected: selectedIndex == 3,
                   onTap: () =>
                       ref.read(selectedNavIndexProvider.notifier).select(3),
