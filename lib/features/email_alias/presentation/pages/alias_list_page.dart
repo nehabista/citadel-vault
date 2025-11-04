@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'ddg_signup_webview.dart';
+
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../../data/models/alias_model.dart';
 import '../../data/services/duckduckgo_alias_service.dart';
@@ -266,13 +268,21 @@ class _DdgLoginViewState extends ConsumerState<_DdgLoginView> {
           const SizedBox(height: 8),
           if (!_otpSent)
             TextButton.icon(
-              onPressed: () => launchUrl(
-                Uri.parse('https://duckduckgo.com/email/'),
-                mode: LaunchMode.externalApplication,
-              ),
+              onPressed: () async {
+                final username = await Navigator.of(context).push<String>(
+                  MaterialPageRoute(builder: (_) => const DdgSignupWebview()),
+                );
+                if (username != null && username.isNotEmpty && mounted) {
+                  _usernameController.text = username;
+                  showCitadelSnackBar(context, 'Welcome! Sending OTP to $username@duck.com...',
+                      type: SnackBarType.success);
+                  // Auto-trigger OTP send
+                  _handleAction();
+                }
+              },
               icon: const Icon(Icons.open_in_new, size: 16),
               label: const Text(
-                "Don't have an account? Sign up free",
+                "Don't have an account? Sign up in-app",
                 style: TextStyle(fontFamily: 'Poppins', fontSize: 13),
               ),
               style: TextButton.styleFrom(foregroundColor: const Color(0xFFDE5833)),
