@@ -44,7 +44,11 @@ class DdgApiException implements Exception {
 /// - Dashboard info
 class DuckDuckGoAliasService {
   static const _baseUrl = 'https://quack.duckduckgo.com';
-  static const _userAgent = 'Citadel Password Manager';
+  // Real DuckDuckGo browser headers — DDG API rejects non-DDG user agents
+  static const _userAgent =
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) '
+      'AppleWebKit/605.1.15 (KHTML, like Gecko) '
+      'Version/26.3 Mobile/15E148 DuckDuckGo/7 Safari/605.1.15';
   static const _tokenSettingsKey = 'ddg_email_token';
 
   final http.Client _client;
@@ -57,6 +61,14 @@ class DuckDuckGoAliasService {
 
   Map<String, String> _baseHeaders() => {
         'User-Agent': _userAgent,
+        'Accept': '*/*',
+        'Accept-Language': 'en-AU,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Origin': 'https://duckduckgo.com',
+        'Referer': 'https://duckduckgo.com/',
+        'Sec-Fetch-Site': 'same-site',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Dest': 'empty',
         'Content-Type': 'application/json',
       };
 

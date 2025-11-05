@@ -26,6 +26,12 @@ class _DdgSignupWebviewState extends State<DdgSignupWebview> {
     super.initState();
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      // Real DuckDuckGo browser User-Agent — DDG blocks non-DDG browsers
+      ..setUserAgent(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) '
+        'AppleWebKit/605.1.15 (KHTML, like Gecko) '
+        'Version/26.3 Mobile/15E148 DuckDuckGo/7 Safari/605.1.15',
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
