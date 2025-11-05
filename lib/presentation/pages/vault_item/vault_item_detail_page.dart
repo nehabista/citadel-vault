@@ -13,6 +13,7 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/providers/session_provider.dart';
 import '../../../core/session/session_state.dart';
 import '../../../features/security/presentation/pages/breach_timeline_page.dart';
+import '../../../features/security/domain/entities/breach_result.dart';
 import '../../../features/security/presentation/providers/totp_provider.dart';
 import '../../../features/security/presentation/widgets/totp_add_dialog.dart';
 import '../../../features/security/presentation/widgets/totp_display.dart';
@@ -137,7 +138,10 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
               ],
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+
+          // Breach warning banner
+          _BreachWarningBanner(item: item),
 
           // Credentials section
           _SectionCard(
@@ -467,6 +471,116 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
       case VaultItemType.sshKey:
         return 'SSH Key';
     }
+  }
+}
+
+/// Breach warning banner that checks the item's password against HIBP.
+///
+/// Shows a red warning container if the password is found in data breaches.
+/// Uses cached results from BreachRepository so repeat views are instant.
+class _BreachWarningBanner extends ConsumerWidget {
+  const _BreachWarningBanner({required this.item});
+
+  final VaultItemEntity item;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (item.password == null || item.password!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final breachRepo = ref.read(breachRepositoryProvider);
+
+    return FutureBuilder<BreachResult>(
+      future: breachRepo.checkPasswordCached(item.password!),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              height: 52,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          );
+        }
+
+        final result = snapshot.data;
+        if (result is! BreachResultBreached) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE53935).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: const Color(0xFFE53935).withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.shield_outlined,
+                  color: Color(0xFFE53935),
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'This password was found in ${result.count} data breach${result.count == 1 ? '' : 'es'}',
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          color: Color(0xFFE53935),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Change this password immediately',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 12,
+                          color: Color(0xFFE53935),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => VaultItemEditPage(existingItem: item),
+                      ),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFE53935),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    textStyle: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                  child: const Text('Change'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 

@@ -7,6 +7,7 @@ import '../../../../core/session/session_state.dart';
 import '../../../vault/domain/entities/vault_item.dart';
 import '../../../vault/presentation/providers/multi_vault_provider.dart';
 import '../../data/models/health_score.dart';
+import '../../domain/entities/breach_result.dart';
 
 /// Watchtower provider that computes the vault health score.
 ///
@@ -36,13 +37,34 @@ class WatchtowerNotifier extends AsyncNotifier<HealthScore> {
   Future<HealthScore> _computeScore() async {
     final vaultRepo = ref.read(vaultRepositoryProvider);
     final watchtower = ref.read(watchtowerServiceProvider);
+    final breachRepo = ref.read(breachRepositoryProvider);
 
     // Fetch all vault items
     final session = ref.read(sessionProvider);
     if (session is! Unlocked) return HealthScore.empty();
 
     final items = await vaultRepo.getAllItems(SecretKey(session.vaultKey));
-    return watchtower.computeScore(items);
+    final score = watchtower.computeScore(items);
+
+    // Check passwords against HIBP inline so the score always includes breach data
+    final breachedItems = <VaultItemEntity>[];
+    for (final item in items.where(
+        (i) => i.password != null && i.password!.isNotEmpty)) {
+      try {
+        final result = await breachRepo.checkPasswordCached(item.password!);
+        if (result is BreachResultBreached) {
+          breachedItems.add(item);
+        }
+      } catch (_) {
+        // Skip items that fail (network errors, etc.)
+      }
+      // Throttle: 100ms between HIBP API calls
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+
+    return breachedItems.isEmpty
+        ? score
+        : score.withBreachedItems(breachedItems);
   }
 
   /// Recompute the health score (e.g., after vault changes).

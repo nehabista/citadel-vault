@@ -72,68 +72,71 @@ class _BreachCatalogPageState extends ConsumerState<BreachCatalogPage> {
           // Filter chips and sort dropdown
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                FilterChip(
-                  label: const Text('Verified only'),
-                  selected: filter.verifiedOnly,
-                  onSelected: (value) {
-                    ref.read(breachFilterProvider.notifier).update(
-                        filter.copyWith(verifiedOnly: value));
-                  },
-                ),
-                const SizedBox(width: 8),
-                FilterChip(
-                  label: const Text('Exclude sensitive'),
-                  selected: filter.excludeSensitive,
-                  onSelected: (value) {
-                    ref.read(breachFilterProvider.notifier).update(
-                        filter.copyWith(excludeSensitive: value));
-                  },
-                ),
-                const Spacer(),
-                PopupMenuButton<BreachSort>(
-                  initialValue: sort,
-                  onSelected: (value) {
-                    ref.read(breachSortProvider.notifier).update(value);
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: BreachSort.newest,
-                      child: Text('Newest'),
-                    ),
-                    const PopupMenuItem(
-                      value: BreachSort.largest,
-                      child: Text('Largest'),
-                    ),
-                    const PopupMenuItem(
-                      value: BreachSort.alphabetical,
-                      child: Text('A-Z'),
-                    ),
-                  ],
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  FilterChip(
+                    label: const Text('Verified only'),
+                    selected: filter.verifiedOnly,
+                    onSelected: (value) {
+                      ref.read(breachFilterProvider.notifier).update(
+                          filter.copyWith(verifiedOnly: value));
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: const Text('Exclude sensitive'),
+                    selected: filter.excludeSensitive,
+                    onSelected: (value) {
+                      ref.read(breachFilterProvider.notifier).update(
+                          filter.copyWith(excludeSensitive: value));
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  PopupMenuButton<BreachSort>(
+                    initialValue: sort,
+                    onSelected: (value) {
+                      ref.read(breachSortProvider.notifier).update(value);
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: BreachSort.newest,
+                        child: Text('Newest'),
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _sortLabel(sort),
-                          style: theme.textTheme.labelMedium,
+                      const PopupMenuItem(
+                        value: BreachSort.largest,
+                        child: Text('Largest'),
+                      ),
+                      const PopupMenuItem(
+                        value: BreachSort.alphabetical,
+                        child: Text('A-Z'),
+                      ),
+                    ],
+                    child: Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: theme.colorScheme.outlineVariant,
                         ),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.arrow_drop_down, size: 18),
-                      ],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _sortLabel(sort),
+                            style: theme.textTheme.labelMedium,
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.arrow_drop_down, size: 18),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
