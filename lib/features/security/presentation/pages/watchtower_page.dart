@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/providers/core_providers.dart';
-import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../../../../routing/app_router.dart';
 import '../../../vault/domain/entities/vault_item.dart';
 import '../../domain/entities/watchtower_category.dart';
@@ -43,55 +41,126 @@ class WatchtowerPage extends ConsumerWidget {
           );
         }
 
+        // Derive score label + color
+        final scoreLabel = _scoreLabel(healthScore.score);
+        final scoreLabelColor = _scoreLabelColor(healthScore.score);
+
         return RefreshIndicator(
           onRefresh: () => ref.read(watchtowerProvider.notifier).refresh(),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             child: Column(
               children: [
-                // Health score ring centered
-                Center(
-                  child: HealthScoreRing(
-                    score: healthScore.score,
-                    color: healthScore.color,
+                // ── 1. Quick Actions (pill row) ──────────────
+                SizedBox(
+                  height: 40,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _ActionPill(
+                        icon: Icons.email_outlined,
+                        label: 'Check Email',
+                        onTap: () => context.push(AppRoutes.emailCheck),
+                      ),
+                      const SizedBox(width: 10),
+                      _ActionPill(
+                        icon: Icons.password_rounded,
+                        label: 'Check Password',
+                        onTap: () => context.push(AppRoutes.passwordCheck),
+                      ),
+                      const SizedBox(width: 10),
+                      _ActionPill(
+                        icon: Icons.shield_outlined,
+                        label: 'Explore Breaches',
+                        onTap: () => context.push(AppRoutes.breachCatalog),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 8),
-
-                // Score description
-                Text(
-                  _scoreDescription(healthScore.score),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
 
-                // Section header
+                // ── 2. Health Score Ring (premium card) ──────
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 28),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0x0D4D4DCD), // 5% primary
+                        Colors.white,
+                      ],
+                    ),
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant
+                          .withValues(alpha: 0.18),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF4D4DCD).withValues(alpha: 0.06),
+                        blurRadius: 24,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      HealthScoreRing(
+                        score: healthScore.score,
+                        color: healthScore.color,
+                        size: 170,
+                        strokeWidth: 13,
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: scoreLabelColor.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          scoreLabel,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: scoreLabelColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
+
+                // ── 3. Vault Analysis (category cards) ───────
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Security Issues',
+                    'Vault Analysis',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
+                      fontFamily: 'Poppins',
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
                 // Category cards
                 ...healthScore.categories.map(
                   (category) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: 10),
                     child: CategoryCard(
                       category: category,
                       onItemTap: (itemId) {
                         if (category.type ==
                             WatchtowerCategoryType.breached) {
-                          // Find the item for the breach info sheet
                           final item = category.items.firstWhere(
                             (i) => i.id == itemId,
                           );
@@ -104,41 +173,7 @@ class WatchtowerPage extends ConsumerWidget {
                   ),
                 ),
 
-                // Quick actions
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Quick Actions',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _QuickActionCard(
-                        icon: Icons.shield_rounded,
-                        label: 'Explore Breaches',
-                        subtitle: 'Browse known data breaches',
-                        onTap: () =>
-                            context.push(AppRoutes.breachCatalog),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _QuickActionCard(
-                        icon: Icons.email_rounded,
-                        label: 'Check Email',
-                        subtitle: 'See if your email was leaked',
-                        onTap: () =>
-                            _showCheckEmailDialog(context, ref),
-                      ),
-                    ),
-                  ],
-                ),
+                // ── 4. Bottom padding ────────────────────────
                 const SizedBox(height: 100),
               ],
             ),
@@ -148,10 +183,74 @@ class WatchtowerPage extends ConsumerWidget {
     );
   }
 
-  String _scoreDescription(int score) {
-    if (score >= 80) return 'Your vault is in great shape!';
-    if (score >= 50) return 'Some passwords need attention.';
-    return 'Critical security issues detected.';
+  /// Color-coded label text for the score badge.
+  String _scoreLabel(int score) {
+    if (score >= 80) return 'Excellent';
+    if (score >= 50) return 'Good';
+    if (score >= 25) return 'Needs Attention';
+    return 'Critical';
+  }
+
+  /// Color for the score label badge.
+  Color _scoreLabelColor(int score) {
+    if (score >= 80) return const Color(0xFF43A047); // success green
+    if (score >= 50) return const Color(0xFFFFA726); // warning amber
+    return const Color(0xFFE53935); // danger red
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Action Pill (iOS-style horizontal chip)
+// ---------------------------------------------------------------------------
+
+class _ActionPill extends StatelessWidget {
+  const _ActionPill({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  static const _primary = Color(0xFF4D4DCD);
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: _primary.withValues(alpha: 0.08),
+            border: Border.all(
+              color: _primary.withValues(alpha: 0.18),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 17, color: _primary),
+              const SizedBox(width: 7),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: _primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -161,25 +260,57 @@ class _LoadingSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final shimmerColor = theme.colorScheme.surfaceContainerHighest;
+    final shimmerColor =
+        Theme.of(context).colorScheme.surfaceContainerHighest;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       child: Column(
         children: [
-          // Ring placeholder
+          // Pills placeholder row
+          Row(
+            children: [
+              for (var i = 0; i < 3; i++) ...[
+                Container(
+                  width: 110,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: shimmerColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                if (i < 2) const SizedBox(width: 10),
+              ],
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Score card placeholder
           Container(
-            width: 180,
-            height: 180,
+            width: double.infinity,
+            height: 240,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
               color: shimmerColor,
+              borderRadius: BorderRadius.circular(14),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
-          // Card placeholders
+          // Section header placeholder
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              width: 130,
+              height: 18,
+              decoration: BoxDecoration(
+                color: shimmerColor,
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Category card placeholders
           for (var i = 0; i < 4; i++) ...[
             Container(
               height: 64,
@@ -188,7 +319,7 @@ class _LoadingSkeleton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
           ],
         ],
       ),
@@ -294,82 +425,6 @@ class _ErrorState extends StatelessWidget {
               child: const Text('Retry'),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Quick Action Card
-// ---------------------------------------------------------------------------
-
-class _QuickActionCard extends StatelessWidget {
-  const _QuickActionCard({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  static const _primary = Color(0xFF4D4DCD);
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-            ),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: _primary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: _primary, size: 22),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                label,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Poppins',
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontFamily: 'Poppins',
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -556,142 +611,6 @@ void _showBreachInfoSheet(
   );
 }
 
-// ---------------------------------------------------------------------------
-// Check Email Dialog
-// ---------------------------------------------------------------------------
+// Note: Check Email and Check Password dialogs have been replaced by
+// standalone pages: EmailCheckPage and PasswordCheckPage.
 
-void _showCheckEmailDialog(BuildContext context, WidgetRef ref) {
-  final emailController = TextEditingController();
-  const primary = Color(0xFF4D4DCD);
-
-  showDialog<void>(
-    context: context,
-    builder: (dialogContext) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Row(
-          children: [
-            Icon(Icons.email_rounded, color: primary, size: 24),
-            SizedBox(width: 10),
-            Text(
-              'Check Email',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Enter an email address to check if it has appeared '
-              'in any known data breaches.',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 13,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(fontFamily: 'Poppins'),
-              decoration: InputDecoration(
-                hintText: 'you@example.com',
-                hintStyle: const TextStyle(fontFamily: 'Poppins'),
-                prefixIcon: const Icon(Icons.alternate_email, size: 20),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: primary, width: 2),
-                ),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 14,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(fontFamily: 'Poppins'),
-            ),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final email = emailController.text.trim();
-              if (email.isEmpty || !email.contains('@')) {
-                showCitadelSnackBar(
-                  context,
-                  'Please enter a valid email address.',
-                  type: SnackBarType.error,
-                );
-                return;
-              }
-
-              Navigator.of(dialogContext).pop();
-
-              showCitadelSnackBar(
-                context,
-                'Checking breaches for $email...',
-                type: SnackBarType.info,
-              );
-
-              try {
-                final breachService = ref.read(breachServiceProvider);
-                final breaches = await breachService.breachedAccount(email);
-
-                if (!context.mounted) return;
-
-                if (breaches.isEmpty) {
-                  showCitadelSnackBar(
-                    context,
-                    'Good news! $email was not found in any breaches.',
-                    type: SnackBarType.success,
-                  );
-                } else {
-                  showCitadelSnackBar(
-                    context,
-                    '$email found in ${breaches.length} breach${breaches.length == 1 ? '' : 'es'}.',
-                    type: SnackBarType.error,
-                  );
-                }
-              } catch (e) {
-                if (!context.mounted) return;
-                showCitadelSnackBar(
-                  context,
-                  e.toString(),
-                  type: SnackBarType.error,
-                );
-              }
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child: const Text(
-              'Check',
-              style: TextStyle(fontFamily: 'Poppins'),
-            ),
-          ),
-        ],
-      );
-    },
-  );
-}

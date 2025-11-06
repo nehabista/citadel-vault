@@ -16,7 +16,9 @@ import '../features/sharing/presentation/pages/shared_vaults_page.dart';
 import '../features/security/presentation/pages/breach_catalog_page.dart';
 import '../features/security/presentation/pages/breach_detail_page.dart';
 import '../features/security/presentation/pages/breach_timeline_page.dart';
+import '../features/security/presentation/pages/email_check_page.dart';
 import '../features/security/presentation/pages/hibp_settings_page.dart';
+import '../features/security/presentation/pages/password_check_page.dart';
 import '../features/vault/domain/entities/vault_item.dart';
 import '../presentation/pages/auth/auth_page.dart';
 import '../presentation/pages/auth/unlock_screen.dart';
@@ -51,6 +53,8 @@ abstract class AppRoutes {
   static const notificationSettings = '/notification-settings';
   static const sharedVaults = '/shared-vaults';
   static const emailAliases = '/email-aliases';
+  static const emailCheck = '/email-check';
+  static const passwordCheck = '/password-check';
 
   /// Routes that don't require authentication.
   static const publicRoutes = [splash, onboarding, login, signup, verification, unlock];
@@ -199,6 +203,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.emailAliases,
         builder: (context, state) => const AliasListPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.emailCheck,
+        builder: (context, state) => const EmailCheckPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.passwordCheck,
+        builder: (context, state) => const PasswordCheckPage(),
       ),
     ],
   );
