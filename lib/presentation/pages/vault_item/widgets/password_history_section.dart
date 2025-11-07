@@ -11,6 +11,17 @@ import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
 import '../../../../features/vault/domain/entities/password_history_entry.dart';
 
+/// Per-item password history provider with Riverpod caching.
+/// Replaces FutureBuilder anti-pattern in PasswordHistorySection.
+final passwordHistoryProvider =
+    FutureProvider.family<List<PasswordHistoryEntry>, String>((ref, itemId) async {
+  final session = ref.watch(sessionProvider);
+  if (session is! Unlocked) return [];
+  final vaultKey = SecretKey(session.vaultKey);
+  final repo = ref.read(vaultRepositoryProvider);
+  return repo.getPasswordHistory(itemId, vaultKey);
+});
+
 /// Displays the password history for a vault item.
 ///
 /// Loads history via VaultRepository.getPasswordHistory and
@@ -29,27 +40,21 @@ class PasswordHistorySection extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final vaultKey = SecretKey(session.vaultKey);
-    final repo = ref.read(vaultRepositoryProvider);
+    final historyAsync = ref.watch(passwordHistoryProvider(itemId));
 
-    return FutureBuilder<List<PasswordHistoryEntry>>(
-      future: repo.getPasswordHistory(itemId, vaultKey),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
-            padding: EdgeInsets.all(16),
-            child: Center(
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          );
-        }
-
-        final entries = snapshot.data ?? [];
-
+    return historyAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.all(16),
+        child: Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (entries) {
         if (entries.isEmpty) {
           return Padding(
             padding: const EdgeInsets.all(16),

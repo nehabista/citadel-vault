@@ -14,6 +14,7 @@ import '../../../core/providers/session_provider.dart';
 import '../../../core/session/session_state.dart';
 import '../../../features/security/presentation/pages/breach_timeline_page.dart';
 import '../../../features/security/domain/entities/breach_result.dart';
+import '../../../features/security/presentation/providers/breach_provider.dart';
 import '../../../features/security/presentation/providers/totp_provider.dart';
 import '../../../features/security/presentation/widgets/totp_add_dialog.dart';
 import '../../../features/security/presentation/widgets/totp_display.dart';
@@ -489,25 +490,21 @@ class _BreachWarningBanner extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final breachRepo = ref.read(breachRepositoryProvider);
+    final resultAsync = ref.watch(breachCheckProvider(item.password!));
 
-    return FutureBuilder<BreachResult>(
-      future: breachRepo.checkPasswordCached(item.password!),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Container(
-              height: 52,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-          );
-        }
-
-        final result = snapshot.data;
+    return resultAsync.when(
+      loading: () => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Container(
+          height: 52,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (result) {
         if (result is! BreachResultBreached) return const SizedBox.shrink();
 
         return Padding(

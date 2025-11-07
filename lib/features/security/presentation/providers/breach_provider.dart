@@ -78,3 +78,11 @@ final breachedItemsProvider =
 
   return results;
 });
+
+/// Per-password breach check provider with caching.
+/// Replaces FutureBuilder anti-pattern in ConsumerWidgets.
+final breachCheckProvider =
+    FutureProvider.family<BreachResult, String>((ref, password) async {
+  final breachRepo = ref.watch(breachRepositoryProvider);
+  return breachRepo.checkPasswordCached(password);
+});

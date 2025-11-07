@@ -11,6 +11,7 @@ import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
 import '../../../../features/search/presentation/widgets/search_highlight.dart';
 import '../../../../features/security/domain/entities/breach_result.dart';
+import '../../../../features/security/presentation/providers/breach_provider.dart';
 import '../../../../features/vault/domain/entities/vault_item.dart';
 import '../../../../features/vault/presentation/providers/multi_vault_provider.dart';
 import '../../../../core/providers/sync_providers.dart';
@@ -403,27 +404,17 @@ class _BreachDot extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (password == null || password!.isEmpty) return const SizedBox.shrink();
 
-    final breachRepo = ref.read(breachRepositoryProvider);
-
-    return FutureBuilder<BreachResult>(
-      future: breachRepo.checkPasswordCached(password!),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const SizedBox(height: 22);
-        }
-
-        final result = snapshot.data;
+    final resultAsync = ref.watch(breachCheckProvider(password!));
+    return resultAsync.when(
+      loading: () => const SizedBox(height: 22),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (result) {
         if (result is! BreachResultBreached) return const SizedBox.shrink();
-
         return const Padding(
           padding: EdgeInsets.only(bottom: 4),
           child: Tooltip(
             message: 'Password found in data breaches',
-            child: Icon(
-              Icons.shield_outlined,
-              color: Color(0xFFE53935),
-              size: 18,
-            ),
+            child: Icon(Icons.shield_outlined, color: Color(0xFFE53935), size: 18),
           ),
         );
       },
