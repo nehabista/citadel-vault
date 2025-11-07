@@ -1,140 +1,130 @@
 // File: lib/features/email_alias/presentation/pages/ddg_signup_webview.dart
-// In-app WebView for DuckDuckGo Email Protection signup.
-// Monitors URL changes to detect successful signup and auto-extract the username.
+// DuckDuckGo Email Protection signup helper.
+// Opens system browser for signup, then prompts for username on return.
 
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-/// WebView page that loads the DuckDuckGo Email Protection signup page.
+/// Helper page that guides the user through DDG Email signup.
 ///
-/// When the user completes signup, the page detects the success URL
-/// and pops with the duck.com username so the parent can auto-fill
-/// the login field and trigger OTP.
-class DdgSignupWebview extends StatefulWidget {
+/// DDG blocks in-app WebViews from accessing Email Protection —
+/// requires the DuckDuckGo browser or extension. So we open the
+/// system browser for signup and ask the user to enter their
+/// username when they return.
+class DdgSignupWebview extends StatelessWidget {
   const DdgSignupWebview({super.key});
-
-  @override
-  State<DdgSignupWebview> createState() => _DdgSignupWebviewState();
-}
-
-class _DdgSignupWebviewState extends State<DdgSignupWebview> {
-  late final WebViewController _controller;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      // Real DuckDuckGo browser User-Agent — DDG blocks non-DDG browsers
-      ..setUserAgent(
-        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) '
-        'AppleWebKit/605.1.15 (KHTML, like Gecko) '
-        'Version/26.3 Mobile/15E148 DuckDuckGo/7 Safari/605.1.15',
-      )
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (url) {
-            setState(() => _isLoading = true);
-          },
-          onPageFinished: (url) {
-            setState(() => _isLoading = false);
-            _checkForSignupCompletion(url);
-          },
-          onUrlChange: (change) {
-            if (change.url != null) {
-              _checkForSignupCompletion(change.url!);
-            }
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse('https://duckduckgo.com/email/'));
-  }
-
-  /// Detect when the user has completed signup.
-  ///
-  /// DuckDuckGo redirects to the dashboard after successful signup.
-  /// We try to extract the username from the page via JavaScript.
-  Future<void> _checkForSignupCompletion(String url) async {
-    // After signup, DDG shows the dashboard or a confirmation page
-    if (url.contains('/email/') && !url.contains('/email/start')) {
-      // Try to extract the username from the page
-      try {
-        final result = await _controller.runJavaScriptReturningResult(
-          '''
-          (function() {
-            // Look for the duck address displayed on the page
-            var el = document.querySelector('[data-testid="address"]') ||
-                     document.querySelector('.address') ||
-                     document.querySelector('input[type="email"]');
-            if (el) {
-              var val = el.textContent || el.value || '';
-              return val.replace('@duck.com', '').trim();
-            }
-            return '';
-          })()
-          ''',
-        );
-
-        final username = result.toString().replaceAll('"', '').trim();
-        if (username.isNotEmpty && username.length > 2 && mounted) {
-          // Found the username — pop back with it
-          Navigator.of(context).pop(username);
-        }
-      } catch (_) {
-        // JS extraction failed — user can still manually go back
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color(0xFFDE5833),
         foregroundColor: Colors.white,
         title: const Text(
-          'DuckDuckGo Email Signup',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
+          'DuckDuckGo Email',
+          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          // Manual "I'm done" button for cases where auto-detection fails
-          TextButton(
-            onPressed: () => _showUsernameDialog(),
-            child: const Text(
-              'Done',
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
       ),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: _controller),
-          if (_isLoading)
-            const LinearProgressIndicator(
-              color: Color(0xFFDE5833),
-              backgroundColor: Colors.transparent,
-            ),
-        ],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              const Spacer(),
+
+              // Duck icon
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDE5833).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(Icons.email_outlined, size: 40, color: Color(0xFFDE5833)),
+              ),
+              const SizedBox(height: 24),
+
+              const Text(
+                'Create a Duck Address',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 22,
+                  color: Color(0xFF1A1A2E),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'DuckDuckGo Email Protection requires signup through their browser or website. '
+                "We'll open it in Safari — create your free @duck.com address, then come back.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Step indicators
+              _StepRow(number: '1', text: "Tap 'Open DuckDuckGo' below"),
+              const SizedBox(height: 12),
+              _StepRow(number: '2', text: 'Create your free @duck.com address'),
+              const SizedBox(height: 12),
+              _StepRow(number: '3', text: "Come back and tap 'I have my address'"),
+
+              const Spacer(),
+
+              // Open DDG button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton.icon(
+                  onPressed: () => launchUrl(
+                    Uri.parse('https://duckduckgo.com/email/'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  icon: const Icon(Icons.open_in_new),
+                  label: const Text(
+                    'Open DuckDuckGo',
+                    style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFDE5833),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // I have my address button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton(
+                  onPressed: () => _showUsernameDialog(context),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFDE5833),
+                    side: const BorderSide(color: Color(0xFFDE5833)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text(
+                    'I have my Duck Address',
+                    style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  /// If auto-detection fails, let the user manually enter their duck username.
-  Future<void> _showUsernameDialog() async {
+  Future<void> _showUsernameDialog(BuildContext context) async {
     final controller = TextEditingController();
 
     final username = await showDialog<String>(
@@ -143,22 +133,14 @@ class _DdgSignupWebviewState extends State<DdgSignupWebview> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Enter your Duck Address',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-          ),
+          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: 18),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Enter the username you just created (without @duck.com)',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 13,
-                color: Colors.grey.shade600,
-              ),
+              'Enter the username you created (without @duck.com)',
+              style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -168,14 +150,8 @@ class _DdgSignupWebviewState extends State<DdgSignupWebview> {
                 labelText: 'Username',
                 labelStyle: const TextStyle(fontFamily: 'Poppins'),
                 suffixText: '@duck.com',
-                suffixStyle: TextStyle(
-                  fontFamily: 'Poppins',
-                  color: Colors.grey.shade500,
-                  fontSize: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                suffixStyle: TextStyle(fontFamily: 'Poppins', color: Colors.grey.shade500, fontSize: 14),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(color: Color(0xFFDE5833), width: 2),
@@ -198,14 +174,58 @@ class _DdgSignupWebviewState extends State<DdgSignupWebview> {
               if (val.isNotEmpty) Navigator.pop(ctx, val);
             },
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFFDE5833)),
-            child: const Text('Save', style: TextStyle(fontFamily: 'Poppins')),
+            child: const Text('Continue', style: TextStyle(fontFamily: 'Poppins')),
           ),
         ],
       ),
     );
 
-    if (username != null && username.isNotEmpty && mounted) {
+    if (username != null && username.isNotEmpty && context.mounted) {
       Navigator.of(context).pop(username);
     }
+  }
+}
+
+class _StepRow extends StatelessWidget {
+  const _StepRow({required this.number, required this.text});
+  final String number;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: const Color(0xFFDE5833).withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFDE5833),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

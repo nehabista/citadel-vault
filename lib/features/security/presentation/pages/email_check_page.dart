@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/providers/core_providers.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
+import '../../../../routing/app_router.dart';
 import '../../data/models/breach_record.dart';
 
 /// Standalone Email Check page accessible from Watchtower Quick Actions.
@@ -153,7 +155,10 @@ class _EmailCheckPageState extends ConsumerState<EmailCheckPage>
                 const SizedBox(height: 16),
                 ..._breaches.map((b) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: _BreachCard(breach: b),
+                      child: GestureDetector(
+                        onTap: () => context.push(AppRoutes.breachDetail, extra: b),
+                        child: _BreachCard(breach: b),
+                      ),
                     )),
               ],
             ],
