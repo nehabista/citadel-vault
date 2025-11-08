@@ -75,6 +75,21 @@ class SharingRepository {
     await _service.publishPublicKey(userId, base64Encode(publicKeyBytes));
   }
 
+  /// Return the local X25519 public key as a base64 string.
+  ///
+  /// Throws [StateError] if the keypair has not been generated yet.
+  /// Call [ensureKeypairExists] first.
+  Future<String> getLocalPublicKeyBase64() async {
+    final publicKeyBase64 =
+        await _secureStorage.read(key: 'x25519_public_key');
+    if (publicKeyBase64 == null || publicKeyBase64.isEmpty) {
+      throw StateError(
+        'X25519 public key not found. Call ensureKeypairExists() first.',
+      );
+    }
+    return publicKeyBase64;
+  }
+
   /// Load the local X25519 keypair from flutter_secure_storage.
   Future<SimpleKeyPair> getLocalKeyPair() async {
     final privateKeyBase64 =

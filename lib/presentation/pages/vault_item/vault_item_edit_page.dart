@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:cryptography/cryptography.dart';
@@ -8,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/citadel_snackbar.dart';
 
 import '../../../core/providers/core_providers.dart';
+import '../../../features/security/domain/entities/breach_result.dart';
 import '../../../core/providers/session_provider.dart';
 import '../../../core/providers/sync_providers.dart';
 import '../../../core/session/session_state.dart';
@@ -87,6 +89,11 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
   late int? _expiryDays;
   bool _passwordVisible = false;
   bool _isSaving = false;
+
+  // Breach check state
+  Timer? _breachDebounce;
+  int? _breachCount; // null = not checked yet, 0 = clean, >0 = breached
+  bool _breachChecking = false;
 
   bool get _isCreateMode => widget.existingItem == null;
 
@@ -173,6 +180,8 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
         ref
             .read(currentPasswordProvider.notifier)
             .set(_passwordController.text);
+        // Trigger initial breach check for existing passwords.
+        _debouncedBreachCheck();
       });
     }
 
@@ -225,10 +234,47 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
 
   void _onPasswordChanged() {
     ref.read(currentPasswordProvider.notifier).set(_passwordController.text);
+    _debouncedBreachCheck();
+  }
+
+  void _debouncedBreachCheck() {
+    _breachDebounce?.cancel();
+    final password = _passwordController.text;
+
+    if (password.isEmpty) {
+      setState(() {
+        _breachCount = null;
+        _breachChecking = false;
+      });
+      return;
+    }
+
+    setState(() => _breachChecking = true);
+
+    _breachDebounce = Timer(const Duration(milliseconds: 500), () async {
+      if (!mounted) return;
+      try {
+        final breachRepo = ref.read(breachRepositoryProvider);
+        final result = await breachRepo.checkPasswordCached(password);
+        if (!mounted) return;
+        setState(() {
+          _breachCount =
+              result is BreachResultBreached ? result.count : 0;
+          _breachChecking = false;
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+          _breachCount = null;
+          _breachChecking = false;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
+    _breachDebounce?.cancel();
     _passwordController.removeListener(_onPasswordChanged);
     _nameController.dispose();
     _urlController.dispose();
@@ -647,6 +693,57 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
           ),
         ),
       ),
+      // Inline breach warning
+      if (_breachChecking)
+        const Padding(
+          padding: EdgeInsets.only(top: 6, left: 4),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  color: Color(0xFF9E9E9E),
+                ),
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Checking breach databases...',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  color: Color(0xFF9E9E9E),
+                ),
+              ),
+            ],
+          ),
+        )
+      else if (_breachCount != null && _breachCount! > 0)
+        Padding(
+          padding: const EdgeInsets.only(top: 6, left: 4),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                size: 16,
+                color: Color(0xFFE53935),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'This password appeared in $_breachCount data breach${_breachCount == 1 ? '' : 'es'}',
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFFE53935),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       const SizedBox(height: 16),
       TextFormField(
         controller: _notesController,

@@ -12,8 +12,10 @@ import '../../../features/sharing/presentation/pages/share_bottom_sheet.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/providers/session_provider.dart';
 import '../../../core/session/session_state.dart';
+import '../../../features/security/data/models/breach_record.dart';
 import '../../../features/security/presentation/pages/breach_timeline_page.dart';
 import '../../../features/security/domain/entities/breach_result.dart';
+import '../../../features/security/presentation/providers/breach_catalog_provider.dart';
 import '../../../features/security/presentation/providers/breach_provider.dart';
 import '../../../features/security/presentation/providers/totp_provider.dart';
 import '../../../features/security/presentation/widgets/totp_add_dialog.dart';
@@ -61,6 +63,10 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final itemAsync = ref.watch(vaultItemDetailProvider(widget.itemId));
+
+    // Pre-warm breach catalog and password history for timeline.
+    ref.watch(breachCatalogProvider);
+    ref.watch(passwordHistoryProvider(widget.itemId));
 
     return itemAsync.when(
       loading: () => Scaffold(
@@ -441,13 +447,48 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
     );
   }
 
-  void _navigateToBreachTimeline(VaultItemEntity item) {
+  Future<void> _navigateToBreachTimeline(VaultItemEntity item) async {
+    // Extract domain from the item's URL for matching against breach catalog.
+    String itemDomain = '';
+    if (item.url != null && item.url!.isNotEmpty) {
+      try {
+        final uri = Uri.parse(item.url!);
+        itemDomain = (uri.host.isNotEmpty ? uri.host : item.url!)
+            .toLowerCase()
+            .replaceFirst(RegExp(r'^www\.'), '');
+      } catch (_) {
+        itemDomain = item.url!.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
+      }
+    }
+
+    // Fetch breach catalog records matching the item's domain.
+    List<BreachRecord> matchingBreaches = const [];
+    if (itemDomain.isNotEmpty) {
+      final catalogAsync = ref.read(breachCatalogProvider);
+      final catalog = catalogAsync.whenData((v) => v).value ?? const [];
+      matchingBreaches = catalog.where((breach) {
+        final breachDomain =
+            breach.domain.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
+        return breachDomain.isNotEmpty &&
+            (itemDomain.contains(breachDomain) ||
+                breachDomain.contains(itemDomain));
+      }).toList();
+    }
+
+    // Fetch password history dates for this item.
+    final historyAsync = ref.read(passwordHistoryProvider(item.id));
+    final history = historyAsync.whenData((v) => v).value ?? const [];
+    final passwordChangeDates =
+        history.map((entry) => entry.changedAt).toList();
+
+    if (!mounted) return;
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => BreachTimelinePage(
           item: item,
-          breaches: const [], // Populated by caller or fetched in page
-          passwordChangeDates: const [],
+          breaches: matchingBreaches,
+          passwordChangeDates: passwordChangeDates,
         ),
       ),
     );

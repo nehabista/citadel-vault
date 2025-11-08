@@ -307,11 +307,13 @@ class SharedVaultsPage extends ConsumerWidget {
                 // Publish public key if needed.
                 final repo = ref.read(sharingRepositoryProvider);
                 await repo.ensureKeypairExists(userId: userId);
+                final publicKey =
+                    await repo.getLocalPublicKeyBase64();
 
                 await service.createSharedVault(
                   name: name,
                   ownerId: userId,
-                  ownerPublicKey: '', // Will be filled by ensureKeypairExists.
+                  ownerPublicKey: publicKey,
                 );
 
                 ref.invalidate(userSharedVaultsProvider);
