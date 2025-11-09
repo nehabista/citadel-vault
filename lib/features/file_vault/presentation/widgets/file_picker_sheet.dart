@@ -146,7 +146,7 @@ class _FilePickerSheetState extends ConsumerState<FilePickerSheet> {
       if (!mounted) return;
       showCitadelSnackBar(
         context,
-        'File exceeds 10MB limit',
+        'File must be under 10MB',
         type: SnackBarType.error,
       );
       return;
@@ -217,7 +217,7 @@ class _FilePickerSheetState extends ConsumerState<FilePickerSheet> {
       setState(() => _isEncrypting = false);
       showCitadelSnackBar(
         context,
-        'File exceeds 10MB limit',
+        'File must be under 10MB',
         type: SnackBarType.error,
       );
     } on UnsupportedFileTypeException {
@@ -225,7 +225,7 @@ class _FilePickerSheetState extends ConsumerState<FilePickerSheet> {
       setState(() => _isEncrypting = false);
       showCitadelSnackBar(
         context,
-        'File type not supported',
+        'Only images (JPG, PNG), PDFs, and text files are supported',
         type: SnackBarType.error,
       );
     } catch (e) {
@@ -233,7 +233,7 @@ class _FilePickerSheetState extends ConsumerState<FilePickerSheet> {
       setState(() => _isEncrypting = false);
       showCitadelSnackBar(
         context,
-        'Error encrypting file: $e',
+        'Failed to save file: $e',
         type: SnackBarType.error,
       );
     }

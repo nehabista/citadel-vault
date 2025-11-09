@@ -1,4 +1,7 @@
 // File: lib/presentation/pages/settings/settings_page.dart
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -113,9 +116,35 @@ class SettingsScreen extends ConsumerWidget {
                 loading: () => 'Checking...',
                 error: (_, __) => 'Not available',
               ),
-              onTap: () {
-                final openSettings = ref.read(openAutofillSettingsProvider);
-                openSettings();
+              onTap: () async {
+                if (kIsWeb) {
+                  showCitadelSnackBar(
+                    context,
+                    'Autofill settings are not available on web',
+                    type: SnackBarType.info,
+                  );
+                  return;
+                }
+                if (!Platform.isAndroid) {
+                  showCitadelSnackBar(
+                    context,
+                    'Autofill settings are available on Android devices',
+                    type: SnackBarType.info,
+                  );
+                  return;
+                }
+                try {
+                  final openSettings =
+                      ref.read(openAutofillSettingsProvider);
+                  await openSettings();
+                } catch (_) {
+                  if (!context.mounted) return;
+                  showCitadelSnackBar(
+                    context,
+                    'Could not open autofill settings',
+                    type: SnackBarType.error,
+                  );
+                }
               },
             ),
             _SettingsTile(
