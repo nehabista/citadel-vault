@@ -251,6 +251,112 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
+  void _showInfoForTab(int index, BuildContext context) {
+    switch (index) {
+      case 0:
+        showCitadelInfoDialog(
+          context,
+          icon: Icons.lock_rounded,
+          iconColor: const Color(0xFF4D4DCD),
+          title: 'About Citadel',
+          sections: const [
+            InfoSection(
+              icon: Icons.enhanced_encryption_rounded,
+              title: 'Zero-Knowledge Encryption',
+              description:
+                  'Your vault is encrypted with AES-256-GCM using a key derived from your master password via Argon2id. We never see your data.',
+            ),
+            InfoSection(
+              icon: Icons.sync_lock_rounded,
+              title: 'End-to-End Encrypted Sync',
+              description:
+                  'All data is encrypted on your device before syncing. The server only stores encrypted blobs.',
+            ),
+            InfoSection(
+              icon: Icons.shield_outlined,
+              title: 'Breach Protection',
+              description:
+                  'Passwords are automatically checked against known breaches. Look for the red shield icon on compromised items.',
+            ),
+            InfoSection(
+              icon: Icons.security_rounded,
+              title: 'TOTP Authenticator',
+              description:
+                  'Store TOTP secrets alongside your logins for one-tap 2FA code access.',
+            ),
+          ],
+        );
+      case 1:
+        showCitadelInfoDialog(
+          context,
+          icon: Icons.shield_rounded,
+          iconColor: const Color(0xFF4D4DCD),
+          title: 'About Watchtower',
+          sections: const [
+            InfoSection(
+              icon: Icons.speed_rounded,
+              title: 'Health Score',
+              description:
+                  'Your vault health score (0-100) measures overall password security \u2014 considering weak, reused, old, and breached passwords.',
+            ),
+            InfoSection(
+              icon: Icons.security_rounded,
+              title: 'Breach Monitoring',
+              description:
+                  'Passwords are checked against Have I Been Pwned\u2019s 14+ billion compromised credentials using k-anonymity. Your passwords are never sent.',
+            ),
+            InfoSection(
+              icon: Icons.analytics_rounded,
+              title: 'Password Analysis',
+              description:
+                  'Weak passwords have low entropy. Reused passwords put multiple accounts at risk. Passwords older than 90 days should be rotated.',
+            ),
+            InfoSection(
+              icon: Icons.bolt_rounded,
+              title: 'Quick Actions',
+              description:
+                  'Check individual emails and passwords against breach databases. Explore the full breach catalog.',
+            ),
+          ],
+        );
+      case 2:
+        showCitadelInfoDialog(
+          context,
+          icon: Icons.auto_awesome_rounded,
+          iconColor: const Color(0xFF4D4DCD),
+          title: 'About Locksmith',
+          sections: const [
+            InfoSection(
+              icon: Icons.bar_chart_rounded,
+              title: 'Entropy',
+              description:
+                  'Measures password randomness in bits. 80+ bits is strong. Uses cryptographic randomness (SecureRandom).',
+            ),
+            InfoSection(
+              icon: Icons.timer_rounded,
+              title: 'Crack Time',
+              description:
+                  'Estimated brute-force time from a single PC to a nation-state supercomputer cluster.',
+            ),
+            InfoSection(
+              icon: Icons.text_snippet_rounded,
+              title: 'Passphrase Mode',
+              description:
+                  'Generates memorable multi-word passphrases. Easier to type while maintaining high entropy.',
+            ),
+            InfoSection(
+              icon: Icons.tune_rounded,
+              title: 'Character Types',
+              description:
+                  'Mix uppercase, lowercase, digits, and symbols for maximum entropy per character.',
+            ),
+          ],
+        );
+      default:
+        break; // No info dialog for Settings tab
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedIndex = ref.watch(selectedNavIndexProvider);
@@ -295,43 +401,16 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         centerTitle: false,
         actions: [
-          if (selectedIndex == 0)
+          if (selectedIndex != 3) // Info button for Vault, Watchtower, Locksmith tabs
             IconButton(
               icon: const Icon(Icons.info_outline_rounded,
                   color: Color(0xFF4D4DCD), size: 22),
-              tooltip: 'About Citadel',
-              onPressed: () => showCitadelInfoDialog(
-                context,
-                icon: Icons.lock_rounded,
-                iconColor: const Color(0xFF4D4DCD),
-                title: 'About Citadel',
-                sections: const [
-                  InfoSection(
-                    icon: Icons.enhanced_encryption_rounded,
-                    title: 'Zero-Knowledge Encryption',
-                    description:
-                        'Your vault is encrypted with AES-256-GCM using a key derived from your master password via Argon2id. We never see your data.',
-                  ),
-                  InfoSection(
-                    icon: Icons.sync_lock_rounded,
-                    title: 'End-to-End Encrypted Sync',
-                    description:
-                        'All data is encrypted on your device before syncing. The server only stores encrypted blobs.',
-                  ),
-                  InfoSection(
-                    icon: Icons.shield_outlined,
-                    title: 'Breach Protection',
-                    description:
-                        'Passwords are automatically checked against known breaches. Look for the red shield icon on compromised items.',
-                  ),
-                  InfoSection(
-                    icon: Icons.security_rounded,
-                    title: 'TOTP Authenticator',
-                    description:
-                        'Store TOTP secrets alongside your logins for one-tap 2FA code access.',
-                  ),
-                ],
-              ),
+              tooltip: switch (selectedIndex) {
+                1 => 'About Watchtower',
+                2 => 'About Locksmith',
+                _ => 'About Citadel',
+              },
+              onPressed: () => _showInfoForTab(selectedIndex, context),
             ),
           if (selectedIndex == 0)
             Padding(

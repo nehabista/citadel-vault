@@ -2,6 +2,8 @@
 // PocketBase CRUD service for shared_items, shared_links, and user_keys collections.
 // Per D-02, D-03, D-04, D-05, D-06, D-15.
 
+import 'dart:developer' as dev;
+
 import 'package:pocketbase/pocketbase.dart';
 
 /// Service responsible for PocketBase API calls related to sharing.
@@ -232,11 +234,16 @@ class SharingService {
   ///
   /// The callback fires on any create/update/delete. Client-side
   /// filtering by recipientId is applied in the repository layer.
-  void subscribeToSharedItems(
+  Future<void> subscribeToSharedItems(
     String userId,
     void Function(RecordSubscriptionEvent) callback,
-  ) {
-    _pb.collection('shared_items').subscribe('*', callback);
+  ) async {
+    try {
+      await _pb.collection('shared_items').subscribe('*', callback);
+    } catch (e) {
+      // Realtime not available — fall back to polling
+      dev.log('[Sharing] Realtime unavailable: $e');
+    }
   }
 
   /// Unsubscribe from all `shared_items` real-time events.

@@ -180,9 +180,7 @@ class SettingsScreen extends ConsumerWidget {
               icon: Icons.flight,
               iconColor: Colors.orange,
               title: 'Travel Mode',
-              onTap: () {
-                // TODO: navigate to travel mode page when available
-              },
+              onTap: () => context.push(AppRoutes.travelMode),
             ),
             _SettingsTile(
               icon: Icons.alternate_email,
@@ -283,9 +281,7 @@ class SettingsScreen extends ConsumerWidget {
               icon: Icons.vpn_key,
               iconColor: Colors.blueGrey,
               title: 'SSH Keys',
-              onTap: () {
-                // TODO: navigate to SSH key page when available
-              },
+              onTap: () => context.push(AppRoutes.sshKeys),
             ),
           ]),
 

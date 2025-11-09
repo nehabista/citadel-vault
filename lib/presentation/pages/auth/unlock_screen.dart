@@ -33,6 +33,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
   bool _isProcessing = false;
   bool _hasError = false;
   bool _biometricsAvailable = false;
+  bool _biometricsConfigured = false;
   bool _hasQuickUnlock = false; // true = PIN mode, false = master password mode
   bool _loading = true;
   bool _obscureMasterPw = true;
@@ -61,16 +62,19 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
     final localAuth = ref.read(localAuthServiceProvider);
     final hasSetup = await localAuth.hasQuickUnlockSetup();
     final canBio = await localAuth.canUseBiometrics();
+    final unlockMethod = await localAuth.getSavedUnlockMethod();
+    final bioConfigured = unlockMethod == UnlockMethod.biometrics;
 
     if (mounted) {
       setState(() {
         _hasQuickUnlock = hasSetup;
         _biometricsAvailable = canBio;
+        _biometricsConfigured = bioConfigured;
         _loading = false;
       });
 
       // Auto-trigger biometric if available and configured
-      if (hasSetup && canBio) {
+      if (bioConfigured && canBio) {
         _attemptBiometricUnlock();
       }
     }
@@ -425,7 +429,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
                 children: [
                   _buildActionButton(
                     icon: Icons.fingerprint_rounded,
-                    visible: _biometricsAvailable,
+                    visible: _biometricsAvailable && _biometricsConfigured,
                     onTap: _attemptBiometricUnlock,
                   ),
                   _buildDigitButton(0),

@@ -3,6 +3,8 @@
 // Manages the full emergency access lifecycle: create, request, approve, reject, revoke.
 // Per D-10, D-11, D-15: configurable waiting period, real-time subscriptions.
 
+import 'dart:developer' as dev;
+
 import 'package:pocketbase/pocketbase.dart';
 
 /// Service that handles PocketBase operations for emergency contacts.
@@ -104,11 +106,16 @@ class EmergencyService {
   ///
   /// Fires on any create/update/delete in the emergency_contacts collection.
   /// The caller should filter events by userId (grantor or grantee).
-  void subscribeToEmergencyEvents(
+  Future<void> subscribeToEmergencyEvents(
     String userId,
     void Function(RecordSubscriptionEvent) callback,
-  ) {
-    _pb.collection(_collection).subscribe('*', callback);
+  ) async {
+    try {
+      await _pb.collection(_collection).subscribe('*', callback);
+    } catch (e) {
+      // Realtime not available — fall back to polling
+      dev.log('[Emergency] Realtime unavailable: $e');
+    }
   }
 
   /// Unsubscribe from real-time emergency contact events.

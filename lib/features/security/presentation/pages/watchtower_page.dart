@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../presentation/widgets/citadel_info_dialog.dart';
 import '../../../../routing/app_router.dart';
 import '../../../vault/domain/entities/vault_item.dart';
 import '../../domain/entities/watchtower_category.dart';
@@ -53,48 +52,6 @@ class WatchtowerPage extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             child: Column(
               children: [
-                // ── 0. Info button ──────────────────────────
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.info_outline_rounded,
-                        color: Color(0xFF4D4DCD), size: 22),
-                    tooltip: 'About Watchtower',
-                    onPressed: () => showCitadelInfoDialog(
-                      context,
-                      icon: Icons.shield_rounded,
-                      iconColor: const Color(0xFF4D4DCD),
-                      title: 'About Watchtower',
-                      sections: const [
-                        InfoSection(
-                          icon: Icons.speed_rounded,
-                          title: 'Health Score',
-                          description:
-                              'Your vault health score (0-100) measures overall password security \u2014 considering weak, reused, old, and breached passwords.',
-                        ),
-                        InfoSection(
-                          icon: Icons.security_rounded,
-                          title: 'Breach Monitoring',
-                          description:
-                              'Passwords are checked against Have I Been Pwned\u2019s 14+ billion compromised credentials using k-anonymity. Your passwords are never sent.',
-                        ),
-                        InfoSection(
-                          icon: Icons.analytics_rounded,
-                          title: 'Password Analysis',
-                          description:
-                              'Weak passwords have low entropy. Reused passwords put multiple accounts at risk. Passwords older than 90 days should be rotated.',
-                        ),
-                        InfoSection(
-                          icon: Icons.bolt_rounded,
-                          title: 'Quick Actions',
-                          description:
-                              'Check individual emails and passwords against breach databases. Explore the full breach catalog.',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
                 // ── 1. Quick Actions (pill row) ──────────────
                 SizedBox(
                   height: 40,

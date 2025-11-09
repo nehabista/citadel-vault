@@ -308,8 +308,8 @@ class SharingRepository {
   ///
   /// When a new item is received, a local notification is triggered
   /// via [NotificationService].
-  void startListening(String userId) {
-    _service.subscribeToSharedItems(userId, (event) async {
+  Future<void> startListening(String userId) async {
+    await _service.subscribeToSharedItems(userId, (event) async {
       if (event.action == 'create') {
         final recipientId = event.record?.getStringValue('recipientId');
         if (recipientId == userId) {

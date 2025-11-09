@@ -205,15 +205,15 @@ class EmergencyRepository {
   ///
   /// On status change to 'waiting' (for grantor): shows local notification.
   /// On status change to 'active' (for grantee): shows local notification.
-  void startListening({
+  Future<void> startListening({
     required String userId,
     required void Function({
       required String message,
       required String actionLabel,
       required String route,
     }) showAlert,
-  }) {
-    _service.subscribeToEmergencyEvents(userId, (event) async {
+  }) async {
+    await _service.subscribeToEmergencyEvents(userId, (event) async {
       if (event.action == 'update' && event.record != null) {
         final contact = EmergencyContact.fromRecord(event.record!);
 
