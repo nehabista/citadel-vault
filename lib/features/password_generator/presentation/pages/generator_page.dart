@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../presentation/widgets/citadel_info_dialog.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../../../../presentation/widgets/hyper_text.dart';
 import '../../domain/entities/password_strength.dart';
@@ -76,6 +77,48 @@ class _GeneratorPageState extends ConsumerState<GeneratorPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // 0. Info button
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.info_outline_rounded,
+                          color: Color(0xFF4D4DCD), size: 22),
+                      tooltip: 'About Locksmith',
+                      onPressed: () => showCitadelInfoDialog(
+                        context,
+                        icon: Icons.auto_awesome_rounded,
+                        iconColor: const Color(0xFF4D4DCD),
+                        title: 'About Locksmith',
+                        sections: const [
+                          InfoSection(
+                            icon: Icons.bar_chart_rounded,
+                            title: 'Entropy',
+                            description:
+                                'Measures password randomness in bits. 80+ bits is strong. Uses cryptographic randomness (SecureRandom).',
+                          ),
+                          InfoSection(
+                            icon: Icons.timer_rounded,
+                            title: 'Crack Time',
+                            description:
+                                'Estimated brute-force time from a single PC to a nation-state supercomputer cluster.',
+                          ),
+                          InfoSection(
+                            icon: Icons.text_snippet_rounded,
+                            title: 'Passphrase Mode',
+                            description:
+                                'Generates memorable multi-word passphrases. Easier to type while maintaining high entropy.',
+                          ),
+                          InfoSection(
+                            icon: Icons.tune_rounded,
+                            title: 'Character Types',
+                            description:
+                                'Mix uppercase, lowercase, digits, and symbols for maximum entropy per character.',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
                   // 1. Password Display
                   _PasswordDisplay(
                     password: password,

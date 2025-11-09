@@ -16,6 +16,7 @@ import '../../../core/session/session_state.dart';
 import '../../../features/password_generator/presentation/providers/strength_provider.dart';
 import '../../../features/password_generator/presentation/widgets/entropy_gauge.dart';
 import '../../../features/password_generator/presentation/widgets/password_generator_sheet.dart';
+import '../../../features/vault/data/services/logo_search_service.dart';
 import '../../../features/vault/domain/entities/custom_field.dart';
 import '../../../features/vault/domain/entities/vault_item.dart';
 import '../../../features/vault/presentation/providers/multi_vault_provider.dart';
@@ -83,6 +84,68 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
   late final TextEditingController _licensedToController;
   late final TextEditingController _licenseExpiryController;
 
+  // --- Drivers License ---
+  late final TextEditingController _dlNameController;
+  late final TextEditingController _dlNumberController;
+  late final TextEditingController _dlStateController;
+  late final TextEditingController _dlExpiryController;
+  late final TextEditingController _dlDobController;
+
+  // --- Passport ---
+  late final TextEditingController _passportNameController;
+  late final TextEditingController _passportNumberController;
+  late final TextEditingController _passportCountryController;
+  late final TextEditingController _passportExpiryController;
+  late final TextEditingController _passportDobController;
+
+  // --- Social Security Number ---
+  late final TextEditingController _ssnNameController;
+  late final TextEditingController _ssnNumberController;
+
+  // --- Health Insurance ---
+  late final TextEditingController _hiProviderController;
+  late final TextEditingController _hiPolicyController;
+  late final TextEditingController _hiGroupController;
+  late final TextEditingController _hiMemberIdController;
+
+  // --- Insurance Policy ---
+  late final TextEditingController _ipCompanyController;
+  late final TextEditingController _ipPolicyController;
+  late final TextEditingController _ipTypeController;
+  late final TextEditingController _ipExpiryController;
+
+  // --- Membership Card ---
+  late final TextEditingController _mcOrgController;
+  late final TextEditingController _mcMemberIdController;
+  late final TextEditingController _mcMemberNameController;
+  late final TextEditingController _mcExpiryController;
+
+  // --- Email Account ---
+  late final TextEditingController _eaEmailController;
+  late final TextEditingController _eaPasswordController;
+  late final TextEditingController _eaServerController;
+  late final TextEditingController _eaPortController;
+
+  // --- Instant Messenger ---
+  late final TextEditingController _imServiceController;
+  late final TextEditingController _imUsernameController;
+  late final TextEditingController _imPasswordController;
+
+  // --- Database ---
+  late final TextEditingController _dbNameController;
+  late final TextEditingController _dbHostController;
+  late final TextEditingController _dbPortController;
+  late final TextEditingController _dbDbNameController;
+  late final TextEditingController _dbUsernameController;
+  late final TextEditingController _dbPasswordController;
+
+  // --- Server ---
+  late final TextEditingController _srvNameController;
+  late final TextEditingController _srvHostController;
+  late final TextEditingController _srvPortController;
+  late final TextEditingController _srvUsernameController;
+  late final TextEditingController _srvPasswordController;
+
   late VaultItemType _selectedType;
   late bool _isFavorite;
   late List<CustomField> _customFields;
@@ -94,6 +157,13 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
   Timer? _breachDebounce;
   int? _breachCount; // null = not checked yet, 0 = clean, >0 = breached
   bool _breachChecking = false;
+
+  // Logo search state (Password type only)
+  Timer? _logoDebounce;
+  List<LogoResult> _logoResults = [];
+  String? _selectedLogoUrl;
+  final LayerLink _logoLayerLink = LayerLink();
+  OverlayEntry? _logoOverlayEntry;
 
   bool get _isCreateMode => widget.existingItem == null;
 
@@ -169,6 +239,110 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
     _licenseExpiryController =
         TextEditingController(text: _customFieldValue('licenseExpiry'));
 
+    // Drivers License
+    _dlNameController =
+        TextEditingController(text: _customFieldValue('dlName'));
+    _dlNumberController =
+        TextEditingController(text: _customFieldValue('dlNumber'));
+    _dlStateController =
+        TextEditingController(text: _customFieldValue('dlState'));
+    _dlExpiryController =
+        TextEditingController(text: _customFieldValue('dlExpiry'));
+    _dlDobController =
+        TextEditingController(text: _customFieldValue('dlDob'));
+
+    // Passport
+    _passportNameController =
+        TextEditingController(text: _customFieldValue('passportName'));
+    _passportNumberController =
+        TextEditingController(text: _customFieldValue('passportNumber'));
+    _passportCountryController =
+        TextEditingController(text: _customFieldValue('passportCountry'));
+    _passportExpiryController =
+        TextEditingController(text: _customFieldValue('passportExpiry'));
+    _passportDobController =
+        TextEditingController(text: _customFieldValue('passportDob'));
+
+    // Social Security Number
+    _ssnNameController =
+        TextEditingController(text: _customFieldValue('ssnName'));
+    _ssnNumberController =
+        TextEditingController(text: _customFieldValue('ssnNumber'));
+
+    // Health Insurance
+    _hiProviderController =
+        TextEditingController(text: _customFieldValue('hiProvider'));
+    _hiPolicyController =
+        TextEditingController(text: _customFieldValue('hiPolicy'));
+    _hiGroupController =
+        TextEditingController(text: _customFieldValue('hiGroup'));
+    _hiMemberIdController =
+        TextEditingController(text: _customFieldValue('hiMemberId'));
+
+    // Insurance Policy
+    _ipCompanyController =
+        TextEditingController(text: _customFieldValue('ipCompany'));
+    _ipPolicyController =
+        TextEditingController(text: _customFieldValue('ipPolicy'));
+    _ipTypeController =
+        TextEditingController(text: _customFieldValue('ipType'));
+    _ipExpiryController =
+        TextEditingController(text: _customFieldValue('ipExpiry'));
+
+    // Membership Card
+    _mcOrgController =
+        TextEditingController(text: _customFieldValue('mcOrg'));
+    _mcMemberIdController =
+        TextEditingController(text: _customFieldValue('mcMemberId'));
+    _mcMemberNameController =
+        TextEditingController(text: _customFieldValue('mcMemberName'));
+    _mcExpiryController =
+        TextEditingController(text: _customFieldValue('mcExpiry'));
+
+    // Email Account
+    _eaEmailController =
+        TextEditingController(text: _customFieldValue('eaEmail'));
+    _eaPasswordController =
+        TextEditingController(text: _customFieldValue('eaPassword'));
+    _eaServerController =
+        TextEditingController(text: _customFieldValue('eaServer'));
+    _eaPortController =
+        TextEditingController(text: _customFieldValue('eaPort'));
+
+    // Instant Messenger
+    _imServiceController =
+        TextEditingController(text: _customFieldValue('imService'));
+    _imUsernameController =
+        TextEditingController(text: _customFieldValue('imUsername'));
+    _imPasswordController =
+        TextEditingController(text: _customFieldValue('imPassword'));
+
+    // Database
+    _dbNameController =
+        TextEditingController(text: _customFieldValue('dbName'));
+    _dbHostController =
+        TextEditingController(text: _customFieldValue('dbHost'));
+    _dbPortController =
+        TextEditingController(text: _customFieldValue('dbPort'));
+    _dbDbNameController =
+        TextEditingController(text: _customFieldValue('dbDbName'));
+    _dbUsernameController =
+        TextEditingController(text: _customFieldValue('dbUsername'));
+    _dbPasswordController =
+        TextEditingController(text: _customFieldValue('dbPassword'));
+
+    // Server
+    _srvNameController =
+        TextEditingController(text: _customFieldValue('srvName'));
+    _srvHostController =
+        TextEditingController(text: _customFieldValue('srvHost'));
+    _srvPortController =
+        TextEditingController(text: _customFieldValue('srvPort'));
+    _srvUsernameController =
+        TextEditingController(text: _customFieldValue('srvUsername'));
+    _srvPasswordController =
+        TextEditingController(text: _customFieldValue('srvPassword'));
+
     // For existing items, also populate name from type-specific name fields.
     if (item != null) {
       _populateNameFromItem(item);
@@ -186,6 +360,15 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
     }
 
     _passwordController.addListener(_onPasswordChanged);
+
+    // Initialize logo URL from existing custom fields.
+    final existingLogoUrl = _customFieldValue('logoUrl');
+    if (existingLogoUrl.isNotEmpty) {
+      _selectedLogoUrl = existingLogoUrl;
+    }
+
+    // Add logo search listener for password type.
+    _nameController.addListener(_onNameChangedForLogo);
   }
 
   /// Read a custom field value by name from the existing item's custom fields.
@@ -272,9 +455,149 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
     });
   }
 
+  void _onNameChangedForLogo() {
+    if (_selectedType != VaultItemType.password) return;
+    _logoDebounce?.cancel();
+    final query = _nameController.text.trim();
+    if (query.length < 2) {
+      _removeLogoOverlay();
+      setState(() => _logoResults = []);
+      return;
+    }
+    _logoDebounce = Timer(const Duration(milliseconds: 300), () async {
+      if (!mounted) return;
+      final service = ref.read(logoSearchServiceProvider);
+      final results = await service.search(query);
+      if (!mounted) return;
+      setState(() => _logoResults = results);
+      if (results.isNotEmpty) {
+        _showLogoOverlay();
+      } else {
+        _removeLogoOverlay();
+      }
+    });
+  }
+
+  void _showLogoOverlay() {
+    _removeLogoOverlay();
+    final overlay = Overlay.of(context);
+    _logoOverlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        width: MediaQuery.of(context).size.width - 32,
+        child: CompositedTransformFollower(
+          link: _logoLayerLink,
+          showWhenUnlinked: false,
+          offset: const Offset(0, 60),
+          child: Material(
+            elevation: 8,
+            shadowColor: Colors.black26,
+            borderRadius: BorderRadius.circular(14),
+            color: Colors.white,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 220),
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                itemCount: _logoResults.length,
+                itemBuilder: (context, index) {
+                  final result = _logoResults[index];
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () => _selectLogoResult(result),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              result.logoUrl,
+                              width: 24,
+                              height: 24,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4D4DCD)
+                                      .withAlpha(25),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.language_rounded,
+                                  size: 14,
+                                  color: Color(0xFF4D4DCD),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  result.name,
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: Color(0xFF1A1A2E),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  result.domain,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 12,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    overlay.insert(_logoOverlayEntry!);
+  }
+
+  void _removeLogoOverlay() {
+    _logoOverlayEntry?.remove();
+    _logoOverlayEntry = null;
+  }
+
+  void _selectLogoResult(LogoResult result) {
+    _removeLogoOverlay();
+    _nameController.removeListener(_onNameChangedForLogo);
+    _nameController.text = result.name;
+    _nameController.addListener(_onNameChangedForLogo);
+    _urlController.text = 'https://${result.domain}';
+    setState(() {
+      _selectedLogoUrl = result.logoUrl;
+      _logoResults = [];
+    });
+  }
+
   @override
   void dispose() {
     _breachDebounce?.cancel();
+    _logoDebounce?.cancel();
+    _removeLogoOverlay();
+    _nameController.removeListener(_onNameChangedForLogo);
     _passwordController.removeListener(_onPasswordChanged);
     _nameController.dispose();
     _urlController.dispose();
@@ -304,6 +627,48 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
     _versionController.dispose();
     _licensedToController.dispose();
     _licenseExpiryController.dispose();
+    _dlNameController.dispose();
+    _dlNumberController.dispose();
+    _dlStateController.dispose();
+    _dlExpiryController.dispose();
+    _dlDobController.dispose();
+    _passportNameController.dispose();
+    _passportNumberController.dispose();
+    _passportCountryController.dispose();
+    _passportExpiryController.dispose();
+    _passportDobController.dispose();
+    _ssnNameController.dispose();
+    _ssnNumberController.dispose();
+    _hiProviderController.dispose();
+    _hiPolicyController.dispose();
+    _hiGroupController.dispose();
+    _hiMemberIdController.dispose();
+    _ipCompanyController.dispose();
+    _ipPolicyController.dispose();
+    _ipTypeController.dispose();
+    _ipExpiryController.dispose();
+    _mcOrgController.dispose();
+    _mcMemberIdController.dispose();
+    _mcMemberNameController.dispose();
+    _mcExpiryController.dispose();
+    _eaEmailController.dispose();
+    _eaPasswordController.dispose();
+    _eaServerController.dispose();
+    _eaPortController.dispose();
+    _imServiceController.dispose();
+    _imUsernameController.dispose();
+    _imPasswordController.dispose();
+    _dbNameController.dispose();
+    _dbHostController.dispose();
+    _dbPortController.dispose();
+    _dbDbNameController.dispose();
+    _dbUsernameController.dispose();
+    _dbPasswordController.dispose();
+    _srvNameController.dispose();
+    _srvHostController.dispose();
+    _srvPortController.dispose();
+    _srvUsernameController.dispose();
+    _srvPasswordController.dispose();
     super.dispose();
   }
 
@@ -339,6 +704,26 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
         return _softwareNameController.text.trim();
       case VaultItemType.sshKey:
         return _nameController.text.trim();
+      case VaultItemType.driversLicense:
+        return _dlNameController.text.trim();
+      case VaultItemType.passport:
+        return _passportNameController.text.trim();
+      case VaultItemType.socialSecurityNumber:
+        return _ssnNameController.text.trim();
+      case VaultItemType.healthInsurance:
+        return _hiProviderController.text.trim();
+      case VaultItemType.insurancePolicy:
+        return _ipCompanyController.text.trim();
+      case VaultItemType.membershipCard:
+        return _mcOrgController.text.trim();
+      case VaultItemType.emailAccount:
+        return _eaEmailController.text.trim();
+      case VaultItemType.instantMessenger:
+        return _imServiceController.text.trim();
+      case VaultItemType.database:
+        return _dbNameController.text.trim();
+      case VaultItemType.server:
+        return _srvNameController.text.trim();
     }
   }
 
@@ -368,7 +753,10 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
 
     switch (_selectedType) {
       case VaultItemType.password:
-        // All stored in top-level fields, no extra custom fields needed.
+        // Store logo URL if selected.
+        if (_selectedLogoUrl != null && _selectedLogoUrl!.isNotEmpty) {
+          addText('logoUrl', _selectedLogoUrl!);
+        }
         break;
       case VaultItemType.secureNote:
         addText('content', _contentController.text.trim());
@@ -408,6 +796,68 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
         break;
       case VaultItemType.sshKey:
         // SSH keys are managed via dedicated SSH key pages, not the generic editor.
+        break;
+      case VaultItemType.driversLicense:
+        addText('dlName', _dlNameController.text.trim());
+        addText('dlNumber', _dlNumberController.text.trim());
+        addText('dlState', _dlStateController.text.trim());
+        addText('dlExpiry', _dlExpiryController.text.trim());
+        addText('dlDob', _dlDobController.text.trim());
+        break;
+      case VaultItemType.passport:
+        addText('passportName', _passportNameController.text.trim());
+        addText('passportNumber', _passportNumberController.text.trim());
+        addText('passportCountry', _passportCountryController.text.trim());
+        addText('passportExpiry', _passportExpiryController.text.trim());
+        addText('passportDob', _passportDobController.text.trim());
+        break;
+      case VaultItemType.socialSecurityNumber:
+        addText('ssnName', _ssnNameController.text.trim());
+        addHidden('ssnNumber', _ssnNumberController.text.trim());
+        break;
+      case VaultItemType.healthInsurance:
+        addText('hiProvider', _hiProviderController.text.trim());
+        addText('hiPolicy', _hiPolicyController.text.trim());
+        addText('hiGroup', _hiGroupController.text.trim());
+        addText('hiMemberId', _hiMemberIdController.text.trim());
+        break;
+      case VaultItemType.insurancePolicy:
+        addText('ipCompany', _ipCompanyController.text.trim());
+        addText('ipPolicy', _ipPolicyController.text.trim());
+        addText('ipType', _ipTypeController.text.trim());
+        addText('ipExpiry', _ipExpiryController.text.trim());
+        break;
+      case VaultItemType.membershipCard:
+        addText('mcOrg', _mcOrgController.text.trim());
+        addText('mcMemberId', _mcMemberIdController.text.trim());
+        addText('mcMemberName', _mcMemberNameController.text.trim());
+        addText('mcExpiry', _mcExpiryController.text.trim());
+        break;
+      case VaultItemType.emailAccount:
+        addText('eaEmail', _eaEmailController.text.trim());
+        addHidden('eaPassword', _eaPasswordController.text.trim());
+        addText('eaServer', _eaServerController.text.trim());
+        addText('eaPort', _eaPortController.text.trim());
+        break;
+      case VaultItemType.instantMessenger:
+        addText('imService', _imServiceController.text.trim());
+        addText('imUsername', _imUsernameController.text.trim());
+        addHidden('imPassword', _imPasswordController.text.trim());
+        break;
+      case VaultItemType.database:
+        addText('dbName', _dbNameController.text.trim());
+        addText('dbHost', _dbHostController.text.trim());
+        addText('dbPort', _dbPortController.text.trim());
+        addText('dbDbName', _dbDbNameController.text.trim());
+        addText('dbUsername', _dbUsernameController.text.trim());
+        addHidden('dbPassword', _dbPasswordController.text.trim());
+        break;
+      case VaultItemType.server:
+        addText('srvName', _srvNameController.text.trim());
+        addText('srvHost', _srvHostController.text.trim());
+        addText('srvPort', _srvPortController.text.trim());
+        addText('srvUsername', _srvUsernameController.text.trim());
+        addHidden('srvPassword', _srvPasswordController.text.trim());
         break;
     }
 
@@ -644,15 +1094,67 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
         return _buildSoftwareLicenseFields();
       case VaultItemType.sshKey:
         return [const Text('SSH keys are managed in Settings → SSH Keys')];
+      case VaultItemType.driversLicense:
+        return _buildDriversLicenseFields();
+      case VaultItemType.passport:
+        return _buildPassportFields();
+      case VaultItemType.socialSecurityNumber:
+        return _buildSocialSecurityNumberFields();
+      case VaultItemType.healthInsurance:
+        return _buildHealthInsuranceFields();
+      case VaultItemType.insurancePolicy:
+        return _buildInsurancePolicyFields();
+      case VaultItemType.membershipCard:
+        return _buildMembershipCardFields();
+      case VaultItemType.emailAccount:
+        return _buildEmailAccountFields();
+      case VaultItemType.instantMessenger:
+        return _buildInstantMessengerFields();
+      case VaultItemType.database:
+        return _buildDatabaseFields();
+      case VaultItemType.server:
+        return _buildServerFields();
     }
   }
 
   List<Widget> _buildPasswordFields() {
     return [
-      TextFormField(
-        controller: _nameController,
-        decoration: _inputDecoration('Name *'),
-        validator: _requiredValidator,
+      CompositedTransformTarget(
+        link: _logoLayerLink,
+        child: TextFormField(
+          controller: _nameController,
+          decoration: _inputDecoration('Name *').copyWith(
+            prefixIcon: _selectedLogoUrl != null &&
+                    _selectedLogoUrl!.isNotEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        _selectedLogoUrl!,
+                        width: 32,
+                        height: 32,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4D4DCD).withAlpha(25),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.lock_outline,
+                            size: 18,
+                            color: Color(0xFF4D4DCD),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : null,
+          ),
+          validator: _requiredValidator,
+        ),
       ),
       const SizedBox(height: 16),
       TextFormField(
@@ -978,6 +1480,351 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
     ];
   }
 
+  List<Widget> _buildDriversLicenseFields() {
+    return [
+      TextFormField(
+        controller: _dlNameController,
+        decoration: _inputDecoration('Name *'),
+        validator: _requiredValidator,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _dlNumberController,
+        decoration: _inputDecoration('License Number'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _dlStateController,
+        decoration: _inputDecoration('State / Province'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _dlExpiryController,
+        decoration: _inputDecoration('Expiry Date'),
+        keyboardType: TextInputType.datetime,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _dlDobController,
+        decoration: _inputDecoration('Date of Birth'),
+        keyboardType: TextInputType.datetime,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _notesController,
+        decoration: _inputDecoration('Notes'),
+        maxLines: 3,
+        keyboardType: TextInputType.multiline,
+      ),
+    ];
+  }
+
+  List<Widget> _buildPassportFields() {
+    return [
+      TextFormField(
+        controller: _passportNameController,
+        decoration: _inputDecoration('Name *'),
+        validator: _requiredValidator,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _passportNumberController,
+        decoration: _inputDecoration('Passport Number'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _passportCountryController,
+        decoration: _inputDecoration('Country'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _passportExpiryController,
+        decoration: _inputDecoration('Expiry Date'),
+        keyboardType: TextInputType.datetime,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _passportDobController,
+        decoration: _inputDecoration('Date of Birth'),
+        keyboardType: TextInputType.datetime,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _notesController,
+        decoration: _inputDecoration('Notes'),
+        maxLines: 3,
+        keyboardType: TextInputType.multiline,
+      ),
+    ];
+  }
+
+  List<Widget> _buildSocialSecurityNumberFields() {
+    return [
+      TextFormField(
+        controller: _ssnNameController,
+        decoration: _inputDecoration('Name *'),
+        validator: _requiredValidator,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _ssnNumberController,
+        decoration: _inputDecoration('SSN'),
+        obscureText: true,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _notesController,
+        decoration: _inputDecoration('Notes'),
+        maxLines: 3,
+        keyboardType: TextInputType.multiline,
+      ),
+    ];
+  }
+
+  List<Widget> _buildHealthInsuranceFields() {
+    return [
+      TextFormField(
+        controller: _hiProviderController,
+        decoration: _inputDecoration('Provider *'),
+        validator: _requiredValidator,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _hiPolicyController,
+        decoration: _inputDecoration('Policy #'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _hiGroupController,
+        decoration: _inputDecoration('Group #'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _hiMemberIdController,
+        decoration: _inputDecoration('Member ID'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _notesController,
+        decoration: _inputDecoration('Notes'),
+        maxLines: 3,
+        keyboardType: TextInputType.multiline,
+      ),
+    ];
+  }
+
+  List<Widget> _buildInsurancePolicyFields() {
+    return [
+      TextFormField(
+        controller: _ipCompanyController,
+        decoration: _inputDecoration('Company *'),
+        validator: _requiredValidator,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _ipPolicyController,
+        decoration: _inputDecoration('Policy #'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _ipTypeController,
+        decoration: _inputDecoration('Type'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _ipExpiryController,
+        decoration: _inputDecoration('Expiry Date'),
+        keyboardType: TextInputType.datetime,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _notesController,
+        decoration: _inputDecoration('Notes'),
+        maxLines: 3,
+        keyboardType: TextInputType.multiline,
+      ),
+    ];
+  }
+
+  List<Widget> _buildMembershipCardFields() {
+    return [
+      TextFormField(
+        controller: _mcOrgController,
+        decoration: _inputDecoration('Organization *'),
+        validator: _requiredValidator,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _mcMemberIdController,
+        decoration: _inputDecoration('Member ID'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _mcMemberNameController,
+        decoration: _inputDecoration('Member Name'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _mcExpiryController,
+        decoration: _inputDecoration('Expiry Date'),
+        keyboardType: TextInputType.datetime,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _notesController,
+        decoration: _inputDecoration('Notes'),
+        maxLines: 3,
+        keyboardType: TextInputType.multiline,
+      ),
+    ];
+  }
+
+  List<Widget> _buildEmailAccountFields() {
+    return [
+      TextFormField(
+        controller: _eaEmailController,
+        decoration: _inputDecoration('Email *'),
+        validator: _requiredValidator,
+        keyboardType: TextInputType.emailAddress,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _eaPasswordController,
+        decoration: _inputDecoration('Password'),
+        obscureText: true,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _eaServerController,
+        decoration: _inputDecoration('Server'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _eaPortController,
+        decoration: _inputDecoration('Port'),
+        keyboardType: TextInputType.number,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _notesController,
+        decoration: _inputDecoration('Notes'),
+        maxLines: 3,
+        keyboardType: TextInputType.multiline,
+      ),
+    ];
+  }
+
+  List<Widget> _buildInstantMessengerFields() {
+    return [
+      TextFormField(
+        controller: _imServiceController,
+        decoration: _inputDecoration('Service *'),
+        validator: _requiredValidator,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _imUsernameController,
+        decoration: _inputDecoration('Username'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _imPasswordController,
+        decoration: _inputDecoration('Password'),
+        obscureText: true,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _notesController,
+        decoration: _inputDecoration('Notes'),
+        maxLines: 3,
+        keyboardType: TextInputType.multiline,
+      ),
+    ];
+  }
+
+  List<Widget> _buildDatabaseFields() {
+    return [
+      TextFormField(
+        controller: _dbNameController,
+        decoration: _inputDecoration('Name *'),
+        validator: _requiredValidator,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _dbHostController,
+        decoration: _inputDecoration('Host'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _dbPortController,
+        decoration: _inputDecoration('Port'),
+        keyboardType: TextInputType.number,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _dbDbNameController,
+        decoration: _inputDecoration('Database Name'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _dbUsernameController,
+        decoration: _inputDecoration('Username'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _dbPasswordController,
+        decoration: _inputDecoration('Password'),
+        obscureText: true,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _notesController,
+        decoration: _inputDecoration('Notes'),
+        maxLines: 3,
+        keyboardType: TextInputType.multiline,
+      ),
+    ];
+  }
+
+  List<Widget> _buildServerFields() {
+    return [
+      TextFormField(
+        controller: _srvNameController,
+        decoration: _inputDecoration('Name *'),
+        validator: _requiredValidator,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _srvHostController,
+        decoration: _inputDecoration('Host'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _srvPortController,
+        decoration: _inputDecoration('Port'),
+        keyboardType: TextInputType.number,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _srvUsernameController,
+        decoration: _inputDecoration('Username'),
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _srvPasswordController,
+        decoration: _inputDecoration('Password'),
+        obscureText: true,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _notesController,
+        decoration: _inputDecoration('Notes'),
+        maxLines: 3,
+        keyboardType: TextInputType.multiline,
+      ),
+    ];
+  }
+
   String? _requiredValidator(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'This field is required';
@@ -1030,6 +1877,26 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
         return 'Software License';
       case VaultItemType.sshKey:
         return 'SSH Key';
+      case VaultItemType.driversLicense:
+        return 'Drivers License';
+      case VaultItemType.passport:
+        return 'Passport';
+      case VaultItemType.socialSecurityNumber:
+        return 'Social Security Number';
+      case VaultItemType.healthInsurance:
+        return 'Health Insurance';
+      case VaultItemType.insurancePolicy:
+        return 'Insurance Policy';
+      case VaultItemType.membershipCard:
+        return 'Membership Card';
+      case VaultItemType.emailAccount:
+        return 'Email Account';
+      case VaultItemType.instantMessenger:
+        return 'Instant Messenger';
+      case VaultItemType.database:
+        return 'Database';
+      case VaultItemType.server:
+        return 'Server';
     }
   }
 }

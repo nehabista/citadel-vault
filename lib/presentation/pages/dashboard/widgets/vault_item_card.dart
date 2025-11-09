@@ -28,6 +28,16 @@ IconData _itemTypeIcon(VaultItemType type) {
     VaultItemType.wifiPassword => Icons.wifi_outlined,
     VaultItemType.softwareLicense => Icons.code_outlined,
     VaultItemType.sshKey => Icons.vpn_key_outlined,
+    VaultItemType.driversLicense => Icons.directions_car_outlined,
+    VaultItemType.passport => Icons.public_outlined,
+    VaultItemType.socialSecurityNumber => Icons.badge_outlined,
+    VaultItemType.healthInsurance => Icons.health_and_safety_outlined,
+    VaultItemType.insurancePolicy => Icons.umbrella_outlined,
+    VaultItemType.membershipCard => Icons.card_membership_outlined,
+    VaultItemType.emailAccount => Icons.alternate_email,
+    VaultItemType.instantMessenger => Icons.chat_outlined,
+    VaultItemType.database => Icons.storage_outlined,
+    VaultItemType.server => Icons.dns_outlined,
   };
 }
 
@@ -42,6 +52,16 @@ Color _itemTypeColor(VaultItemType type) {
     VaultItemType.contactInfo => const Color(0xFF5E35B1),
     VaultItemType.softwareLicense => const Color(0xFF795548),
     VaultItemType.sshKey => const Color(0xFF37474F),
+    VaultItemType.driversLicense => const Color(0xFF546E7A),
+    VaultItemType.passport => const Color(0xFF1565C0),
+    VaultItemType.socialSecurityNumber => const Color(0xFF6A1B9A),
+    VaultItemType.healthInsurance => const Color(0xFFE91E63),
+    VaultItemType.insurancePolicy => const Color(0xFF00838F),
+    VaultItemType.membershipCard => const Color(0xFF4527A0),
+    VaultItemType.emailAccount => const Color(0xFFD84315),
+    VaultItemType.instantMessenger => const Color(0xFF2E7D32),
+    VaultItemType.database => const Color(0xFF37474F),
+    VaultItemType.server => const Color(0xFF455A64),
   };
 }
 
@@ -111,20 +131,8 @@ class VaultItemCard extends ConsumerWidget {
                     color: typeColor,
                   ),
                   const SizedBox(width: 12),
-                  // Type icon in rounded square container
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: typeColor.withAlpha(25),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      _itemTypeIcon(item.type),
-                      color: typeColor,
-                      size: 22,
-                    ),
-                  ),
+                  // Type icon or logo in rounded square container
+                  _buildItemIcon(typeColor),
                   const SizedBox(width: 12),
                   // Title, subtitle, modified
                   Expanded(
@@ -193,6 +201,52 @@ class VaultItemCard extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildItemIcon(Color typeColor) {
+    final logoUrl = item.customFields
+        ?.where((f) => f.name == 'logoUrl')
+        .firstOrNull
+        ?.value;
+
+    if (logoUrl != null && logoUrl.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          logoUrl,
+          width: 42,
+          height: 42,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: typeColor.withAlpha(25),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              _itemTypeIcon(item.type),
+              color: typeColor,
+              size: 22,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: typeColor.withAlpha(25),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        _itemTypeIcon(item.type),
+        color: typeColor,
+        size: 22,
       ),
     );
   }

@@ -12,6 +12,7 @@ import '../../features/vault/domain/entities/vault_item.dart';
 import '../../gen/assets.gen.dart';
 import '../../routing/app_router.dart';
 import '../widgets/bottom_nav_item.dart';
+import '../widgets/citadel_info_dialog.dart';
 import '../widgets/citadel_snackbar.dart';
 import 'dashboard/dashboard_page.dart';
 import 'settings/settings_page.dart';
@@ -294,6 +295,44 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         centerTitle: false,
         actions: [
+          if (selectedIndex == 0)
+            IconButton(
+              icon: const Icon(Icons.info_outline_rounded,
+                  color: Color(0xFF4D4DCD), size: 22),
+              tooltip: 'About Citadel',
+              onPressed: () => showCitadelInfoDialog(
+                context,
+                icon: Icons.lock_rounded,
+                iconColor: const Color(0xFF4D4DCD),
+                title: 'About Citadel',
+                sections: const [
+                  InfoSection(
+                    icon: Icons.enhanced_encryption_rounded,
+                    title: 'Zero-Knowledge Encryption',
+                    description:
+                        'Your vault is encrypted with AES-256-GCM using a key derived from your master password via Argon2id. We never see your data.',
+                  ),
+                  InfoSection(
+                    icon: Icons.sync_lock_rounded,
+                    title: 'End-to-End Encrypted Sync',
+                    description:
+                        'All data is encrypted on your device before syncing. The server only stores encrypted blobs.',
+                  ),
+                  InfoSection(
+                    icon: Icons.shield_outlined,
+                    title: 'Breach Protection',
+                    description:
+                        'Passwords are automatically checked against known breaches. Look for the red shield icon on compromised items.',
+                  ),
+                  InfoSection(
+                    icon: Icons.security_rounded,
+                    title: 'TOTP Authenticator',
+                    description:
+                        'Store TOTP secrets alongside your logins for one-tap 2FA code access.',
+                  ),
+                ],
+              ),
+            ),
           if (selectedIndex == 0)
             Padding(
               padding: EdgeInsets.only(right: screenWidth * 0.03),
@@ -603,23 +642,67 @@ class _QuickUnlockOption extends StatelessWidget {
   }
 }
 
-/// Bottom sheet with grid of item types for creating new vault items.
+/// Bottom sheet with categorized list of item types for creating new vault items.
 class _NewItemBottomSheet extends StatelessWidget {
   const _NewItemBottomSheet();
 
-  static const _itemTypes = <({IconData icon, String label, VaultItemType type})>[
-    (icon: Icons.lock_outline, label: 'Password', type: VaultItemType.password),
-    (icon: Icons.sticky_note_2_outlined, label: 'Secure Note', type: VaultItemType.secureNote),
-    (icon: Icons.account_balance_outlined, label: 'Bank Account', type: VaultItemType.bankAccount),
-    (icon: Icons.credit_card_outlined, label: 'Payment Card', type: VaultItemType.paymentCard),
-    (icon: Icons.wifi_outlined, label: 'WiFi', type: VaultItemType.wifiPassword),
-    (icon: Icons.contact_page_outlined, label: 'Contact', type: VaultItemType.contactInfo),
-    (icon: Icons.code_outlined, label: 'Software License', type: VaultItemType.softwareLicense),
+  static const _sections = <({String header, List<({IconData icon, String label, VaultItemType type})> items})>[
+    (
+      header: 'Logins & Notes',
+      items: [
+        (icon: Icons.lock_outline, label: 'Password', type: VaultItemType.password),
+        (icon: Icons.sticky_note_2_outlined, label: 'Secure Note', type: VaultItemType.secureNote),
+        (icon: Icons.contact_page_outlined, label: 'Contact Info', type: VaultItemType.contactInfo),
+      ],
+    ),
+    (
+      header: 'Financial',
+      items: [
+        (icon: Icons.credit_card_outlined, label: 'Payment Card', type: VaultItemType.paymentCard),
+        (icon: Icons.account_balance_outlined, label: 'Bank Account', type: VaultItemType.bankAccount),
+      ],
+    ),
+    (
+      header: 'Identity Documents',
+      items: [
+        (icon: Icons.directions_car_outlined, label: 'Drivers License', type: VaultItemType.driversLicense),
+        (icon: Icons.public_outlined, label: 'Passport', type: VaultItemType.passport),
+        (icon: Icons.badge_outlined, label: 'Social Security Number', type: VaultItemType.socialSecurityNumber),
+      ],
+    ),
+    (
+      header: 'Insurance & Memberships',
+      items: [
+        (icon: Icons.health_and_safety_outlined, label: 'Health Insurance', type: VaultItemType.healthInsurance),
+        (icon: Icons.umbrella_outlined, label: 'Insurance Policy', type: VaultItemType.insurancePolicy),
+        (icon: Icons.card_membership_outlined, label: 'Membership Card', type: VaultItemType.membershipCard),
+        (icon: Icons.wifi_outlined, label: 'WiFi Password', type: VaultItemType.wifiPassword),
+      ],
+    ),
+    (
+      header: 'Communication',
+      items: [
+        (icon: Icons.alternate_email, label: 'Email Account', type: VaultItemType.emailAccount),
+        (icon: Icons.chat_outlined, label: 'Instant Messenger', type: VaultItemType.instantMessenger),
+      ],
+    ),
+    (
+      header: 'Infrastructure',
+      items: [
+        (icon: Icons.storage_outlined, label: 'Database', type: VaultItemType.database),
+        (icon: Icons.dns_outlined, label: 'Server', type: VaultItemType.server),
+        (icon: Icons.vpn_key_outlined, label: 'SSH Key', type: VaultItemType.sshKey),
+        (icon: Icons.code_outlined, label: 'Software License', type: VaultItemType.softwareLicense),
+      ],
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.75,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -666,46 +749,60 @@ class _NewItemBottomSheet extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: GridView.builder(
+          const SizedBox(height: 12),
+          Flexible(
+            child: ListView.builder(
               shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 2.4,
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                bottom: MediaQuery.of(context).padding.bottom + 24,
               ),
-              itemCount: _itemTypes.length,
-              itemBuilder: (context, index) {
-                final item = _itemTypes[index];
-                return _ItemTypeCard(
-                  icon: item.icon,
-                  label: item.label,
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push(AppRoutes.vaultItemCreate, extra: item.type);
-                  },
+              itemCount: _sections.length,
+              itemBuilder: (context, sectionIndex) {
+                final section = _sections[sectionIndex];
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16, bottom: 8),
+                      child: Text(
+                        section.header.toUpperCase(),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade500,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                    ...section.items.map((item) => _NewItemListTile(
+                          icon: item.icon,
+                          label: item.label,
+                          onTap: () {
+                            Navigator.pop(context);
+                            context.push(AppRoutes.vaultItemCreate, extra: item.type);
+                          },
+                        )),
+                  ],
                 );
               },
             ),
           ),
-          SizedBox(height: MediaQuery.of(context).padding.bottom + 24),
         ],
       ),
     );
   }
 }
 
-/// A single item type card in the new-item bottom sheet grid.
-class _ItemTypeCard extends StatelessWidget {
+/// A single item type list tile in the new-item bottom sheet.
+class _NewItemListTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
 
-  const _ItemTypeCard({
+  const _NewItemListTile({
     required this.icon,
     required this.label,
     required this.onTap,
@@ -714,17 +811,12 @@ class _ItemTypeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFFF8FAFC),
-      borderRadius: BorderRadius.circular(12),
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE8EDF5)),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
           child: Row(
             children: [
               Container(
@@ -736,18 +828,22 @@ class _ItemTypeCard extends StatelessWidget {
                 ),
                 child: Icon(icon, size: 18, color: const Color(0xFF4D4DCD)),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 14),
               Expanded(
                 child: Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Poppins',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                     color: Color(0xFF1A1A2E),
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: Colors.grey.shade400,
               ),
             ],
           ),

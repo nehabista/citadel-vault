@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
 /// Result from the logo.dev search API.
@@ -62,3 +63,10 @@ class LogoSearchService {
     _client.close();
   }
 }
+
+/// Riverpod provider for [LogoSearchService].
+final logoSearchServiceProvider = Provider<LogoSearchService>((ref) {
+  final service = LogoSearchService();
+  ref.onDispose(() => service.dispose());
+  return service;
+});

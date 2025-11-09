@@ -121,9 +121,10 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Item type badge
+          // Item logo + type badge
           Row(
             children: [
+              _buildDetailLogo(item),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -295,6 +296,29 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
           ),
           const SizedBox(height: 32),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDetailLogo(VaultItemEntity item) {
+    final logoUrl = item.customFields
+        ?.where((f) => f.name == 'logoUrl')
+        .firstOrNull
+        ?.value;
+
+    if (logoUrl == null || logoUrl.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Image.network(
+          logoUrl,
+          width: 40,
+          height: 40,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        ),
       ),
     );
   }
@@ -512,6 +536,26 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
         return 'Software License';
       case VaultItemType.sshKey:
         return 'SSH Key';
+      case VaultItemType.driversLicense:
+        return 'Drivers License';
+      case VaultItemType.passport:
+        return 'Passport';
+      case VaultItemType.socialSecurityNumber:
+        return 'Social Security Number';
+      case VaultItemType.healthInsurance:
+        return 'Health Insurance';
+      case VaultItemType.insurancePolicy:
+        return 'Insurance Policy';
+      case VaultItemType.membershipCard:
+        return 'Membership Card';
+      case VaultItemType.emailAccount:
+        return 'Email Account';
+      case VaultItemType.instantMessenger:
+        return 'Instant Messenger';
+      case VaultItemType.database:
+        return 'Database';
+      case VaultItemType.server:
+        return 'Server';
     }
   }
 }
