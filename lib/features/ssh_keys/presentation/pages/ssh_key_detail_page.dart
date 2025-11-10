@@ -30,6 +30,11 @@ class _SshKeyDetailPageState extends ConsumerState<SshKeyDetailPage> {
   bool _showPrivateKey = false;
   bool _showPassphrase = false;
 
+  static const _primary = Color(0xFF4D4DCD);
+  static const _darkText = Color(0xFF1A1A2E);
+  static const _borderColor = Color(0xFFE8EDF5);
+  static const _cardBg = Colors.white;
+
   VaultItemEntity? get _resolvedItem {
     // First try the directly passed item
     if (widget.item != null) return widget.item;
@@ -81,14 +86,15 @@ class _SshKeyDetailPageState extends ConsumerState<SshKeyDetailPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Key info header
-          _buildInfoCard(context, sshData, isEd25519, item),
+          // Header card
+          _buildHeaderCard(context, sshData, isEd25519, item),
           const SizedBox(height: 16),
 
           // Public key section
           _buildKeySection(
             context,
             title: 'Public Key',
+            icon: Icons.lock_open_rounded,
             value: sshData.publicKey,
             isObscured: false,
             onCopy: () {
@@ -103,14 +109,11 @@ class _SshKeyDetailPageState extends ConsumerState<SshKeyDetailPage> {
           _buildKeySection(
             context,
             title: 'Private Key',
+            icon: Icons.lock_rounded,
             value: sshData.privateKey,
             isObscured: !_showPrivateKey,
             onToggle: () => setState(() => _showPrivateKey = !_showPrivateKey),
-            onCopy: () {
-              Clipboard.setData(ClipboardData(text: sshData.privateKey));
-              showCitadelSnackBar(context, 'Private key copied',
-                  type: SnackBarType.success);
-            },
+            onCopy: () => _confirmCopyPrivateKey(sshData.privateKey),
           ),
 
           // Passphrase section (if set)
@@ -120,6 +123,7 @@ class _SshKeyDetailPageState extends ConsumerState<SshKeyDetailPage> {
             _buildKeySection(
               context,
               title: 'Passphrase',
+              icon: Icons.password_rounded,
               value: sshData.passphrase!,
               isObscured: !_showPassphrase,
               onToggle: () =>
@@ -132,12 +136,25 @@ class _SshKeyDetailPageState extends ConsumerState<SshKeyDetailPage> {
               },
             ),
           ],
+
+          // Comment section
+          if (sshData.comment != null && sshData.comment!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildCommentCard(sshData.comment!),
+          ],
+
+          const SizedBox(height: 24),
+
+          // Delete button
+          _buildDeleteButton(context, item),
+
+          const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  Widget _buildInfoCard(
+  Widget _buildHeaderCard(
     BuildContext context,
     SshKeyData sshData,
     bool isEd25519,
@@ -146,83 +163,252 @@ class _SshKeyDetailPageState extends ConsumerState<SshKeyDetailPage> {
     final typeBadgeColor =
         isEd25519 ? const Color(0xFF43A047) : const Color(0xFF1E88E5);
     final typeBadgeLabel = isEd25519 ? 'Ed25519' : 'RSA 4096';
+    final iconBgColor = isEd25519
+        ? const Color(0xFF009688).withValues(alpha: 0.10)
+        : const Color(0xFF607D8B).withValues(alpha: 0.10);
+    final iconColor =
+        isEd25519 ? const Color(0xFF009688) : const Color(0xFF607D8B);
 
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 0,
-      color: const Color(0xFFF8FAFC),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.vpn_key, color: Color(0xFF4D4DCD), size: 22),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    item.name,
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w700,
-                      fontSize: 17,
-                      color: Color(0xFF1A1A2E),
-                    ),
-                  ),
+    return Container(
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _borderColor),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: typeBadgeColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    typeBadgeLabel,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: typeBadgeColor,
-                    ),
-                  ),
+                child: Icon(
+                  Icons.vpn_key_rounded,
+                  size: 24,
+                  color: iconColor,
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _infoRow('Fingerprint', sshData.fingerprint, mono: true),
-            if (sshData.comment != null && sshData.comment!.isNotEmpty)
-              _infoRow('Comment', sshData.comment!),
-            _infoRow('Created', _formatDate(item.createdAt)),
-          ],
-        ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        color: _darkText,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: typeBadgeColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        typeBadgeLabel,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: typeBadgeColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          const Divider(height: 1, color: _borderColor),
+          const SizedBox(height: 14),
+          _infoRow('Fingerprint', sshData.fingerprint, mono: true),
+          const SizedBox(height: 10),
+          _infoRow('Created', _formatDate(item.createdAt)),
+        ],
       ),
     );
   }
 
   Widget _infoRow(String label, String value, {bool mono = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade500,
+            letterSpacing: 0.3,
+          ),
+        ),
+        const SizedBox(height: 3),
+        SelectableText(
+          value,
+          style: TextStyle(
+            fontFamily: mono ? 'monospace' : 'Poppins',
+            fontSize: 13,
+            color: _darkText,
+            height: 1.4,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildKeySection(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required String value,
+    required bool isObscured,
+    VoidCallback? onToggle,
+    required VoidCallback onCopy,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _borderColor),
+      ),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
-            ),
+          Row(
+            children: [
+              Icon(icon, size: 18, color: _primary),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: _darkText,
+                ),
+              ),
+              const Spacer(),
+              if (onToggle != null)
+                _actionIconButton(
+                  icon: isObscured
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  tooltip: isObscured ? 'Reveal' : 'Hide',
+                  onPressed: onToggle,
+                ),
+              const SizedBox(width: 2),
+              _actionIconButton(
+                icon: Icons.copy_rounded,
+                tooltip: 'Copy',
+                onPressed: onCopy,
+              ),
+            ],
           ),
-          const SizedBox(height: 2),
-          SelectableText(
-            value,
-            style: TextStyle(
-              fontFamily: mono ? 'monospace' : 'Poppins',
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _borderColor),
+            ),
+            child: isObscured
+                ? const Text(
+                    '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022',
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 13,
+                      letterSpacing: 2,
+                      color: Color(0xFF6B7280),
+                    ),
+                  )
+                : SelectableText(
+                    value,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      color: _darkText,
+                      height: 1.5,
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionIconButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onPressed,
+        child: Tooltip(
+          message: tooltip,
+          child: Padding(
+            padding: const EdgeInsets.all(6),
+            child: Icon(icon, size: 18, color: Colors.grey.shade600),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCommentCard(String comment) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _borderColor),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.comment_outlined, size: 18, color: _primary),
+              const SizedBox(width: 8),
+              const Text(
+                'Comment',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: _darkText,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            comment,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
               fontSize: 13,
-              color: const Color(0xFF1A1A2E),
+              color: Color(0xFF6B7280),
+              height: 1.4,
             ),
           ),
         ],
@@ -230,90 +416,59 @@ class _SshKeyDetailPageState extends ConsumerState<SshKeyDetailPage> {
     );
   }
 
-  Widget _buildKeySection(
-    BuildContext context, {
-    required String title,
-    required String value,
-    required bool isObscured,
-    VoidCallback? onToggle,
-    required VoidCallback onCopy,
-  }) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 0,
-      color: const Color(0xFFF8FAFC),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
+  Widget _buildDeleteButton(BuildContext context, VaultItemEntity item) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => _deleteKey(context, item),
+        icon: const Icon(Icons.delete_outline_rounded, size: 18),
+        label: const Text('Delete Key',
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500)),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.red.shade600,
+          side: BorderSide(color: Colors.red.shade300),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
+    );
+  }
+
+  void _confirmCopyPrivateKey(String privateKey) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Copy Private Key?',
+            style: TextStyle(
+                fontFamily: 'Poppins', fontWeight: FontWeight.w600)),
+        content: const Text(
+          'Your private key is sensitive. Make sure you are in a secure environment before copying it to the clipboard.',
+          style: TextStyle(fontFamily: 'Poppins', fontSize: 14),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel',
+                style: TextStyle(fontFamily: 'Poppins')),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Clipboard.setData(ClipboardData(text: privateKey));
+              if (mounted) {
+                showCitadelSnackBar(context, 'Private key copied',
+                    type: SnackBarType.success);
+              }
+            },
+            child: const Text('Copy',
+                style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Color(0xFF1A1A2E),
-                  ),
-                ),
-                const Spacer(),
-                if (onToggle != null)
-                  IconButton(
-                    icon: Icon(
-                      isObscured
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      size: 20,
-                      color: Colors.grey.shade600,
-                    ),
-                    onPressed: onToggle,
-                    tooltip: isObscured ? 'Reveal' : 'Hide',
-                    constraints: const BoxConstraints(),
-                    padding: const EdgeInsets.all(4),
-                  ),
-                const SizedBox(width: 4),
-                IconButton(
-                  icon: Icon(Icons.copy, size: 20, color: Colors.grey.shade600),
-                  onPressed: onCopy,
-                  tooltip: 'Copy',
-                  constraints: const BoxConstraints(),
-                  padding: const EdgeInsets.all(4),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE8EDF5)),
-              ),
-              child: isObscured
-                  ? const Text(
-                      '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022',
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 13,
-                        letterSpacing: 2,
-                        color: Color(0xFF6B7280),
-                      ),
-                    )
-                  : SelectableText(
-                      value,
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                        color: Color(0xFF1A1A2E),
-                        height: 1.5,
-                      ),
-                    ),
-            ),
-          ],
-        ),
+                    color: _primary)),
+          ),
+        ],
       ),
     );
   }
@@ -323,7 +478,8 @@ class _SshKeyDetailPageState extends ConsumerState<SshKeyDetailPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete SSH Key',
-            style: TextStyle(fontFamily: 'Poppins')),
+            style: TextStyle(
+                fontFamily: 'Poppins', fontWeight: FontWeight.w600)),
         content: Text(
           'Are you sure you want to delete "${item.name}"? This action cannot be undone.',
           style: const TextStyle(fontFamily: 'Poppins'),

@@ -13,6 +13,7 @@ import '../features/notifications/presentation/pages/notification_settings_page.
 import '../features/security/data/models/breach_record.dart';
 import '../features/sharing/presentation/pages/emergency_access_page.dart';
 import '../features/sharing/presentation/pages/shared_vaults_page.dart';
+import '../features/ssh_keys/presentation/pages/ssh_key_detail_page.dart';
 import '../features/ssh_keys/presentation/pages/ssh_key_list_page.dart';
 import '../features/travel_mode/presentation/pages/travel_mode_page.dart';
 import '../features/security/presentation/pages/breach_catalog_page.dart';
@@ -223,6 +224,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.sshKeys,
         builder: (context, state) => const SshKeyListPage(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              final item = state.extra as VaultItemEntity?;
+              return SshKeyDetailPage(itemId: id, item: item);
+            },
+          ),
+        ],
       ),
     ],
   );

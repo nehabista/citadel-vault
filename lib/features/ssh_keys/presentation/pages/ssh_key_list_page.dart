@@ -15,15 +15,37 @@ import '../widgets/import_key_sheet.dart';
 class SshKeyListPage extends ConsumerWidget {
   const SshKeyListPage({super.key});
 
+  static const _primary = Color(0xFF4D4DCD);
+  static const _darkText = Color(0xFF1A1A2E);
+  static const _borderColor = Color(0xFFE8EDF5);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final keysAsync = ref.watch(sshKeyListProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'SSH Keys',
-          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'SSH Keys',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
+            ),
+            Text(
+              'Manage your SSH keys',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w400,
+                fontSize: 12,
+                color: Colors.grey.shade500,
+              ),
+            ),
+          ],
         ),
       ),
       body: keysAsync.when(
@@ -43,7 +65,7 @@ class SshKeyListPage extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF4D4DCD),
+        backgroundColor: _primary,
         onPressed: () => _showAddMenu(context, ref),
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -57,53 +79,72 @@ class SshKeyListPage extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.vpn_key_outlined,
-                size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _primary.withValues(alpha: 0.08),
+              ),
+              child: const Icon(
+                Icons.vpn_key_rounded,
+                size: 44,
+                color: _primary,
+              ),
+            ),
+            const SizedBox(height: 24),
             const Text(
-              'No SSH keys yet',
+              'No SSH Keys',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A2E),
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: _darkText,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Generate or import SSH keys to store them securely in your vault.',
+              'Generate or import SSH keys to manage\nthem securely in your vault.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 14,
                 color: Colors.grey.shade600,
+                height: 1.5,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton.icon(
                   onPressed: () => _showGenerateSheet(context, ref),
                   icon: const Icon(Icons.auto_fix_high, size: 18),
-                  label: const Text('Generate'),
+                  label: const Text('Generate Key',
+                      style: TextStyle(fontFamily: 'Poppins')),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4D4DCD),
+                    backgroundColor: _primary,
                     foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
                   ),
                 ),
                 const SizedBox(width: 12),
                 OutlinedButton.icon(
                   onPressed: () => _showImportSheet(context, ref),
                   icon: const Icon(Icons.file_download_outlined, size: 18),
-                  label: const Text('Import'),
+                  label: const Text('Import Key',
+                      style: TextStyle(fontFamily: 'Poppins')),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF4D4DCD),
-                    side: const BorderSide(color: Color(0xFF4D4DCD)),
+                    foregroundColor: _primary,
+                    side: const BorderSide(color: _primary),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(14)),
                   ),
                 ),
               ],
@@ -127,44 +168,90 @@ class SshKeyListPage extends ConsumerWidget {
         final isEd25519 = sshData.keyType == 'ed25519';
         final typeBadgeColor =
             isEd25519 ? const Color(0xFF43A047) : const Color(0xFF1E88E5);
-        final typeBadgeLabel =
-            isEd25519 ? 'Ed25519' : 'RSA 4096';
+        final typeBadgeLabel = isEd25519 ? 'Ed25519' : 'RSA 4096';
+        final iconBgColor = isEd25519
+            ? const Color(0xFF009688).withValues(alpha: 0.10)
+            : const Color(0xFF607D8B).withValues(alpha: 0.10);
+        final iconColor =
+            isEd25519 ? const Color(0xFF009688) : const Color(0xFF607D8B);
 
         // Truncate fingerprint for display
-        final shortFingerprint = sshData.fingerprint.length > 30
-            ? '${sshData.fingerprint.substring(0, 30)}...'
+        final shortFingerprint = sshData.fingerprint.length > 28
+            ? '${sshData.fingerprint.substring(0, 28)}...'
             : sshData.fingerprint;
 
-        return Card(
+        return Container(
           margin: const EdgeInsets.only(bottom: 10),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          elevation: 0,
-          color: const Color(0xFFF8FAFC),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _borderColor),
+          ),
           child: InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: () => context.push('/ssh-keys/${item.id}', extra: item),
             onLongPress: () => _showDeleteDialog(context, ref, item),
             child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.all(14),
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
+                  // Key icon in colored circle
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: iconBgColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.vpn_key_rounded,
+                      size: 22,
+                      color: iconColor,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  // Name, fingerprint, date
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
                           item.name,
                           style: const TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w600,
                             fontSize: 15,
-                            color: Color(0xFF1A1A2E),
+                            color: _darkText,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(width: 8),
+                        const SizedBox(height: 3),
+                        Text(
+                          shortFingerprint,
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 11,
+                            color: Color(0xFF6B7280),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          _formatDate(item.createdAt),
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Type badge + chevron
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
@@ -182,25 +269,13 @@ class SshKeyListPage extends ConsumerWidget {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 6),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 20,
+                        color: Colors.grey.shade400,
+                      ),
                     ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    shortFingerprint,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                      color: Color(0xFF6B7280),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatDate(item.createdAt),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 11,
-                      color: Colors.grey.shade500,
-                    ),
                   ),
                 ],
               ),
@@ -230,12 +305,40 @@ class SshKeyListPage extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
+            const SizedBox(height: 20),
+            const Text(
+              'Add SSH Key',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: _darkText,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Choose how to add a new key',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 13,
+                color: Colors.grey.shade500,
+              ),
+            ),
             const SizedBox(height: 16),
             ListTile(
-              leading:
-                  const Icon(Icons.auto_fix_high, color: Color(0xFF4D4DCD)),
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.auto_fix_high,
+                    color: _primary, size: 20),
+              ),
               title: const Text('Generate Key',
-                  style: TextStyle(fontFamily: 'Poppins')),
+                  style: TextStyle(
+                      fontFamily: 'Poppins', fontWeight: FontWeight.w500)),
               subtitle: const Text('Create a new SSH key pair',
                   style: TextStyle(fontFamily: 'Poppins', fontSize: 12)),
               onTap: () {
@@ -244,10 +347,19 @@ class SshKeyListPage extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.file_download_outlined,
-                  color: Color(0xFF4D4DCD)),
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.file_download_outlined,
+                    color: _primary, size: 20),
+              ),
               title: const Text('Import Key',
-                  style: TextStyle(fontFamily: 'Poppins')),
+                  style: TextStyle(
+                      fontFamily: 'Poppins', fontWeight: FontWeight.w500)),
               subtitle: const Text('Import from file or paste text',
                   style: TextStyle(fontFamily: 'Poppins', fontSize: 12)),
               onTap: () {
@@ -255,7 +367,7 @@ class SshKeyListPage extends ConsumerWidget {
                 _showImportSheet(context, ref);
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -306,7 +418,8 @@ class SshKeyListPage extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete SSH Key',
-            style: TextStyle(fontFamily: 'Poppins')),
+            style: TextStyle(
+                fontFamily: 'Poppins', fontWeight: FontWeight.w600)),
         content: Text(
           'Are you sure you want to delete "${item.name}"? This action cannot be undone.',
           style: const TextStyle(fontFamily: 'Poppins'),
