@@ -12,6 +12,9 @@ class VaultMember {
   /// ID of the shared vault.
   final String vaultId;
 
+  /// Human-readable vault name (populated from expanded relation).
+  final String vaultName;
+
   /// ID of the member user.
   final String userId;
 
@@ -33,6 +36,7 @@ class VaultMember {
   const VaultMember({
     required this.id,
     required this.vaultId,
+    this.vaultName = '',
     required this.userId,
     this.role = 'viewer',
     required this.encryptedVaultKey,
@@ -43,9 +47,18 @@ class VaultMember {
 
   /// Deserialize from a PocketBase RecordModel.
   factory VaultMember.fromRecord(RecordModel record) {
+    // Extract vault name from expanded vaultId relation when available.
+    String vaultName = '';
+    try {
+      vaultName = record.get<String>('expand.vaultId.name');
+    } catch (_) {
+      // Expansion not present — vaultName stays empty.
+    }
+
     return VaultMember(
       id: record.id,
       vaultId: record.getStringValue('vaultId'),
+      vaultName: vaultName,
       userId: record.getStringValue('userId'),
       role: record.getStringValue('role'),
       encryptedVaultKey: record.getStringValue('encryptedVaultKey'),
@@ -73,6 +86,7 @@ class VaultMember {
   VaultMember copyWith({
     String? id,
     String? vaultId,
+    String? vaultName,
     String? userId,
     String? role,
     String? encryptedVaultKey,
@@ -83,6 +97,7 @@ class VaultMember {
     return VaultMember(
       id: id ?? this.id,
       vaultId: vaultId ?? this.vaultId,
+      vaultName: vaultName ?? this.vaultName,
       userId: userId ?? this.userId,
       role: role ?? this.role,
       encryptedVaultKey: encryptedVaultKey ?? this.encryptedVaultKey,

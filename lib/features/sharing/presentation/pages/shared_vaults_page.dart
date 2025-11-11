@@ -148,7 +148,9 @@ class SharedVaultsPage extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      member.vaultId,
+                      member.vaultName.isNotEmpty
+                          ? member.vaultName
+                          : member.vaultId,
                       style: const TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 15,

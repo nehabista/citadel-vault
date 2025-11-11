@@ -3,11 +3,14 @@ import 'dart:math';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../widgets/citadel_snackbar.dart';
 
+import '../../../features/ssh_keys/data/models/ssh_key_data.dart';
+import '../../../features/ssh_keys/presentation/providers/ssh_key_providers.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../features/security/domain/entities/breach_result.dart';
 import '../../../core/providers/session_provider.dart';
@@ -145,6 +148,20 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
   late final TextEditingController _srvPortController;
   late final TextEditingController _srvUsernameController;
   late final TextEditingController _srvPasswordController;
+
+  // --- SSH Key ---
+  late final TextEditingController _sshNameController;
+  late final TextEditingController _sshPublicKeyController;
+  late final TextEditingController _sshPrivateKeyController;
+  late final TextEditingController _sshFingerprintController;
+  late final TextEditingController _sshCommentController;
+  late final TextEditingController _sshPassphraseController;
+  late final TextEditingController _sshImportController;
+  String _sshKeyType = 'ed25519'; // 'ed25519' or 'rsa4096'
+  bool _sshGenerating = false;
+  bool _sshPrivateKeyVisible = false;
+  bool _sshPassphraseVisible = false;
+  bool _sshImportMode = false;
 
   late VaultItemType _selectedType;
   late bool _isFavorite;
@@ -343,6 +360,25 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
     _srvPasswordController =
         TextEditingController(text: _customFieldValue('srvPassword'));
 
+    // SSH Key
+    _sshNameController =
+        TextEditingController(text: _customFieldValue('sshName'));
+    _sshPublicKeyController =
+        TextEditingController(text: _customFieldValue('publicKey'));
+    _sshPrivateKeyController =
+        TextEditingController(text: _customFieldValue('privateKey'));
+    _sshFingerprintController =
+        TextEditingController(text: _customFieldValue('fingerprint'));
+    _sshCommentController =
+        TextEditingController(text: _customFieldValue('comment'));
+    _sshPassphraseController =
+        TextEditingController(text: _customFieldValue('passphrase'));
+    _sshImportController = TextEditingController();
+    final existingKeyType = _customFieldValue('keyType');
+    if (existingKeyType.isNotEmpty) {
+      _sshKeyType = existingKeyType;
+    }
+
     // For existing items, also populate name from type-specific name fields.
     if (item != null) {
       _populateNameFromItem(item);
@@ -408,6 +444,11 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
       case VaultItemType.paymentCard:
         if (_cardNameController.text.isEmpty) {
           _cardNameController.text = item.name;
+        }
+        break;
+      case VaultItemType.sshKey:
+        if (_sshNameController.text.isEmpty) {
+          _sshNameController.text = item.name;
         }
         break;
       default:
@@ -669,6 +710,13 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
     _srvPortController.dispose();
     _srvUsernameController.dispose();
     _srvPasswordController.dispose();
+    _sshNameController.dispose();
+    _sshPublicKeyController.dispose();
+    _sshPrivateKeyController.dispose();
+    _sshFingerprintController.dispose();
+    _sshCommentController.dispose();
+    _sshPassphraseController.dispose();
+    _sshImportController.dispose();
     super.dispose();
   }
 
@@ -703,7 +751,7 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
       case VaultItemType.softwareLicense:
         return _softwareNameController.text.trim();
       case VaultItemType.sshKey:
-        return _nameController.text.trim();
+        return _sshNameController.text.trim();
       case VaultItemType.driversLicense:
         return _dlNameController.text.trim();
       case VaultItemType.passport:
@@ -795,7 +843,13 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
         addText('licenseExpiry', _licenseExpiryController.text.trim());
         break;
       case VaultItemType.sshKey:
-        // SSH keys are managed via dedicated SSH key pages, not the generic editor.
+        addText('sshName', _sshNameController.text.trim());
+        addHidden('privateKey', _sshPrivateKeyController.text.trim());
+        addText('publicKey', _sshPublicKeyController.text.trim());
+        addText('keyType', _sshKeyType);
+        addText('fingerprint', _sshFingerprintController.text.trim());
+        addText('comment', _sshCommentController.text.trim());
+        addHidden('passphrase', _sshPassphraseController.text.trim());
         break;
       case VaultItemType.driversLicense:
         addText('dlName', _dlNameController.text.trim());
@@ -1093,7 +1147,7 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
       case VaultItemType.softwareLicense:
         return _buildSoftwareLicenseFields();
       case VaultItemType.sshKey:
-        return [const Text('SSH keys are managed in Settings → SSH Keys')];
+        return _buildSshKeyFields();
       case VaultItemType.driversLicense:
         return _buildDriversLicenseFields();
       case VaultItemType.passport:
@@ -1478,6 +1532,311 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
         keyboardType: TextInputType.multiline,
       ),
     ];
+  }
+
+  List<Widget> _buildSshKeyFields() {
+    const primaryColor = Color(0xFF4D4DCD);
+    return [
+      // --- Name field ---
+      TextFormField(
+        controller: _sshNameController,
+        decoration: _inputDecoration('Key Name *'),
+        validator: _requiredValidator,
+      ),
+      const SizedBox(height: 16),
+
+      // --- Key Type dropdown ---
+      DropdownButtonFormField<String>(
+        initialValue: _sshKeyType,
+        decoration: _inputDecoration('Key Type'),
+        items: const [
+          DropdownMenuItem(value: 'ed25519', child: Text('Ed25519')),
+          DropdownMenuItem(value: 'rsa4096', child: Text('RSA 4096')),
+        ],
+        onChanged: _sshPublicKeyController.text.isEmpty
+            ? (v) {
+                if (v != null) setState(() => _sshKeyType = v);
+              }
+            : null,
+      ),
+      const SizedBox(height: 20),
+
+      // --- Generate / Import toggle ---
+      Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: _sshGenerating ? null : _generateSshKey,
+              icon: _sshGenerating
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.vpn_key_rounded, size: 18),
+              label: Text(
+                _sshGenerating ? 'Generating...' : 'Generate Key',
+                style: const TextStyle(fontFamily: 'Poppins'),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          OutlinedButton.icon(
+            onPressed: () => setState(() => _sshImportMode = !_sshImportMode),
+            icon: Icon(
+              _sshImportMode ? Icons.close : Icons.file_upload_outlined,
+              size: 18,
+            ),
+            label: Text(
+              _sshImportMode ? 'Cancel' : 'Import',
+              style: const TextStyle(fontFamily: 'Poppins'),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: primaryColor,
+              side: const BorderSide(color: primaryColor),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+
+      // --- Import mode: paste private key ---
+      if (_sshImportMode) ...[
+        TextFormField(
+          controller: _sshImportController,
+          decoration: _inputDecoration('Paste Private Key').copyWith(
+            hintText: '-----BEGIN OPENSSH PRIVATE KEY-----',
+            hintStyle: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+          ),
+          maxLines: 6,
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+          keyboardType: TextInputType.multiline,
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _importSshKey,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            child: const Text(
+              'Import Key',
+              style: TextStyle(fontFamily: 'Poppins'),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+
+      // --- Public Key (read-only) ---
+      if (_sshPublicKeyController.text.isNotEmpty) ...[
+        TextFormField(
+          controller: _sshPublicKeyController,
+          decoration: _inputDecoration('Public Key').copyWith(
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.copy, size: 18),
+              onPressed: () {
+                _copySshField(_sshPublicKeyController.text, 'Public key');
+              },
+            ),
+          ),
+          readOnly: true,
+          maxLines: 3,
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+        ),
+        const SizedBox(height: 16),
+      ],
+
+      // --- Private Key (read-only, obscured) ---
+      if (_sshPrivateKeyController.text.isNotEmpty) ...[
+        TextFormField(
+          controller: _sshPrivateKeyController,
+          decoration: _inputDecoration('Private Key').copyWith(
+            suffixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    _sshPrivateKeyVisible
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    size: 18,
+                  ),
+                  onPressed: () => setState(
+                      () => _sshPrivateKeyVisible = !_sshPrivateKeyVisible),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 18),
+                  onPressed: () {
+                    _copySshField(
+                        _sshPrivateKeyController.text, 'Private key');
+                  },
+                ),
+              ],
+            ),
+          ),
+          readOnly: true,
+          maxLines: _sshPrivateKeyVisible ? 4 : 1,
+          obscureText: !_sshPrivateKeyVisible,
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+        ),
+        const SizedBox(height: 16),
+      ],
+
+      // --- Fingerprint (read-only) ---
+      if (_sshFingerprintController.text.isNotEmpty) ...[
+        TextFormField(
+          controller: _sshFingerprintController,
+          decoration: _inputDecoration('Fingerprint').copyWith(
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.copy, size: 18),
+              onPressed: () {
+                _copySshField(
+                    _sshFingerprintController.text, 'Fingerprint');
+              },
+            ),
+          ),
+          readOnly: true,
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+        ),
+        const SizedBox(height: 16),
+      ],
+
+      // --- Comment (optional) ---
+      TextFormField(
+        controller: _sshCommentController,
+        decoration: _inputDecoration('Comment (e.g. user@host)'),
+      ),
+      const SizedBox(height: 16),
+
+      // --- Passphrase (optional) ---
+      TextFormField(
+        controller: _sshPassphraseController,
+        decoration: _inputDecoration('Passphrase').copyWith(
+          suffixIcon: IconButton(
+            icon: Icon(
+              _sshPassphraseVisible ? Icons.visibility_off : Icons.visibility,
+              size: 18,
+            ),
+            onPressed: () =>
+                setState(() => _sshPassphraseVisible = !_sshPassphraseVisible),
+          ),
+        ),
+        obscureText: !_sshPassphraseVisible,
+      ),
+      const SizedBox(height: 16),
+
+      // --- Notes ---
+      TextFormField(
+        controller: _notesController,
+        decoration: _inputDecoration('Notes'),
+        maxLines: 3,
+        keyboardType: TextInputType.multiline,
+      ),
+    ];
+  }
+
+  Future<void> _generateSshKey() async {
+    setState(() => _sshGenerating = true);
+    try {
+      final service = ref.read(sshKeyServiceProvider);
+      final comment = _sshCommentController.text.trim();
+      final SshKeyData keyData;
+      if (_sshKeyType == 'rsa4096') {
+        keyData =
+            await service.generateRsa4096(comment: comment.isEmpty ? null : comment);
+      } else {
+        keyData =
+            await service.generateEd25519(comment: comment.isEmpty ? null : comment);
+      }
+      if (!mounted) return;
+      setState(() {
+        _sshPublicKeyController.text = keyData.publicKey;
+        _sshPrivateKeyController.text = keyData.privateKey;
+        _sshFingerprintController.text = keyData.fingerprint;
+        _sshKeyType = keyData.keyType;
+        _sshImportMode = false;
+        _sshGenerating = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _sshGenerating = false);
+      showCitadelSnackBar(
+        context,
+        'Key generation failed: $e',
+        type: SnackBarType.error,
+      );
+    }
+  }
+
+  void _importSshKey() {
+    final text = _sshImportController.text.trim();
+    if (text.isEmpty) {
+      showCitadelSnackBar(
+        context,
+        'Please paste a private key to import.',
+        type: SnackBarType.error,
+      );
+      return;
+    }
+    try {
+      final service = ref.read(sshKeyServiceProvider);
+      final comment = _sshCommentController.text.trim();
+      final keyData =
+          service.importFromText(text, comment: comment.isEmpty ? null : comment);
+      setState(() {
+        _sshPublicKeyController.text = keyData.publicKey;
+        _sshPrivateKeyController.text = keyData.privateKey;
+        _sshFingerprintController.text = keyData.fingerprint;
+        _sshKeyType = keyData.keyType;
+        if (keyData.comment != null && _sshCommentController.text.isEmpty) {
+          _sshCommentController.text = keyData.comment!;
+        }
+        _sshImportMode = false;
+        _sshImportController.clear();
+      });
+      showCitadelSnackBar(
+        context,
+        'SSH key imported successfully.',
+        type: SnackBarType.success,
+      );
+    } catch (e) {
+      showCitadelSnackBar(
+        context,
+        'Import failed: $e',
+        type: SnackBarType.error,
+      );
+    }
+  }
+
+  void _copySshField(String value, String label) {
+    Clipboard.setData(ClipboardData(text: value));
+    showCitadelSnackBar(context, '$label copied to clipboard.');
   }
 
   List<Widget> _buildDriversLicenseFields() {

@@ -34,12 +34,26 @@ class SharedVaultService {
     required String ownerPublicKey,
   }) async {
     try {
-      return await _pb.collection('vault_collections').create(body: {
+      final vault = await _pb.collection('vault_collections').create(body: {
         'name': name,
         'ownerId': ownerId,
         'ownerPublicKey': ownerPublicKey,
         'type': 'shared',
       });
+
+      // Create owner membership so getUserSharedVaults() finds this vault.
+      final now = DateTime.now().toUtc().toIso8601String();
+      await _pb.collection('vault_members').create(body: {
+        'vaultId': vault.id,
+        'userId': ownerId,
+        'role': 'owner',
+        'encryptedVaultKey': '',
+        'ownerPublicKey': ownerPublicKey,
+        'invitedAt': now,
+        'acceptedAt': now,
+      });
+
+      return vault;
     } catch (e) {
       throw SharedVaultServiceException('Failed to create shared vault: $e');
     }
