@@ -36,8 +36,9 @@ class SharedVaultService {
     try {
       final vault = await _pb.collection('vault_collections').create(body: {
         'name': name,
-        'ownerId': ownerId,
-        'ownerPublicKey': ownerPublicKey,
+        'owner': ownerId,
+        'colorHex': '#26A69A',
+        'iconName': 'people',
         'type': 'shared',
       });
 
