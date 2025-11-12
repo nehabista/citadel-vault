@@ -154,14 +154,14 @@ class EmergencyContactCard extends ConsumerWidget {
     final repo = ref.read(emergencyRepositoryProvider);
 
     if (isGrantor) {
-      return _buildGrantorActions(context, repo);
+      return _buildGrantorActions(context, ref, repo);
     } else {
       return _buildGranteeActions(context, ref, repo);
     }
   }
 
   Widget _buildGrantorActions(
-      BuildContext context, EmergencyRepository repo) {
+      BuildContext context, WidgetRef ref, EmergencyRepository repo) {
     return switch (contact.status) {
       'pending' => Row(
           children: [
@@ -178,25 +178,7 @@ class EmergencyContactCard extends ConsumerWidget {
             ),
           ],
         ),
-      'waiting' => Row(
-          children: [
-            const Spacer(),
-            FilledButton.icon(
-              onPressed: () async {
-                await repo.rejectRequest(contact.id);
-                if (context.mounted) {
-                  showCitadelSnackBar(context, 'Emergency access rejected');
-                }
-              },
-              icon: const Icon(Icons.block, size: 16),
-              label: const Text('Reject',
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: 13)),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFE53935),
-              ),
-            ),
-          ],
-        ),
+      'waiting' => _buildWaitingGrantorActions(context, ref, repo),
       'active' => Row(
           children: [
             Row(
@@ -228,6 +210,97 @@ class EmergencyContactCard extends ConsumerWidget {
         ),
       _ => const SizedBox.shrink(),
     };
+  }
+
+  Widget _buildWaitingGrantorActions(
+      BuildContext context, WidgetRef ref, EmergencyRepository repo) {
+    final remaining = repo.remainingWaitTime(contact);
+    final waitingExpired = remaining != null && remaining.isNegative;
+
+    return Row(
+      children: [
+        if (waitingExpired) ...[
+          FilledButton.icon(
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Release Vault Access?',
+                      style: TextStyle(fontFamily: 'Poppins')),
+                  content: const Text(
+                    'This will encrypt your vault key for the grantee '
+                    'and grant them read-only access to your vault. '
+                    'You can revoke access at any time.',
+                    style: TextStyle(fontFamily: 'Poppins'),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel',
+                          style: TextStyle(fontFamily: 'Poppins')),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF43A047),
+                      ),
+                      child: const Text('Release Access',
+                          style: TextStyle(fontFamily: 'Poppins')),
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed == true && context.mounted) {
+                final error = await repo.releaseVaultKey(
+                  contact: contact,
+                  // TODO: Wire actual grantor key pair from auth state
+                  grantorKeyPair: ref.read(grantorKeyPairProvider),
+                  vaultKeyData: ref.read(vaultKeyDataProvider),
+                );
+                if (context.mounted) {
+                  if (error == null) {
+                    showCitadelSnackBar(
+                      context,
+                      'Vault access released',
+                      type: SnackBarType.success,
+                    );
+                    ref.invalidate(grantorContactsProvider);
+                  } else {
+                    showCitadelSnackBar(
+                      context,
+                      error,
+                      type: SnackBarType.error,
+                    );
+                  }
+                }
+              }
+            },
+            icon: const Icon(Icons.key, size: 16),
+            label: const Text('Release Access',
+                style: TextStyle(fontFamily: 'Poppins', fontSize: 13)),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF43A047),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+        const Spacer(),
+        FilledButton.icon(
+          onPressed: () async {
+            await repo.rejectRequest(contact.id);
+            if (context.mounted) {
+              showCitadelSnackBar(context, 'Emergency access rejected');
+            }
+          },
+          icon: const Icon(Icons.block, size: 16),
+          label: const Text('Reject',
+              style: TextStyle(fontFamily: 'Poppins', fontSize: 13)),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFE53935),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildGranteeActions(

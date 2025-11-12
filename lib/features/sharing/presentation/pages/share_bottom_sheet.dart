@@ -3,7 +3,6 @@
 // Per D-05, D-06, D-20.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../presentation/widgets/citadel_snackbar.dart';
@@ -45,19 +44,7 @@ class _ShareBottomSheetState extends ConsumerState<ShareBottomSheet>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
-  // Link sharing state.
-  Duration _selectedTtl = const Duration(hours: 24);
-  bool _oneTimeView = false;
-  bool _isCreatingLink = false;
-  String? _generatedLink;
   bool _isSharing = false;
-
-  static const _ttlOptions = [
-    (label: '1 hour', duration: Duration(hours: 1)),
-    (label: '24 hours', duration: Duration(hours: 24)),
-    (label: '7 days', duration: Duration(days: 7)),
-    (label: '30 days', duration: Duration(days: 30)),
-  ];
 
   @override
   void initState() {
@@ -98,45 +85,6 @@ class _ShareBottomSheetState extends ConsumerState<ShareBottomSheet>
     } finally {
       if (mounted) setState(() => _isSharing = false);
     }
-  }
-
-  Future<void> _createShareLink() async {
-    setState(() {
-      _isCreatingLink = true;
-      _generatedLink = null;
-    });
-
-    try {
-      final repo = ref.read(sharingRepositoryProvider);
-      final link = await repo.createShareLink(
-        itemData: widget.itemData,
-        ttl: _selectedTtl,
-        oneTimeView: _oneTimeView,
-      );
-      setState(() {
-        _generatedLink = link;
-        _isCreatingLink = false;
-      });
-    } catch (e) {
-      if (mounted) {
-        showCitadelSnackBar(
-          context,
-          'Failed to create link',
-          type: SnackBarType.error,
-        );
-      }
-      setState(() => _isCreatingLink = false);
-    }
-  }
-
-  void _copyLink() {
-    if (_generatedLink == null) return;
-    Clipboard.setData(ClipboardData(text: _generatedLink!));
-    showCitadelSnackBar(
-      context,
-      'Link copied to clipboard',
-      type: SnackBarType.success,
-    );
   }
 
   @override
@@ -276,170 +224,78 @@ class _ShareBottomSheetState extends ConsumerState<ShareBottomSheet>
   }
 
   Widget _buildLinkShareTab() {
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
-            'Create Shareable Link',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Decryption key stays in the URL fragment (never sent to server)',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 12,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // TTL dropdown.
-          const Text(
-            'Link expires after',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color:
-                  Theme.of(context).colorScheme.surfaceContainerHighest,
+              color: const Color(0xFF4D4DCD).withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(14),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<Duration>(
-                value: _selectedTtl,
-                isExpanded: true,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                items: _ttlOptions
-                    .map(
-                      (opt) => DropdownMenuItem(
-                        value: opt.duration,
-                        child: Text(opt.label),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (val) {
-                  if (val != null) setState(() => _selectedTtl = val);
-                },
+              border: Border.all(
+                color: const Color(0xFF4D4DCD).withValues(alpha: 0.15),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-
-          // One-time view checkbox.
-          CheckboxListTile(
-            value: _oneTimeView,
-            onChanged: (val) =>
-                setState(() => _oneTimeView = val ?? false),
-            title: const Text(
-              'One-time view',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 13,
-              ),
-            ),
-            subtitle: Text(
-              'Link expires after first access',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 11,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            contentPadding: EdgeInsets.zero,
-            controlAffinity: ListTileControlAffinity.leading,
-            activeColor: const Color(0xFF4D4DCD),
-            dense: true,
-          ),
-          const SizedBox(height: 12),
-
-          // Create link button or generated link display.
-          if (_generatedLink == null)
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _isCreatingLink ? null : _createShareLink,
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF4D4DCD),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4D4DCD).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: const Icon(
+                    Icons.link_off,
+                    color: Color(0xFF4D4DCD),
+                    size: 28,
+                  ),
                 ),
-                icon: _isCreatingLink
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation(Colors.white),
-                        ),
-                      )
-                    : const Icon(Icons.link, size: 18),
-                label: Text(
-                  _isCreatingLink ? 'Creating...' : 'Create Link',
-                  style: const TextStyle(
+                const SizedBox(height: 14),
+                const Text(
+                  'Link Sharing Coming in v2',
+                  style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A2E),
                   ),
                 ),
-              ),
-            )
-          else
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF4D4DCD).withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: const Color(0xFF4D4DCD).withValues(alpha: 0.2),
+                const SizedBox(height: 8),
+                Text(
+                  'Shareable links for non-Citadel users require a web '
+                  'frontend to decrypt shared data. This feature is planned '
+                  'for a future release.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    height: 1.5,
+                    color: Colors.grey.shade600,
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _generatedLink!,
-                      style: const TextStyle(
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.arrow_back,
+                        size: 14, color: Colors.grey.shade500),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Use "Citadel User" tab to share securely now',
+                      style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 11,
-                        color: Color(0xFF4D4DCD),
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.copy,
-                      color: Color(0xFF4D4DCD),
-                      size: 20,
-                    ),
-                    onPressed: _copyLink,
-                    tooltip: 'Copy link',
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
+          ),
         ],
       ),
     );

@@ -2,6 +2,7 @@
 // Riverpod providers for emergency access feature.
 // Wires EmergencyService, EmergencyRepository, and derived state providers.
 
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/core_providers.dart';
@@ -51,6 +52,26 @@ final granteeContactsProvider =
 
   final repo = ref.watch(emergencyRepositoryProvider);
   return repo.getGranteeContacts(userId);
+});
+
+/// Grantor's X25519 key pair for encrypting vault keys for emergency contacts.
+///
+/// TODO: Wire to the actual auth/crypto state that holds the user's key pair.
+/// This is a placeholder that must be overridden before emergency key release works.
+final grantorKeyPairProvider = Provider<SimpleKeyPair>((ref) {
+  throw UnimplementedError(
+    'grantorKeyPairProvider must be overridden with the actual user key pair',
+  );
+});
+
+/// The vault key data to encrypt for emergency contacts.
+///
+/// TODO: Wire to the actual vault key provider from the encryption layer.
+/// This is a placeholder that must be overridden before emergency key release works.
+final vaultKeyDataProvider = Provider<Map<String, dynamic>>((ref) {
+  throw UnimplementedError(
+    'vaultKeyDataProvider must be overridden with the actual vault key data',
+  );
 });
 
 /// Count of emergency contacts in 'waiting' status where user is grantor.

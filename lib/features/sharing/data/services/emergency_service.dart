@@ -57,6 +57,49 @@ class EmergencyService {
     });
   }
 
+  /// Release the encrypted vault key to a grantee after the waiting period.
+  ///
+  /// Verifies server-side that the waiting period has elapsed before storing
+  /// the encrypted vault key. This is the only path to populate the key --
+  /// the key is never stored at contact creation time.
+  ///
+  /// Throws [StateError] if the waiting period has not yet expired.
+  Future<void> releaseVaultKey(
+    String contactId,
+    String encryptedVaultKey,
+  ) async {
+    // Fetch the current record to verify waiting period
+    final record = await _pb.collection(_collection).getOne(contactId);
+    final status = record.getStringValue('status');
+    final requestedAtStr = record.getStringValue('requestedAt');
+    final waitingDays = record.getIntValue('waitingPeriodDays');
+
+    if (status != 'waiting' && status != 'active') {
+      throw StateError(
+        'Cannot release vault key: contact status is "$status" (expected "waiting" or "active")',
+      );
+    }
+
+    if (requestedAtStr.isEmpty) {
+      throw StateError('Cannot release vault key: no access request found');
+    }
+
+    final requestedAt = DateTime.parse(requestedAtStr);
+    final deadline = requestedAt.add(Duration(days: waitingDays));
+    if (DateTime.now().toUtc().isBefore(deadline)) {
+      final remaining = deadline.difference(DateTime.now().toUtc());
+      throw StateError(
+        'Waiting period has not expired. ${remaining.inDays} days ${remaining.inHours % 24} hours remaining.',
+      );
+    }
+
+    // Waiting period verified -- store the encrypted vault key and set active
+    await _pb.collection(_collection).update(contactId, body: {
+      'status': 'active',
+      'encryptedVaultKey': encryptedVaultKey,
+    });
+  }
+
   /// Grantor rejects the emergency access request during waiting period.
   Future<void> rejectAccess(String contactId) async {
     await _pb.collection(_collection).update(contactId, body: {

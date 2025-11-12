@@ -86,6 +86,61 @@ class EmergencyRepository {
     );
   }
 
+  /// Manually release the encrypted vault key to a grantee.
+  ///
+  /// Called by the grantor after the waiting period has expired.
+  /// Encrypts the vault key with the grantee's X25519 public key and
+  /// stores it via [EmergencyService.releaseVaultKey], which verifies
+  /// the waiting period server-side before accepting the key.
+  ///
+  /// Returns an error message on failure, or null on success.
+  Future<String?> releaseVaultKey({
+    required EmergencyContact contact,
+    required SimpleKeyPair grantorKeyPair,
+    required Map<String, dynamic> vaultKeyData,
+  }) async {
+    try {
+      if (contact.granteePublicKey == null) {
+        return 'Grantee public key not available';
+      }
+
+      final granteePublicKeyBytes = base64Decode(contact.granteePublicKey!);
+      final granteePublicKey = SimplePublicKey(
+        granteePublicKeyBytes,
+        type: KeyPairType.x25519,
+      );
+
+      // Derive shared key with emergency context (per D-12)
+      final sharedKey = await _crypto.deriveSharedKey(
+        localKeyPair: grantorKeyPair,
+        remotePublicKey: granteePublicKey,
+        context: utf8.encode('citadel-emergency-v1'),
+      );
+
+      // Encrypt vault key for grantee
+      final encryptedVaultKey = await _crypto.encryptForSharing(
+        vaultKeyData,
+        sharedKey,
+      );
+
+      final encryptedVaultKeyBase64 = base64Encode(encryptedVaultKey);
+
+      await _service.releaseVaultKey(contact.id, encryptedVaultKeyBase64);
+
+      await _notificationService.showEmergencyNotification(
+        title: 'Emergency Access Released',
+        body: 'Vault key has been released to the emergency contact.',
+        payload: 'emergency:${contact.id}:released',
+      );
+
+      return null; // success
+    } on StateError catch (e) {
+      return e.message;
+    } catch (e) {
+      return 'Failed to release vault key: $e';
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Grantee operations
   // ---------------------------------------------------------------------------
@@ -187,7 +242,7 @@ class EmergencyRepository {
 
       final encryptedVaultKeyBase64 = base64Encode(encryptedVaultKey);
 
-      await _service.approveAccess(contact.id, encryptedVaultKeyBase64);
+      await _service.releaseVaultKey(contact.id, encryptedVaultKeyBase64);
 
       await _notificationService.showEmergencyNotification(
         title: 'Emergency Access Granted',
