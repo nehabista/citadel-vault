@@ -310,8 +310,8 @@ class _DashBoardPageState extends ConsumerState<DashBoardPage> {
   }
 }
 
-/// Secondary horizontal type filter tabs.
-class _TypeFilterBar extends StatelessWidget {
+/// Secondary horizontal type filter tabs with auto-scroll to selected chip.
+class _TypeFilterBar extends StatefulWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelected;
 
@@ -319,6 +319,13 @@ class _TypeFilterBar extends StatelessWidget {
     required this.selectedIndex,
     required this.onSelected,
   });
+
+  @override
+  State<_TypeFilterBar> createState() => _TypeFilterBarState();
+}
+
+class _TypeFilterBarState extends State<_TypeFilterBar> {
+  final Map<int, GlobalKey> _chipKeys = {};
 
   static const _tabs = [
     (icon: Icons.grid_view_rounded, text: 'All'),
@@ -332,6 +339,32 @@ class _TypeFilterBar extends StatelessWidget {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    for (int i = 0; i < _tabs.length; i++) {
+      _chipKeys[i] = GlobalKey();
+    }
+  }
+
+  void _scrollToChip(int index) {
+    final key = _chipKeys[index];
+    if (key == null || key.currentContext == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final keyContext = key.currentContext;
+      if (keyContext != null) {
+        Scrollable.ensureVisible(
+          keyContext,
+          alignment: 0.4,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 36,
@@ -341,12 +374,16 @@ class _TypeFilterBar extends StatelessWidget {
         itemCount: _tabs.length,
         itemBuilder: (context, index) {
           final tab = _tabs[index];
-          final isSelected = index == selectedIndex;
+          final isSelected = index == widget.selectedIndex;
 
           return Padding(
+            key: _chipKeys[index],
             padding: const EdgeInsets.only(right: 6),
             child: GestureDetector(
-              onTap: () => onSelected(index),
+              onTap: () {
+                widget.onSelected(index);
+                _scrollToChip(index);
+              },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

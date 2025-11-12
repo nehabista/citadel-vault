@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as dev;
+import 'dart:typed_data';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart';
 import 'package:pocketbase/pocketbase.dart';
 
+import '../crypto/crypto_engine.dart';
 import '../database/app_database.dart';
 import '../database/daos/settings_dao.dart';
 import '../database/daos/sync_dao.dart';
@@ -24,6 +27,12 @@ class SyncEngine {
   final SettingsDao _settingsDao;
   final PocketBase _pb;
   final ConnectivityService _connectivity;
+  final CryptoEngine _cryptoEngine;
+
+  /// Callback that returns the current vault key bytes, or null if locked.
+  /// Sync only runs when session is Unlocked, so this should always return
+  /// a value during active sync operations.
+  final Uint8List? Function() _getVaultKeyBytes;
 
   /// Maximum number of retries before skipping a queue entry.
   static const int maxRetries = 5;
@@ -55,11 +64,50 @@ class SyncEngine {
     required SettingsDao settingsDao,
     required PocketBase pb,
     required ConnectivityService connectivity,
+    required CryptoEngine cryptoEngine,
+    required Uint8List? Function() getVaultKeyBytes,
   })  : _syncDao = syncDao,
         _vaultDao = vaultDao,
         _settingsDao = settingsDao,
         _pb = pb,
-        _connectivity = connectivity;
+        _connectivity = connectivity,
+        _cryptoEngine = cryptoEngine,
+        _getVaultKeyBytes = getVaultKeyBytes;
+
+  /// Get the current vault key as a [SecretKey], or null if session is locked.
+  SecretKey? get _vaultKey {
+    final bytes = _getVaultKeyBytes();
+    return bytes != null ? SecretKey(bytes) : null;
+  }
+
+  /// Encrypt a vault name before sending to PocketBase.
+  ///
+  /// Per D-11 / D-18: all metadata must be encrypted. Vault names are
+  /// identifying information that must not be stored as plaintext on the server.
+  /// Returns a base64-encoded encrypted blob.
+  Future<String> _encryptVaultName(String name, SecretKey key) async {
+    final plaintext = Uint8List.fromList(utf8.encode(name));
+    final encrypted = await _cryptoEngine.encrypt(plaintext, key);
+    return base64Encode(encrypted);
+  }
+
+  /// Decrypt a vault name received from PocketBase.
+  ///
+  /// Returns the plaintext vault name. If decryption fails (e.g. the name
+  /// was stored as plaintext before this fix), returns the raw value as-is
+  /// for backward compatibility.
+  Future<String> _decryptVaultName(String encodedName, SecretKey key) async {
+    try {
+      final encrypted = base64Decode(encodedName);
+      final decrypted = await _cryptoEngine.decrypt(encrypted, key);
+      return utf8.decode(decrypted);
+    } catch (_) {
+      // Backward compatibility: if the name can't be decrypted, it was likely
+      // stored as plaintext before this encryption was added. Return as-is.
+      dev.log('[Sync] Vault name not encrypted (legacy) — using as plaintext');
+      return encodedName;
+    }
+  }
 
   /// Run a full sync cycle: push local changes, then pull remote changes.
   ///
@@ -67,8 +115,13 @@ class SyncEngine {
   Future<void> sync() async {
     if (_isSyncing) return;
 
-    // Don't sync if not authenticated
+    // Don't sync if not authenticated or vault is locked (key required for
+    // encrypting/decrypting vault names per D-11).
     if (!_pb.authStore.isValid || _currentUserId == null) {
+      return;
+    }
+    if (_vaultKey == null) {
+      dev.log('[Sync] Skipping — vault is locked (no encryption key)');
       return;
     }
 
@@ -184,9 +237,18 @@ class SyncEngine {
       // Skip if already synced (has remoteId)
       if (vault.remoteId != null) return;
 
+      final key = _vaultKey;
+      if (key == null) {
+        dev.log('[Sync] ✗ Session locked — cannot encrypt vault name');
+        return;
+      }
+
+      // D-11: encrypt vault name before sending to PocketBase
+      final encryptedName = await _encryptVaultName(vault.name, key);
+
       final record = await _pb.collection('vault_collections').create(
         body: {
-          'name': vault.name,
+          'name': encryptedName,
           'owner': userId,
           'colorHex': vault.colorHex,
           'iconName': vault.iconName,
@@ -227,10 +289,26 @@ class SyncEngine {
       );
     } else if (entry.entityTable == 'vaults') {
       final vault = await _vaultDao.getVaultById(entry.itemId);
-      if (vault == null) return;
+      if (vault == null || vault.remoteId == null) return;
 
-      // For vaults, we'd need a remoteId mapping too.
-      // For now, skip vault updates until we add remote ID tracking for vaults.
+      final key = _vaultKey;
+      if (key == null) {
+        dev.log('[Sync] ✗ Session locked — cannot encrypt vault name');
+        return;
+      }
+
+      // D-11: encrypt vault name before sending to PocketBase
+      final encryptedName = await _encryptVaultName(vault.name, key);
+
+      await _pb.collection('vault_collections').update(
+        vault.remoteId!,
+        body: {
+          'name': encryptedName,
+          'owner': userId,
+          'colorHex': vault.colorHex,
+          'iconName': vault.iconName,
+        },
+      );
     }
   }
 
@@ -255,6 +333,15 @@ class SyncEngine {
       filter += ' && updated > "$lastSync"';
     }
 
+    // Pull vault collections first (items reference them).
+    final vaultRecords = await _pb.collection('vault_collections').getFullList(
+      filter: filter,
+    );
+    for (final record in vaultRecords) {
+      await _applyRemoteVaultRecord(record);
+    }
+
+    // Pull vault items.
     final records = await _pb.collection('vault_items').getFullList(
       filter: filter,
     );
@@ -266,6 +353,62 @@ class SyncEngine {
     await _settingsDao.setSetting(
       'lastSync',
       DateTime.now().toUtc().toIso8601String(),
+    );
+  }
+
+  /// Apply a remote vault collection record to the local database.
+  ///
+  /// Decrypts the vault name (D-11) before storing locally.
+  Future<void> _applyRemoteVaultRecord(RecordModel record) async {
+    final key = _vaultKey;
+    if (key == null) {
+      dev.log('[Sync] ✗ Session locked — cannot decrypt vault name');
+      return;
+    }
+
+    final rawName = record.getStringValue('name');
+    final decryptedName = await _decryptVaultName(rawName, key);
+    final colorHex = record.getStringValue('colorHex');
+    final iconName = record.getStringValue('iconName');
+
+    // Check if we have this vault locally by remote ID.
+    final allVaults = await _vaultDao.getAllVaults();
+    final localVault = allVaults.where((v) => v.remoteId == record.id).firstOrNull;
+
+    if (localVault == null) {
+      // New remote vault — insert locally with decrypted name.
+      await _vaultDao.insertVault(
+        VaultsCompanion(
+          id: Value(record.id),
+          name: Value(decryptedName),
+          colorHex: Value(colorHex.isNotEmpty ? colorHex : '#4D4DCD'),
+          iconName: Value(iconName.isNotEmpty ? iconName : 'shield'),
+          // ignore: deprecated_member_use
+          createdAt: Value(DateTime.parse(record.created)),
+          // ignore: deprecated_member_use
+          updatedAt: Value(DateTime.parse(record.updated)),
+          remoteId: Value(record.id),
+        ),
+      );
+      return;
+    }
+
+    // Conflict resolution: last-write-wins with local preference on tie (D-17).
+    // ignore: deprecated_member_use
+    final remoteUpdatedAt = DateTime.parse(record.updated);
+    if (_localWins(localVault.updatedAt, remoteUpdatedAt)) {
+      return;
+    }
+
+    // Remote wins — update local vault with decrypted name.
+    await _vaultDao.updateVault(
+      VaultsCompanion(
+        id: Value(localVault.id),
+        name: Value(decryptedName),
+        colorHex: Value(colorHex.isNotEmpty ? colorHex : localVault.colorHex),
+        iconName: Value(iconName.isNotEmpty ? iconName : localVault.iconName),
+        updatedAt: Value(remoteUpdatedAt),
+      ),
     );
   }
 

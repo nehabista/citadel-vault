@@ -34,18 +34,56 @@ Color _parseColor(String hex) {
 }
 
 /// Horizontal scrollable vault tabs.
-class VaultTabs extends ConsumerWidget {
+class VaultTabs extends ConsumerStatefulWidget {
   const VaultTabs({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VaultTabs> createState() => _VaultTabsState();
+}
+
+class _VaultTabsState extends ConsumerState<VaultTabs> {
+  final ScrollController _scrollController = ScrollController();
+  final Map<int, GlobalKey> _tabKeys = {};
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToSelected(int selectedIndex) {
+    final key = _tabKeys[selectedIndex];
+    if (key == null || key.currentContext == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final keyContext = key.currentContext;
+      if (keyContext != null) {
+        Scrollable.ensureVisible(
+          keyContext,
+          alignment: 0.4,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final vaultState = ref.watch(multiVaultProvider);
     final vaults = vaultState.vaults;
     final selectedId = vaultState.selectedVaultId;
 
+    // Ensure we have keys for each tab
+    for (int i = 0; i < vaults.length; i++) {
+      _tabKeys.putIfAbsent(i, () => GlobalKey());
+    }
+
     return SizedBox(
       height: 44,
       child: ListView.builder(
+        controller: _scrollController,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         itemCount: vaults.length + 1, // +1 for the add button
@@ -59,16 +97,20 @@ class VaultTabs extends ConsumerWidget {
           final isSelected = vault.id == selectedId;
           final color = _parseColor(vault.colorHex);
 
-          return _VaultTab(
-            vault: vault,
-            isSelected: isSelected,
-            color: color,
-            onTap: () {
-              ref.read(multiVaultProvider.notifier).selectVault(vault.id);
-            },
-            onLongPress: () {
-              _showVaultMenu(context, ref, vault);
-            },
+          return KeyedSubtree(
+            key: _tabKeys[index],
+            child: _VaultTab(
+              vault: vault,
+              isSelected: isSelected,
+              color: color,
+              onTap: () {
+                ref.read(multiVaultProvider.notifier).selectVault(vault.id);
+                _scrollToSelected(index);
+              },
+              onLongPress: () {
+                _showVaultMenu(context, ref, vault);
+              },
+            ),
           );
         },
       ),

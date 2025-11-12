@@ -40,7 +40,7 @@ class SharedVaultSelector extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 8),
+              padding: const EdgeInsets.only(left: 4, top: 6, bottom: 6),
               child: Row(
                 children: [
                   const Icon(
@@ -53,9 +53,9 @@ class SharedVaultSelector extends ConsumerWidget {
                     'Shared Vaults',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade600,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade500,
                     ),
                   ),
                 ],
@@ -79,10 +79,13 @@ class SharedVaultSelector extends ConsumerWidget {
 
   Widget _buildChip(BuildContext context, VaultMember member) {
     final isSelected = selectedVaultId == member.vaultId;
+    final displayName = member.vaultName.isNotEmpty
+        ? member.vaultName
+        : 'Shared Vault';
 
     return FilterChip(
       label: Text(
-        member.vaultId,
+        displayName,
         style: TextStyle(
           fontFamily: 'Poppins',
           fontSize: 12,
