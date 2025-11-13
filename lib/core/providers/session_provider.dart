@@ -37,14 +37,16 @@ class SessionNotifier extends Notifier<SessionState> {
 }
 
 /// Observes app lifecycle and auto-locks on pause (D-21).
+/// [lockOnBackground] controls whether pausing the app triggers a lock.
 class AppLifecycleObserver extends WidgetsBindingObserver {
   final SessionNotifier _notifier;
+  bool lockOnBackground;
 
-  AppLifecycleObserver(this._notifier);
+  AppLifecycleObserver(this._notifier, {this.lockOnBackground = true});
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.paused && lockOnBackground) {
       _notifier.lock();
     }
   }

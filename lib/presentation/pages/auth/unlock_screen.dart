@@ -8,9 +8,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/core_providers.dart';
 import '../../../core/providers/session_provider.dart';
+import '../../../core/session/pin_rate_limiter.dart';
 import '../../../data/services/auth/local_auth_service.dart';
 import '../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../routing/app_router.dart';
+import '../../widgets/citadel_snackbar.dart';
 
 /// Unlock screen that shows either PIN pad or master password field
 /// depending on whether quick unlock (PIN/biometric) is configured.
@@ -37,6 +39,11 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
   bool _hasQuickUnlock = false; // true = PIN mode, false = master password mode
   bool _loading = true;
   bool _obscureMasterPw = true;
+
+  // PIN rate limiting
+  final PinRateLimiter _rateLimiter = PinRateLimiter();
+  Timer? _lockoutCountdownTimer;
+  int _lockoutSecondsRemaining = 0;
 
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
@@ -96,6 +103,28 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
   // ─── PIN ───
   void _onDigitTap(int digit) {
     if (_isProcessing || _enteredPin.length >= _pinLength) return;
+
+    // Check if PIN is disabled for session (15+ failures).
+    if (_rateLimiter.isPinDisabledForSession) {
+      showCitadelSnackBar(
+        context,
+        'Too many failed attempts. Use your master password to unlock.',
+        type: SnackBarType.error,
+      );
+      return;
+    }
+
+    // Check if currently locked out.
+    if (_rateLimiter.isLockedOut) {
+      final remaining = _rateLimiter.remainingLockout;
+      showCitadelSnackBar(
+        context,
+        'Too many attempts. Try again in ${_formatLockoutTime(remaining.inSeconds)}',
+        type: SnackBarType.error,
+      );
+      return;
+    }
+
     HapticFeedback.lightImpact();
     setState(() {
       _hasError = false;
@@ -120,17 +149,46 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
     notifier.pinController.text = pin;
     final success = await notifier.unlockWithPin();
     if (success && mounted) {
+      _rateLimiter.reset();
       context.go(AppRoutes.home);
     } else if (mounted) {
+      // Record failure and check for lockout.
+      final lockoutDuration = _rateLimiter.recordFailure();
+
       HapticFeedback.heavyImpact();
       setState(() {
         _hasError = true;
         _isProcessing = false;
       });
       _shakeController.forward();
-      Future.delayed(const Duration(milliseconds: 600), () {
-        if (mounted) setState(() => _enteredPin.clear());
-      });
+
+      if (_rateLimiter.isPinDisabledForSession) {
+        // 15+ failures: force master password mode.
+        showCitadelSnackBar(
+          context,
+          'PIN disabled. Use your master password to unlock.',
+          type: SnackBarType.error,
+        );
+        setState(() {
+          _hasQuickUnlock = false;
+          _enteredPin.clear();
+        });
+      } else if (lockoutDuration > Duration.zero) {
+        // Show lockout countdown.
+        _startLockoutCountdown(lockoutDuration);
+        showCitadelSnackBar(
+          context,
+          'Too many attempts. Locked for ${_formatLockoutTime(lockoutDuration.inSeconds)}',
+          type: SnackBarType.error,
+        );
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) setState(() => _enteredPin.clear());
+        });
+      } else {
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) setState(() => _enteredPin.clear());
+        });
+      }
     }
   }
 
@@ -169,8 +227,41 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
     }
   }
 
+  /// Start a visual countdown timer for lockout feedback.
+  void _startLockoutCountdown(Duration lockoutDuration) {
+    _lockoutCountdownTimer?.cancel();
+    _lockoutSecondsRemaining = lockoutDuration.inSeconds;
+    _lockoutCountdownTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        setState(() {
+          _lockoutSecondsRemaining--;
+          if (_lockoutSecondsRemaining <= 0) {
+            _lockoutSecondsRemaining = 0;
+            timer.cancel();
+          }
+        });
+      },
+    );
+  }
+
+  /// Format seconds into mm:ss display.
+  String _formatLockoutTime(int totalSeconds) {
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    if (minutes > 0) {
+      return '${minutes}m ${seconds.toString().padLeft(2, '0')}s';
+    }
+    return '${seconds}s';
+  }
+
   @override
   void dispose() {
+    _lockoutCountdownTimer?.cancel();
     _shakeController.dispose();
     _masterPwController.dispose();
     super.dispose();
@@ -356,18 +447,50 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
         const SizedBox(height: 24),
 
         Text(
-          _hasError ? 'Incorrect PIN' : 'Enter your PIN',
+          _rateLimiter.isPinDisabledForSession
+              ? 'PIN Disabled'
+              : _hasError
+                  ? 'Incorrect PIN'
+                  : 'Enter your PIN',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w700,
-            color: _hasError ? _errorColor : const Color(0xFF1A1A2E),
+            color: (_hasError || _rateLimiter.isPinDisabledForSession)
+                ? _errorColor
+                : const Color(0xFF1A1A2E),
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          'Unlock your vault',
-          style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-        ),
+        if (_lockoutSecondsRemaining > 0)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: _errorColor.withAlpha(15),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _errorColor.withAlpha(50)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.timer_outlined, color: _errorColor, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'Try again in ${_formatLockoutTime(_lockoutSecondsRemaining)}',
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: _errorColor,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Text(
+            'Unlock your vault',
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+          ),
         const SizedBox(height: 32),
 
         // PIN dots
@@ -474,23 +597,31 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
   }
 
   Widget _buildDigitButton(int digit) {
+    final isDisabled = _rateLimiter.isLockedOut ||
+        _rateLimiter.isPinDisabledForSession;
+
     return SizedBox(
       width: 72,
       height: 72,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _onDigitTap(digit),
-          customBorder: const CircleBorder(),
-          splashColor: _primaryColor.withAlpha(30),
-          highlightColor: _primaryColor.withAlpha(15),
-          child: Center(
-            child: Text(
-              '$digit',
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF1A1A2E),
+      child: Opacity(
+        opacity: isDisabled ? 0.35 : 1.0,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _onDigitTap(digit),
+            customBorder: const CircleBorder(),
+            splashColor: _primaryColor.withAlpha(30),
+            highlightColor: _primaryColor.withAlpha(15),
+            child: Center(
+              child: Text(
+                '$digit',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w500,
+                  color: isDisabled
+                      ? Colors.grey.shade400
+                      : const Color(0xFF1A1A2E),
+                ),
               ),
             ),
           ),

@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/core_providers.dart';
+import '../../../core/providers/session_timeout_provider.dart';
 import '../../../core/providers/sync_providers.dart';
 import '../../../core/sync/sync_state.dart';
 import '../../../data/services/auth/local_auth_service.dart';
@@ -41,6 +42,8 @@ class SettingsScreen extends ConsumerWidget {
     final autofillStatusAsync = ref.watch(autofillStatusProvider);
     final clipboardTimeoutAsync = ref.watch(clipboardTimeoutProvider);
     final syncStateAsync = ref.watch(syncStateProvider);
+    final sessionTimeoutAsync = ref.watch(sessionTimeoutSettingProvider);
+    final lockOnBackgroundAsync = ref.watch(lockOnBackgroundSettingProvider);
 
     final currentMethod =
         unlockMethodAsync.value ?? UnlockMethod.masterPassword;
@@ -102,6 +105,75 @@ class SettingsScreen extends ConsumerWidget {
                   } else {
                     _disableQuickUnlock(context, ref);
                   }
+                },
+              ),
+            ),
+            _SettingsTile(
+              icon: Icons.lock_clock,
+              iconColor: const Color(0xFF4D4DCD),
+              title: 'Auto-Lock',
+              trailing: sessionTimeoutAsync.when(
+                data: (currentMinutes) {
+                  final selectedValue =
+                      autoLockOptions.containsKey(currentMinutes)
+                          ? currentMinutes
+                          : kDefaultTimeoutMinutes;
+
+                  return DropdownButton<int>(
+                    value: selectedValue,
+                    underline: const SizedBox(),
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                    items: autoLockOptions.entries
+                        .map((entry) => DropdownMenuItem<int>(
+                              value: entry.key,
+                              child: Text(entry.value),
+                            ))
+                        .toList(),
+                    onChanged: (newValue) async {
+                      if (newValue == null) return;
+                      final db = ref.read(appDatabaseProvider);
+                      await db.settingsDao.setSetting(
+                        kSessionTimeoutKey,
+                        newValue.toString(),
+                      );
+                      ref.invalidate(sessionTimeoutSettingProvider);
+                    },
+                  );
+                },
+                loading: () => const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                error: (_, __) => const Text(
+                  '5 minutes',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+            ),
+            _SettingsTile(
+              icon: Icons.phonelink_lock,
+              iconColor: const Color(0xFF4D4DCD),
+              title: 'Lock on Background',
+              subtitle: 'Lock vault when app goes to background',
+              trailing: Switch.adaptive(
+                value: lockOnBackgroundAsync.value ?? true,
+                activeTrackColor: const Color(0xFF4D4DCD),
+                onChanged: (bool value) async {
+                  final db = ref.read(appDatabaseProvider);
+                  await db.settingsDao.setSetting(
+                    kLockOnBackgroundKey,
+                    value.toString(),
+                  );
+                  ref.invalidate(lockOnBackgroundSettingProvider);
                 },
               ),
             ),
