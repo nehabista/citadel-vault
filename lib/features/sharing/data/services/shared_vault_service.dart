@@ -4,6 +4,7 @@
 
 import 'package:pocketbase/pocketbase.dart';
 
+import '../../../../core/utils/pb_filter_sanitizer.dart';
 import 'sharing_crypto_service.dart';
 
 /// Service for managing shared vaults (family/team vaults).
@@ -115,8 +116,9 @@ class SharedVaultService {
   /// Get all members of a shared vault.
   Future<List<RecordModel>> getVaultMembers(String vaultId) async {
     try {
+      final safeVaultId = sanitizePbFilter(vaultId);
       return await _pb.collection('vault_members').getFullList(
-        filter: 'vaultId = "$vaultId"',
+        filter: 'vaultId = "$safeVaultId"',
       );
     } catch (e) {
       throw SharedVaultServiceException('Failed to get vault members: $e');
@@ -126,8 +128,9 @@ class SharedVaultService {
   /// Get all shared vaults a user belongs to, with expanded vault details.
   Future<List<RecordModel>> getUserSharedVaults(String userId) async {
     try {
+      final safeUserId = sanitizePbFilter(userId);
       return await _pb.collection('vault_members').getFullList(
-        filter: 'userId = "$userId"',
+        filter: 'userId = "$safeUserId"',
         expand: 'vaultId',
       );
     } catch (e) {

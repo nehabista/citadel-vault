@@ -17,16 +17,18 @@ class BreachService {
     http.Client? client,
     String? hibpApiKey,
   })  : _client = client ?? http.Client(),
-        _hibpApiKey = hibpApiKey ?? _defaultApiKey;
+        _hibpApiKey = hibpApiKey ??
+            (_defaultApiKey.isNotEmpty ? _defaultApiKey : null);
 
   final http.Client _client;
   final String? _hibpApiKey;
 
-  /// Built-in HIBP API key — users don't need to configure this.
-  static const _defaultApiKey = String.fromEnvironment(
-    'HIBP_API_KEY',
-    defaultValue: '19845a8c362a464b837f724beada9cf2',
-  );
+  /// HIBP API key from compile-time environment.
+  ///
+  /// Pass via: `--dart-define=HIBP_API_KEY=your_key_here`
+  /// If not set, email breach checks require a user-configured key in settings.
+  /// Password k-anonymity checks do NOT need a key and always work.
+  static const _defaultApiKey = String.fromEnvironment('HIBP_API_KEY');
 
   static const _ua = 'Citadel/1.0';
 
@@ -69,7 +71,9 @@ class BreachService {
   Future<List<BreachRecord>> breachedAccount(String email) async {
     if (!hasHibpKey) {
       throw BreachServiceError(
-        'Missing HIBP API key.',
+        'Please configure HIBP API key in settings or pass via '
+        '--dart-define=HIBP_API_KEY=your_key. Password breach checks '
+        'still work without a key.',
         code: 'NO_KEY',
       );
     }

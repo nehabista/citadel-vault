@@ -7,6 +7,8 @@ import 'dart:developer' as dev;
 
 import 'package:pocketbase/pocketbase.dart';
 
+import '../../../../core/utils/pb_filter_sanitizer.dart';
+
 /// Service that handles PocketBase operations for emergency contacts.
 ///
 /// Manages the lifecycle: pending -> waiting -> active/rejected/revoked.
@@ -117,16 +119,18 @@ class EmergencyService {
 
   /// Get all emergency contacts where the user is the grantor.
   Future<List<RecordModel>> getContactsAsGrantor(String userId) async {
+    final safeUserId = sanitizePbFilter(userId);
     return await _pb.collection(_collection).getFullList(
-          filter: 'grantorId = "$userId"',
+          filter: 'grantorId = "$safeUserId"',
           sort: '-created',
         );
   }
 
   /// Get all emergency contacts where the user is the grantee.
   Future<List<RecordModel>> getContactsAsGrantee(String userId) async {
+    final safeUserId = sanitizePbFilter(userId);
     return await _pb.collection(_collection).getFullList(
-          filter: 'granteeId = "$userId"',
+          filter: 'granteeId = "$safeUserId"',
           sort: '-created',
         );
   }

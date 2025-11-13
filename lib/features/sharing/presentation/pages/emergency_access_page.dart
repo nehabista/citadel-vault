@@ -148,8 +148,8 @@ class EmergencyAccessPage extends ConsumerWidget {
           const Expanded(
             child: Text(
               'Emergency access allows trusted contacts to request read-only '
-              'access to your vault. You\'ll be notified and can reject the '
-              'request during a configurable waiting period.',
+              'access to your vault. You\'ll be notified in-app and can reject '
+              'the request during a configurable waiting period.',
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 12,

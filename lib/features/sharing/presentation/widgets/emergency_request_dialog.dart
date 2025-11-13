@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/utils/pb_filter_sanitizer.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../providers/emergency_providers.dart';
 
@@ -68,8 +69,9 @@ class _EmergencyRequestDialogState
       }
 
       // Look up user by email to get their ID and public key
+      final safeEmail = sanitizePbFilter(email);
       final users = await pb.collection('users').getFullList(
-            filter: 'email = "$email"',
+            filter: 'email = "$safeEmail"',
           );
 
       if (users.isEmpty) {
@@ -84,8 +86,9 @@ class _EmergencyRequestDialogState
       final granteeId = grantee.id;
 
       // Look up the grantee's public key from user_keys collection
+      final safeGranteeId = sanitizePbFilter(granteeId);
       final keyRecords = await pb.collection('user_keys').getFullList(
-            filter: 'userId = "$granteeId"',
+            filter: 'userId = "$safeGranteeId"',
           );
 
       final granteePublicKey = keyRecords.isNotEmpty

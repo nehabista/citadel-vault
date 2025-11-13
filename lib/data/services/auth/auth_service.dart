@@ -53,7 +53,7 @@ class AuthService {
       "avatar": pngUrl,
       "usesSecretKey": false,
     };
-    log(body.toString());
+    log('[Auth] Registration request for ${body['email']}');
 
     await pb.collection('users').create(body: body);
     await pb.collection('users').requestVerification(email);

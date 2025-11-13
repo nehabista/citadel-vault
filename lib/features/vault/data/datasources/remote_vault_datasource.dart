@@ -5,6 +5,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import '../../../../core/crypto/crypto_engine.dart';
+import '../../../../core/utils/pb_filter_sanitizer.dart';
 
 /// Remote data source wrapping PocketBase for vault_items collection.
 ///
@@ -72,9 +73,11 @@ class RemoteVaultDatasource {
     final userId = _currentUserId;
     if (userId == null) return Future.value([]);
 
-    String filter = 'owner = "$userId"';
+    final safeUserId = sanitizePbFilter(userId);
+    String filter = 'owner = "$safeUserId"';
     if (lastSync != null) {
-      filter += ' && updated > "$lastSync"';
+      final safeLastSync = sanitizePbFilter(lastSync);
+      filter += ' && updated > "$safeLastSync"';
     }
     return _pb.collection(_itemsCollection).getFullList(filter: filter);
   }

@@ -6,6 +6,8 @@ import 'dart:developer' as dev;
 
 import 'package:pocketbase/pocketbase.dart';
 
+import '../../../../core/utils/pb_filter_sanitizer.dart';
+
 /// Service responsible for PocketBase API calls related to sharing.
 ///
 /// Manages three PB collections:
@@ -28,8 +30,9 @@ class SharingService {
   Future<void> publishPublicKey(String userId, String base64PublicKey) async {
     try {
       // Try to find existing key record for this user.
+      final safeUserId = sanitizePbFilter(userId);
       final existing = await _pb.collection('user_keys').getFullList(
-        filter: 'userId = "$userId"',
+        filter: 'userId = "$safeUserId"',
       );
       if (existing.isNotEmpty) {
         await _pb.collection('user_keys').update(existing.first.id, body: {
@@ -52,8 +55,9 @@ class SharingService {
   /// hasn't published a key yet (not a Citadel user or hasn't enabled sharing).
   Future<String?> getPublicKey(String userId) async {
     try {
+      final safeUserId = sanitizePbFilter(userId);
       final records = await _pb.collection('user_keys').getFullList(
-        filter: 'userId = "$userId"',
+        filter: 'userId = "$safeUserId"',
       );
       if (records.isEmpty) return null;
       return records.first.getStringValue('x25519PublicKey');
@@ -68,8 +72,9 @@ class SharingService {
   /// Used by the share flow to resolve a recipient email to an ID.
   Future<String?> lookupUserByEmail(String email) async {
     try {
+      final safeEmail = sanitizePbFilter(email);
       final records = await _pb.collection('users').getFullList(
-        filter: 'email = "$email"',
+        filter: 'email = "$safeEmail"',
       );
       if (records.isEmpty) return null;
       return records.first.id;
@@ -111,8 +116,9 @@ class SharingService {
   /// Get all items shared with a specific user, sorted by creation date desc.
   Future<List<RecordModel>> getReceivedItems(String userId) async {
     try {
+      final safeUserId = sanitizePbFilter(userId);
       return await _pb.collection('shared_items').getFullList(
-        filter: 'recipientId = "$userId"',
+        filter: 'recipientId = "$safeUserId"',
         sort: '-created',
       );
     } catch (e) {
@@ -123,8 +129,9 @@ class SharingService {
   /// Get all items sent (shared) by a specific user.
   Future<List<RecordModel>> getSentItems(String userId) async {
     try {
+      final safeUserId = sanitizePbFilter(userId);
       return await _pb.collection('shared_items').getFullList(
-        filter: 'senderId = "$userId"',
+        filter: 'senderId = "$safeUserId"',
         sort: '-created',
       );
     } catch (e) {

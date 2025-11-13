@@ -1,4 +1,5 @@
 // File: lib/presentation/pages/settings/settings_page.dart
+import 'dart:convert' show Base64Decoder;
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -315,6 +316,26 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ]),
 
+          // ── Danger Zone ──
+          _SettingsGroup(children: [
+            _SettingsTile(
+              icon: Icons.delete_forever,
+              iconColor: Colors.red,
+              title: 'Delete All Vault Data',
+              subtitle: 'Permanently erase all passwords and vaults',
+              trailing: const SizedBox.shrink(),
+              onTap: () => _deleteAllVaultData(context, ref),
+            ),
+            _SettingsTile(
+              icon: Icons.person_remove,
+              iconColor: Colors.red,
+              title: 'Delete Account',
+              subtitle: 'Remove your account and all data forever',
+              trailing: const SizedBox.shrink(),
+              onTap: () => _deleteAccount(context, ref),
+            ),
+          ]),
+
           // ── Account ──
           _SettingsGroup(children: [
             _SettingsTile(
@@ -393,6 +414,374 @@ class SettingsScreen extends ConsumerWidget {
     if (context.mounted) {
       showCitadelSnackBar(context, 'Quick unlock disabled');
     }
+  }
+
+  /// Delete all vault data (vault items, collections, password history).
+  void _deleteAllVaultData(BuildContext context, WidgetRef ref) {
+    showMasterPasswordPrompt(
+      context: context,
+      title: 'Confirm Vault Deletion',
+      subtitle: 'Enter your master password to delete ALL vault data',
+      onSubmit: (masterPassword) async {
+        // Verify master password by attempting key derivation
+        final authService = ref.read(authServiceProvider);
+        final user = authService.currentUser;
+        if (user == null) return;
+
+        try {
+          final crypto = ref.read(cryptoEngineProvider);
+          final saltBytes =
+              const Base64Decoder().convert(user.salt);
+          await crypto.deriveKey(masterPassword, saltBytes);
+        } catch (_) {
+          if (context.mounted) {
+            showCitadelSnackBar(context, 'Incorrect master password',
+                type: SnackBarType.error);
+          }
+          return;
+        }
+
+        if (!context.mounted) return;
+
+        // Second confirmation: type "DELETE"
+        final confirmed = await _showTypedConfirmationDialog(
+          context: context,
+          title: 'Delete All Vault Data?',
+          description:
+              'This action is IRREVERSIBLE. All passwords, vault collections, '
+              'TOTP entries, and password history will be permanently deleted '
+              'from this device and the server.',
+          confirmationText: 'DELETE',
+        );
+
+        if (confirmed != true || !context.mounted) return;
+
+        // Show progress
+        _showProgressDialog(context, 'Deleting vault data...');
+
+        try {
+          final db = ref.read(appDatabaseProvider);
+          final pb = ref.read(pocketBaseClientProvider);
+          final userId = pb.authStore.record?.id;
+
+          // Delete remote vault items
+          if (userId != null) {
+            try {
+              final remoteItems = await pb
+                  .collection('vault_items')
+                  .getFullList(filter: 'owner = "$userId"');
+              for (final item in remoteItems) {
+                await pb.collection('vault_items').delete(item.id);
+              }
+              final remoteVaults = await pb
+                  .collection('vault_collections')
+                  .getFullList(filter: 'owner = "$userId"');
+              for (final v in remoteVaults) {
+                await pb.collection('vault_collections').delete(v.id);
+              }
+            } catch (_) {
+              // Remote deletion failure is non-fatal
+            }
+          }
+
+          // Delete local data
+          await db.customStatement('DELETE FROM vault_items');
+          await db.customStatement('DELETE FROM vaults');
+          await db.customStatement('DELETE FROM totp_entries');
+          await db.customStatement('DELETE FROM password_history');
+          await db.customStatement('DELETE FROM sync_queue');
+
+          if (context.mounted) {
+            Navigator.of(context).pop(); // close progress dialog
+            showCitadelSnackBar(context, 'All vault data deleted',
+                type: SnackBarType.success);
+            // Lock session and navigate to login
+            ref.read(authProvider.notifier).logout();
+            context.go(AppRoutes.login);
+          }
+        } catch (e) {
+          if (context.mounted) {
+            Navigator.of(context).pop(); // close progress dialog
+            showCitadelSnackBar(
+              context,
+              'Failed to delete vault data: ${e.toString()}',
+              type: SnackBarType.error,
+            );
+          }
+        }
+      },
+    );
+  }
+
+  /// Delete the entire account and all associated data.
+  void _deleteAccount(BuildContext context, WidgetRef ref) {
+    showMasterPasswordPrompt(
+      context: context,
+      title: 'Confirm Account Deletion',
+      subtitle: 'Enter your master password to delete your account',
+      onSubmit: (masterPassword) async {
+        // Verify master password
+        final authService = ref.read(authServiceProvider);
+        final user = authService.currentUser;
+        if (user == null) return;
+
+        try {
+          final crypto = ref.read(cryptoEngineProvider);
+          final saltBytes =
+              const Base64Decoder().convert(user.salt);
+          await crypto.deriveKey(masterPassword, saltBytes);
+        } catch (_) {
+          if (context.mounted) {
+            showCitadelSnackBar(context, 'Incorrect master password',
+                type: SnackBarType.error);
+          }
+          return;
+        }
+
+        if (!context.mounted) return;
+
+        // Second confirmation: type "DELETE MY ACCOUNT"
+        final confirmed = await _showTypedConfirmationDialog(
+          context: context,
+          title: 'Delete Your Account?',
+          description:
+              'This action is IRREVERSIBLE. Your account, all vault data, '
+              'shared items, emergency contacts, and all associated data will '
+              'be permanently deleted. You will not be able to recover anything.',
+          confirmationText: 'DELETE MY ACCOUNT',
+        );
+
+        if (confirmed != true || !context.mounted) return;
+
+        // Show progress
+        _showProgressDialog(context, 'Deleting account...');
+
+        try {
+          final db = ref.read(appDatabaseProvider);
+          final pb = ref.read(pocketBaseClientProvider);
+          final userId = pb.authStore.record?.id;
+
+          // Delete remote data
+          if (userId != null) {
+            try {
+              // Delete vault items
+              final remoteItems = await pb
+                  .collection('vault_items')
+                  .getFullList(filter: 'owner = "$userId"');
+              for (final item in remoteItems) {
+                await pb.collection('vault_items').delete(item.id);
+              }
+              // Delete vault collections
+              final remoteVaults = await pb
+                  .collection('vault_collections')
+                  .getFullList(filter: 'owner = "$userId"');
+              for (final v in remoteVaults) {
+                await pb.collection('vault_collections').delete(v.id);
+              }
+              // Delete the PocketBase user record
+              await pb.collection('users').delete(userId);
+            } catch (_) {
+              // Remote deletion failure is non-fatal
+            }
+          }
+
+          // Clear all local data
+          await db.customStatement('DELETE FROM vault_items');
+          await db.customStatement('DELETE FROM vaults');
+          await db.customStatement('DELETE FROM totp_entries');
+          await db.customStatement('DELETE FROM password_history');
+          await db.customStatement('DELETE FROM sync_queue');
+          await db.customStatement('DELETE FROM settings');
+          await db.customStatement('DELETE FROM shared_items');
+          await db.customStatement('DELETE FROM vault_members');
+          await db.customStatement('DELETE FROM emergency_contacts');
+          await db.customStatement('DELETE FROM notification_records');
+          await db.customStatement('DELETE FROM file_attachments');
+          await db.customStatement('DELETE FROM autofill_index');
+
+          // Clear secure storage
+          final localAuth = ref.read(localAuthServiceProvider);
+          await localAuth.disableQuickUnlock();
+
+          // Clear auth state
+          pb.authStore.clear();
+
+          if (context.mounted) {
+            Navigator.of(context).pop(); // close progress dialog
+            showCitadelSnackBar(context, 'Account deleted successfully',
+                type: SnackBarType.success);
+            context.go(AppRoutes.onboarding);
+          }
+        } catch (e) {
+          if (context.mounted) {
+            Navigator.of(context).pop(); // close progress dialog
+            showCitadelSnackBar(
+              context,
+              'Failed to delete account: ${e.toString()}',
+              type: SnackBarType.error,
+            );
+          }
+        }
+      },
+    );
+  }
+
+  /// Show a typed confirmation dialog requiring the user to type [confirmationText].
+  Future<bool?> _showTypedConfirmationDialog({
+    required BuildContext context,
+    required String title,
+    required String description,
+    required String confirmationText,
+  }) {
+    final controller = TextEditingController();
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            final isMatch =
+                controller.text.trim() == confirmationText;
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+              title: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded,
+                      color: Colors.red, size: 24),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 17,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    description,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 13,
+                        color: Color(0xFF1A1A2E),
+                      ),
+                      children: [
+                        const TextSpan(text: 'Type '),
+                        TextSpan(
+                          text: confirmationText,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.red,
+                          ),
+                        ),
+                        const TextSpan(text: ' to confirm:'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    style: const TextStyle(
+                        fontFamily: 'Poppins', fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: confirmationText,
+                      hintStyle: TextStyle(
+                        fontFamily: 'Poppins',
+                        color: Colors.grey.shade300,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:
+                            const BorderSide(color: Colors.red),
+                      ),
+                    ),
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text('Cancel',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        color: Colors.grey.shade600,
+                      )),
+                ),
+                FilledButton(
+                  onPressed: isMatch
+                      ? () => Navigator.pop(ctx, true)
+                      : null,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    disabledBackgroundColor:
+                        Colors.red.withValues(alpha: 0.3),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Confirm Deletion',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        color: Colors.white,
+                      )),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Show a non-dismissible progress dialog.
+  void _showProgressDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14)),
+        content: Row(
+          children: [
+            const CircularProgressIndicator(
+                color: Color(0xFF4D4DCD)),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
 }

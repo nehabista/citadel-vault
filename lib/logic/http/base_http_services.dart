@@ -14,7 +14,7 @@ abstract class BaseHttpService {
   }
 
   Future<ProcessResponseModel> get(String endpoint) async {
-    log('GET request to $baseUrl/$endpoint');
+    log('[HTTP] GET $endpoint');
     try {
       final uri = Uri.parse('$baseUrl/$endpoint');
       final response = await _client.get(uri);
@@ -32,24 +32,10 @@ abstract class BaseHttpService {
       final uri = Uri.parse('$baseUrl/$endpoint');
       final response =
           await _client.post(uri, headers: headers, body: jsonEncode(body));
-      log("""{
-        'endpoint': endpoint,
-        "headers": headers ?? _headers(token!),
-        "uri": '$baseUrl/$endpoint',
-        "response": response.body,
-        "responseCode": response.statusCode,
-        'body': jsonEncode(body),
-      }""");
+      log('[HTTP] POST $endpoint -> ${response.statusCode}');
       return _processResponse(response: response);
     } catch (e) {
-      log("""{
-        'message': e.toString(),
-        'endpoint': endpoint,
-        "headers": headers ?? _headers(token!),
-        "uri": '$baseUrl/$endpoint',
-        'body': jsonEncode(body),
-      }""");
-
+      log('[HTTP] POST $endpoint failed: ${e.runtimeType}');
       throw ApiException(message: e.toString(), code: 500);
     }
   }
