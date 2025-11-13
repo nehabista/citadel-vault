@@ -524,6 +524,70 @@ class SyncEngine {
     await syncNow();
   }
 
+  /// Pull ALL vaults and items from PocketBase into the local database.
+  ///
+  /// This is a pull-only sync: it fetches every vault_collection and
+  /// vault_item owned by the current user from PocketBase and
+  /// inserts/updates them locally. No local data is pushed to the server.
+  ///
+  /// Primary use-case: restoring vaults after travel mode deactivation.
+  /// Travel mode purges non-travel-safe vaults from the local DB, so a
+  /// push-based resync would have nothing to push. This method restores
+  /// the full vault set from the server.
+  Future<void> pullFromServer() async {
+    if (_isSyncing) return;
+
+    final userId = _currentUserId;
+    if (userId == null || !_pb.authStore.isValid) {
+      dev.log('[Sync] pullFromServer — not authenticated, aborting');
+      return;
+    }
+    if (_vaultKey == null) {
+      dev.log('[Sync] pullFromServer — vault locked (no key), aborting');
+      return;
+    }
+
+    _isSyncing = true;
+
+    try {
+      _emitState(const Syncing(pendingCount: 0));
+      dev.log('[Sync] Pull-only sync — fetching all data from server');
+
+      final filter = 'owner = "$userId"';
+
+      // 1. Pull ALL vault collections (no date filter — we want everything).
+      final vaultRecords = await _pb.collection('vault_collections').getFullList(
+        filter: filter,
+      );
+      dev.log('[Sync] Pulled ${vaultRecords.length} vault(s) from server');
+      for (final record in vaultRecords) {
+        await _applyRemoteVaultRecord(record);
+      }
+
+      // 2. Pull ALL vault items.
+      final itemRecords = await _pb.collection('vault_items').getFullList(
+        filter: filter,
+      );
+      dev.log('[Sync] Pulled ${itemRecords.length} item(s) from server');
+      for (final record in itemRecords) {
+        await _applyRemoteRecord(record);
+      }
+
+      await _settingsDao.setSetting(
+        'lastSync',
+        DateTime.now().toUtc().toIso8601String(),
+      );
+
+      _emitState(SyncIdle(lastSyncAt: DateTime.now()));
+      dev.log('[Sync] Pull-only sync complete');
+    } catch (e) {
+      dev.log('[Sync] Pull-only sync error: $e');
+      _emitState(SyncError(message: e.toString(), failedAt: DateTime.now()));
+    } finally {
+      _isSyncing = false;
+    }
+  }
+
   /// Trigger an immediate sync attempt.
   /// Call this after creating/updating items for write-through behavior:
   /// local save is instant, then we try to push to PocketBase immediately.

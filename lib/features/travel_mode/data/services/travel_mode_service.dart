@@ -52,14 +52,20 @@ class TravelModeService {
 
   /// Deactivate travel mode per D-03:
   /// 1. Clear travel mode flag
-  /// 2. Force full re-sync from PocketBase to restore hidden vaults
+  /// 2. Pull all vaults from PocketBase to restore locally-purged vaults
+  ///
+  /// Important: we use pullFromServer() instead of forceFullResync() because
+  /// forceFullResync() re-queues and PUSHES local data. After travel mode
+  /// activation, non-travel-safe vaults were deleted locally, so a push-based
+  /// resync would have nothing to push — the vaults would stay gone. A
+  /// pull-only sync fetches all vaults from PocketBase and restores them.
   ///
   /// Caller must verify master password before calling this method.
   Future<void> deactivate() async {
-    dev.log('[TravelMode] Deactivating -- will restore vaults via re-sync');
+    dev.log('[TravelMode] Deactivating -- will restore vaults from server');
     await _settingsDao.setSetting(_travelModeKey, 'false');
-    await _syncEngine.forceFullResync();
-    dev.log('[TravelMode] Travel mode deactivated, re-sync initiated');
+    await _syncEngine.pullFromServer();
+    dev.log('[TravelMode] Travel mode deactivated, vaults restored from server');
   }
 
   /// Toggle a vault's travel-safe status per D-01.
