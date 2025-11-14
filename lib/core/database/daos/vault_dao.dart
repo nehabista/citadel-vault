@@ -16,8 +16,19 @@ class VaultDao extends DatabaseAccessor<AppDatabase> with _$VaultDaoMixin {
     return into(vaults).insert(vault);
   }
 
-  /// Get all vaults ordered by sort order.
+  /// Get all visible vaults ordered by sort order.
+  /// Excludes vaults hidden by travel mode.
   Future<List<Vault>> getAllVaults() {
+    return (select(vaults)
+          ..where((t) => t.isHiddenByTravel.equals(false))
+          ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+        .get();
+  }
+
+  /// Get ALL vaults including those hidden by travel mode.
+  /// Used by the travel mode settings page so users can see and toggle
+  /// travel-safe status for every vault.
+  Future<List<Vault>> getAllVaultsIncludingHidden() {
     return (select(vaults)..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
         .get();
   }
@@ -93,5 +104,20 @@ class VaultDao extends DatabaseAccessor<AppDatabase> with _$VaultDaoMixin {
   Future<void> updateTravelSafe(String vaultId, bool isSafe) {
     return (update(vaults)..where((t) => t.id.equals(vaultId)))
         .write(VaultsCompanion(isTravelSafe: Value(isSafe)));
+  }
+
+  /// Soft-hide a vault for travel mode (sets isHiddenByTravel = true).
+  /// The vault and its items remain in the database but are excluded from
+  /// normal queries.
+  Future<void> hideVaultForTravel(String vaultId) {
+    return (update(vaults)..where((t) => t.id.equals(vaultId)))
+        .write(const VaultsCompanion(isHiddenByTravel: Value(true)));
+  }
+
+  /// Unhide all travel-hidden vaults (sets isHiddenByTravel = false for all).
+  /// Called when travel mode is deactivated.
+  Future<void> unhideAllTravelVaults() {
+    return (update(vaults)..where((t) => t.isHiddenByTravel.equals(true)))
+        .write(const VaultsCompanion(isHiddenByTravel: Value(false)));
   }
 }

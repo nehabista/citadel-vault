@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/core_providers.dart';
-import '../../../../core/providers/sync_providers.dart';
 import '../../data/services/travel_mode_service.dart';
 
 /// Provides the TravelModeService with all dependencies injected.
@@ -10,7 +9,6 @@ final travelModeServiceProvider = Provider<TravelModeService>((ref) {
   return TravelModeService(
     db.vaultDao,
     db.settingsDao,
-    ref.watch(syncEngineProvider),
   );
 });
 

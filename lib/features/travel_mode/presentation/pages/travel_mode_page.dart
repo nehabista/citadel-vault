@@ -9,8 +9,9 @@ import '../providers/travel_mode_providers.dart';
 /// Travel Mode settings page.
 ///
 /// Allows users to hide selected vaults when crossing borders.
-/// When Travel Mode is active, hidden vaults are removed from local storage
-/// and can only be restored after disabling Travel Mode and re-syncing.
+/// When Travel Mode is active, non-travel-safe vaults are soft-hidden
+/// (isHiddenByTravel flag) and excluded from normal queries.
+/// Deactivation instantly unhides all vaults — no sync needed.
 class TravelModePage extends ConsumerStatefulWidget {
   const TravelModePage({super.key});
 
@@ -194,8 +195,8 @@ class _TravelModePageState extends ConsumerState<TravelModePage> {
             ),
           ),
           content: const Text(
-            'Hidden vaults will be removed from this device. '
-            'They can be restored when you deactivate travel mode and re-sync.',
+            'Non-travel-safe vaults will be hidden from view. '
+            'They remain on your device and will reappear when you deactivate travel mode.',
             style: TextStyle(fontFamily: 'Poppins', fontSize: 14),
           ),
           shape: RoundedRectangleBorder(
@@ -226,7 +227,7 @@ class _TravelModePageState extends ConsumerState<TravelModePage> {
         if (!mounted) return;
         showCitadelSnackBar(
           context,
-          'Travel mode activated -- hidden vaults removed',
+          'Travel mode activated -- sensitive vaults hidden',
           type: SnackBarType.success,
         );
       } catch (e) {
@@ -243,17 +244,12 @@ class _TravelModePageState extends ConsumerState<TravelModePage> {
       // Deactivate
       setState(() => _isToggling = true);
       try {
-        showCitadelSnackBar(
-          context,
-          'Restoring hidden vaults...',
-          type: SnackBarType.info,
-        );
         await service.deactivate();
         ref.invalidate(travelModeActiveProvider);
         if (!mounted) return;
         showCitadelSnackBar(
           context,
-          'Travel mode deactivated -- vaults restored',
+          'Travel mode deactivated -- all vaults visible',
           type: SnackBarType.success,
         );
       } catch (e) {
@@ -270,10 +266,12 @@ class _TravelModePageState extends ConsumerState<TravelModePage> {
   }
 }
 
-/// Provider that loads all vaults for the travel-safe list.
+/// Provider that loads all vaults (including travel-hidden) for the
+/// travel-safe list. Must include hidden vaults so the user can see and
+/// toggle travel-safe status for every vault.
 final _allVaultsProvider = FutureProvider((ref) async {
   final db = ref.watch(appDatabaseProvider);
-  return db.vaultDao.getAllVaults();
+  return db.vaultDao.getAllVaultsIncludingHidden();
 });
 
 /// List of vaults with toggles showing travel-safe status.

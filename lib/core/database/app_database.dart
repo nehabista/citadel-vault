@@ -54,7 +54,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -76,6 +76,10 @@ class AppDatabase extends _$AppDatabase {
           // Add travel mode column and file attachments table.
           await migrator.addColumn(vaults, vaults.isTravelSafe);
           await migrator.createTable(fileAttachments);
+        }
+        if (from < 5) {
+          // Add soft-hide column for travel mode (replaces hard deletion).
+          await migrator.addColumn(vaults, vaults.isHiddenByTravel);
         }
       },
     );

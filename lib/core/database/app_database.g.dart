@@ -121,6 +121,21 @@ class $VaultsTable extends Vaults with TableInfo<$VaultsTable, Vault> {
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _isHiddenByTravelMeta = const VerificationMeta(
+    'isHiddenByTravel',
+  );
+  @override
+  late final GeneratedColumn<bool> isHiddenByTravel = GeneratedColumn<bool>(
+    'is_hidden_by_travel',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_hidden_by_travel" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -133,6 +148,7 @@ class $VaultsTable extends Vaults with TableInfo<$VaultsTable, Vault> {
     colorHex,
     iconName,
     isTravelSafe,
+    isHiddenByTravel,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -217,6 +233,15 @@ class $VaultsTable extends Vaults with TableInfo<$VaultsTable, Vault> {
         ),
       );
     }
+    if (data.containsKey('is_hidden_by_travel')) {
+      context.handle(
+        _isHiddenByTravelMeta,
+        isHiddenByTravel.isAcceptableOrUnknown(
+          data['is_hidden_by_travel']!,
+          _isHiddenByTravelMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -274,6 +299,11 @@ class $VaultsTable extends Vaults with TableInfo<$VaultsTable, Vault> {
             DriftSqlType.bool,
             data['${effectivePrefix}is_travel_safe'],
           )!,
+      isHiddenByTravel:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_hidden_by_travel'],
+          )!,
     );
   }
 
@@ -315,6 +345,11 @@ class Vault extends DataClass implements Insertable<Vault> {
   /// Per D-01: stored encrypted in metadata blob as source of truth.
   /// This plaintext column is a mirror for query filtering per D-04.
   final bool isTravelSafe;
+
+  /// Whether this vault is currently hidden by an active travel mode session.
+  /// When true, the vault is soft-hidden from normal queries but NOT deleted.
+  /// Flipped back to false when travel mode is deactivated.
+  final bool isHiddenByTravel;
   const Vault({
     required this.id,
     required this.name,
@@ -326,6 +361,7 @@ class Vault extends DataClass implements Insertable<Vault> {
     required this.colorHex,
     required this.iconName,
     required this.isTravelSafe,
+    required this.isHiddenByTravel,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -344,6 +380,7 @@ class Vault extends DataClass implements Insertable<Vault> {
     map['color_hex'] = Variable<String>(colorHex);
     map['icon_name'] = Variable<String>(iconName);
     map['is_travel_safe'] = Variable<bool>(isTravelSafe);
+    map['is_hidden_by_travel'] = Variable<bool>(isHiddenByTravel);
     return map;
   }
 
@@ -365,6 +402,7 @@ class Vault extends DataClass implements Insertable<Vault> {
       colorHex: Value(colorHex),
       iconName: Value(iconName),
       isTravelSafe: Value(isTravelSafe),
+      isHiddenByTravel: Value(isHiddenByTravel),
     );
   }
 
@@ -384,6 +422,7 @@ class Vault extends DataClass implements Insertable<Vault> {
       colorHex: serializer.fromJson<String>(json['colorHex']),
       iconName: serializer.fromJson<String>(json['iconName']),
       isTravelSafe: serializer.fromJson<bool>(json['isTravelSafe']),
+      isHiddenByTravel: serializer.fromJson<bool>(json['isHiddenByTravel']),
     );
   }
   @override
@@ -400,6 +439,7 @@ class Vault extends DataClass implements Insertable<Vault> {
       'colorHex': serializer.toJson<String>(colorHex),
       'iconName': serializer.toJson<String>(iconName),
       'isTravelSafe': serializer.toJson<bool>(isTravelSafe),
+      'isHiddenByTravel': serializer.toJson<bool>(isHiddenByTravel),
     };
   }
 
@@ -414,6 +454,7 @@ class Vault extends DataClass implements Insertable<Vault> {
     String? colorHex,
     String? iconName,
     bool? isTravelSafe,
+    bool? isHiddenByTravel,
   }) => Vault(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -425,6 +466,7 @@ class Vault extends DataClass implements Insertable<Vault> {
     colorHex: colorHex ?? this.colorHex,
     iconName: iconName ?? this.iconName,
     isTravelSafe: isTravelSafe ?? this.isTravelSafe,
+    isHiddenByTravel: isHiddenByTravel ?? this.isHiddenByTravel,
   );
   Vault copyWithCompanion(VaultsCompanion data) {
     return Vault(
@@ -442,6 +484,10 @@ class Vault extends DataClass implements Insertable<Vault> {
           data.isTravelSafe.present
               ? data.isTravelSafe.value
               : this.isTravelSafe,
+      isHiddenByTravel:
+          data.isHiddenByTravel.present
+              ? data.isHiddenByTravel.value
+              : this.isHiddenByTravel,
     );
   }
 
@@ -457,7 +503,8 @@ class Vault extends DataClass implements Insertable<Vault> {
           ..write('remoteId: $remoteId, ')
           ..write('colorHex: $colorHex, ')
           ..write('iconName: $iconName, ')
-          ..write('isTravelSafe: $isTravelSafe')
+          ..write('isTravelSafe: $isTravelSafe, ')
+          ..write('isHiddenByTravel: $isHiddenByTravel')
           ..write(')'))
         .toString();
   }
@@ -474,6 +521,7 @@ class Vault extends DataClass implements Insertable<Vault> {
     colorHex,
     iconName,
     isTravelSafe,
+    isHiddenByTravel,
   );
   @override
   bool operator ==(Object other) =>
@@ -488,7 +536,8 @@ class Vault extends DataClass implements Insertable<Vault> {
           other.remoteId == this.remoteId &&
           other.colorHex == this.colorHex &&
           other.iconName == this.iconName &&
-          other.isTravelSafe == this.isTravelSafe);
+          other.isTravelSafe == this.isTravelSafe &&
+          other.isHiddenByTravel == this.isHiddenByTravel);
 }
 
 class VaultsCompanion extends UpdateCompanion<Vault> {
@@ -502,6 +551,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
   final Value<String> colorHex;
   final Value<String> iconName;
   final Value<bool> isTravelSafe;
+  final Value<bool> isHiddenByTravel;
   final Value<int> rowid;
   const VaultsCompanion({
     this.id = const Value.absent(),
@@ -514,6 +564,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     this.colorHex = const Value.absent(),
     this.iconName = const Value.absent(),
     this.isTravelSafe = const Value.absent(),
+    this.isHiddenByTravel = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VaultsCompanion.insert({
@@ -527,6 +578,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     this.colorHex = const Value.absent(),
     this.iconName = const Value.absent(),
     this.isTravelSafe = const Value.absent(),
+    this.isHiddenByTravel = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -543,6 +595,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     Expression<String>? colorHex,
     Expression<String>? iconName,
     Expression<bool>? isTravelSafe,
+    Expression<bool>? isHiddenByTravel,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -556,6 +609,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
       if (colorHex != null) 'color_hex': colorHex,
       if (iconName != null) 'icon_name': iconName,
       if (isTravelSafe != null) 'is_travel_safe': isTravelSafe,
+      if (isHiddenByTravel != null) 'is_hidden_by_travel': isHiddenByTravel,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -571,6 +625,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     Value<String>? colorHex,
     Value<String>? iconName,
     Value<bool>? isTravelSafe,
+    Value<bool>? isHiddenByTravel,
     Value<int>? rowid,
   }) {
     return VaultsCompanion(
@@ -584,6 +639,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
       colorHex: colorHex ?? this.colorHex,
       iconName: iconName ?? this.iconName,
       isTravelSafe: isTravelSafe ?? this.isTravelSafe,
+      isHiddenByTravel: isHiddenByTravel ?? this.isHiddenByTravel,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -621,6 +677,9 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
     if (isTravelSafe.present) {
       map['is_travel_safe'] = Variable<bool>(isTravelSafe.value);
     }
+    if (isHiddenByTravel.present) {
+      map['is_hidden_by_travel'] = Variable<bool>(isHiddenByTravel.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -640,6 +699,7 @@ class VaultsCompanion extends UpdateCompanion<Vault> {
           ..write('colorHex: $colorHex, ')
           ..write('iconName: $iconName, ')
           ..write('isTravelSafe: $isTravelSafe, ')
+          ..write('isHiddenByTravel: $isHiddenByTravel, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5791,6 +5851,7 @@ typedef $$VaultsTableCreateCompanionBuilder =
       Value<String> colorHex,
       Value<String> iconName,
       Value<bool> isTravelSafe,
+      Value<bool> isHiddenByTravel,
       Value<int> rowid,
     });
 typedef $$VaultsTableUpdateCompanionBuilder =
@@ -5805,6 +5866,7 @@ typedef $$VaultsTableUpdateCompanionBuilder =
       Value<String> colorHex,
       Value<String> iconName,
       Value<bool> isTravelSafe,
+      Value<bool> isHiddenByTravel,
       Value<int> rowid,
     });
 
@@ -5887,6 +5949,11 @@ class $$VaultsTableFilterComposer
 
   ColumnFilters<bool> get isTravelSafe => $composableBuilder(
     column: $table.isTravelSafe,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isHiddenByTravel => $composableBuilder(
+    column: $table.isHiddenByTravel,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5974,6 +6041,11 @@ class $$VaultsTableOrderingComposer
     column: $table.isTravelSafe,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isHiddenByTravel => $composableBuilder(
+    column: $table.isHiddenByTravel,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$VaultsTableAnnotationComposer
@@ -6016,6 +6088,11 @@ class $$VaultsTableAnnotationComposer
 
   GeneratedColumn<bool> get isTravelSafe => $composableBuilder(
     column: $table.isTravelSafe,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isHiddenByTravel => $composableBuilder(
+    column: $table.isHiddenByTravel,
     builder: (column) => column,
   );
 
@@ -6083,6 +6160,7 @@ class $$VaultsTableTableManager
                 Value<String> colorHex = const Value.absent(),
                 Value<String> iconName = const Value.absent(),
                 Value<bool> isTravelSafe = const Value.absent(),
+                Value<bool> isHiddenByTravel = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VaultsCompanion(
                 id: id,
@@ -6095,6 +6173,7 @@ class $$VaultsTableTableManager
                 colorHex: colorHex,
                 iconName: iconName,
                 isTravelSafe: isTravelSafe,
+                isHiddenByTravel: isHiddenByTravel,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6109,6 +6188,7 @@ class $$VaultsTableTableManager
                 Value<String> colorHex = const Value.absent(),
                 Value<String> iconName = const Value.absent(),
                 Value<bool> isTravelSafe = const Value.absent(),
+                Value<bool> isHiddenByTravel = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VaultsCompanion.insert(
                 id: id,
@@ -6121,6 +6201,7 @@ class $$VaultsTableTableManager
                 colorHex: colorHex,
                 iconName: iconName,
                 isTravelSafe: isTravelSafe,
+                isHiddenByTravel: isHiddenByTravel,
                 rowid: rowid,
               ),
           withReferenceMapper:

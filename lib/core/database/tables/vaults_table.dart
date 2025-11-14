@@ -38,6 +38,12 @@ class Vaults extends Table {
   BoolColumn get isTravelSafe =>
       boolean().withDefault(const Constant(true))();
 
+  /// Whether this vault is currently hidden by an active travel mode session.
+  /// When true, the vault is soft-hidden from normal queries but NOT deleted.
+  /// Flipped back to false when travel mode is deactivated.
+  BoolColumn get isHiddenByTravel =>
+      boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

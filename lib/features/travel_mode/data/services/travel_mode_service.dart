@@ -2,23 +2,23 @@ import 'dart:developer' as dev;
 
 import '../../../../core/database/daos/vault_dao.dart';
 import '../../../../core/database/daos/settings_dao.dart';
-import '../../../../core/sync/sync_engine.dart';
 
 /// Service for activating and deactivating travel mode.
 ///
-/// Travel mode hides sensitive vaults from the local device by deleting
-/// non-travel-safe vaults (and their items) from the local Drift database.
-/// On deactivation, vaults are restored via a full PocketBase re-sync.
+/// Travel mode soft-hides sensitive vaults by setting isHiddenByTravel = true
+/// on non-travel-safe vaults. No data is deleted — vaults remain in the local
+/// Drift database but are excluded from normal queries.
 ///
-/// Per D-02: Activation purges non-travel-safe vaults from local DB.
-/// Per D-03: Deactivation requires master password re-entry + full re-sync.
-/// Per D-04: isTravelSafe column used for filtering.
+/// On deactivation, the flag is flipped back to false — no server sync needed.
+///
+/// Per D-02: Activation soft-hides non-travel-safe vaults from local queries.
+/// Per D-03: Deactivation unhides all travel-hidden vaults instantly.
+/// Per D-04: isTravelSafe column used for filtering which vaults to hide.
 class TravelModeService {
   final VaultDao _vaultDao;
   final SettingsDao _settingsDao;
-  final SyncEngine _syncEngine;
 
-  TravelModeService(this._vaultDao, this._settingsDao, this._syncEngine);
+  TravelModeService(this._vaultDao, this._settingsDao);
 
   static const _travelModeKey = 'travel_mode_active';
 
@@ -28,44 +28,40 @@ class TravelModeService {
     return value == 'true';
   }
 
-  /// Activate travel mode per D-02:
+  /// Activate travel mode:
   /// 1. Find all vaults where isTravelSafe == false
-  /// 2. Delete those vaults (and their items) from local Drift DB
+  /// 2. Set isHiddenByTravel = true on those vaults (soft-hide, NOT delete)
   /// 3. Set travel_mode_active = 'true' in settings
   ///
-  /// Hidden vault data remains safe on the PocketBase server and will be
-  /// restored when the user deactivates travel mode.
+  /// No data is lost — vaults and their items remain in the database.
+  /// They are simply excluded from normal queries via the isHiddenByTravel
+  /// filter in getAllVaults().
   Future<void> activate() async {
     final nonSafeVaults = await _vaultDao.getNonTravelSafeVaults();
     dev.log(
-      '[TravelMode] Activating -- purging ${nonSafeVaults.length} '
-      'non-travel-safe vaults from local DB',
+      '[TravelMode] Activating -- soft-hiding ${nonSafeVaults.length} '
+      'non-travel-safe vaults',
     );
 
     for (final vault in nonSafeVaults) {
-      await _vaultDao.deleteVault(vault.id);
+      await _vaultDao.hideVaultForTravel(vault.id);
     }
 
     await _settingsDao.setSetting(_travelModeKey, 'true');
     dev.log('[TravelMode] Travel mode activated');
   }
 
-  /// Deactivate travel mode per D-03:
-  /// 1. Clear travel mode flag
-  /// 2. Pull all vaults from PocketBase to restore locally-purged vaults
+  /// Deactivate travel mode:
+  /// 1. Unhide all travel-hidden vaults (flip isHiddenByTravel back to false)
+  /// 2. Clear travel mode flag
   ///
-  /// Important: we use pullFromServer() instead of forceFullResync() because
-  /// forceFullResync() re-queues and PUSHES local data. After travel mode
-  /// activation, non-travel-safe vaults were deleted locally, so a push-based
-  /// resync would have nothing to push — the vaults would stay gone. A
-  /// pull-only sync fetches all vaults from PocketBase and restores them.
-  ///
-  /// Caller must verify master password before calling this method.
+  /// No server sync needed — data was never deleted, just hidden locally.
+  /// Works instantly and offline.
   Future<void> deactivate() async {
-    dev.log('[TravelMode] Deactivating -- will restore vaults from server');
+    dev.log('[TravelMode] Deactivating -- unhiding all travel-hidden vaults');
+    await _vaultDao.unhideAllTravelVaults();
     await _settingsDao.setSetting(_travelModeKey, 'false');
-    await _syncEngine.pullFromServer();
-    dev.log('[TravelMode] Travel mode deactivated, vaults restored from server');
+    dev.log('[TravelMode] Travel mode deactivated, vaults unhidden');
   }
 
   /// Toggle a vault's travel-safe status per D-01.
