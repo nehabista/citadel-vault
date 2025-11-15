@@ -6,6 +6,7 @@ import 'package:pocketbase/pocketbase.dart';
 
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/providers/session_provider.dart';
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../data/services/auth/auth_service.dart';
 import '../../../../utils/exceptions/auth_exception.dart';
 
@@ -93,12 +94,15 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoadingSignUp: true, errorMessage: null);
     try {
       final email = emailSignUpController.text.trim();
+      final masterPw = masterPasswordController.text;
       await _authService.register(
         name: nameSignUpController.text.trim(),
         email: email,
         accountPassword: passwordSignUpController.text,
-        masterPassword: masterPasswordController.text,
+        masterPassword: masterPw,
       );
+      // Clear master password from controller immediately after use.
+      masterPasswordController.clear();
       state = state.copyWith(isLoadingSignUp: false);
       return (
         success: true,
@@ -107,11 +111,13 @@ class AuthNotifier extends Notifier<AuthState> {
         email: email
       );
     } catch (e) {
+      masterPasswordController.clear();
+      final sanitized = sanitizeErrorMessage(e);
       state = state.copyWith(
-          isLoadingSignUp: false, errorMessage: e.toString());
+          isLoadingSignUp: false, errorMessage: sanitized);
       return (
         success: false,
-        error: e.toString(),
+        error: sanitized,
         needsVerification: false,
         email: null
       );
@@ -122,18 +128,22 @@ class AuthNotifier extends Notifier<AuthState> {
       login() async {
     state = state.copyWith(isLoadingLogin: true, errorMessage: null);
     try {
+      final masterPw = masterPasswordController.text;
       await _authService.loginWithMasterPassword(
         email: emailLoginController.text.trim(),
         password: passwordLoginController.text,
-        masterPassword: masterPasswordController.text,
+        masterPassword: masterPw,
       );
 
       // Unlock the session via the new SessionNotifier
       final sessionNotifier = ref.read(sessionProvider.notifier);
       await sessionNotifier.unlock(
-        masterPasswordController.text,
+        masterPw,
         _authService.currentUser!.salt,
       );
+
+      // Clear master password from controller immediately after use.
+      masterPasswordController.clear();
 
       state = state.copyWith(isLoadingLogin: false);
       return (
@@ -143,6 +153,7 @@ class AuthNotifier extends Notifier<AuthState> {
         email: null
       );
     } on ClientException catch (e) {
+      masterPasswordController.clear();
       state = state.copyWith(isLoadingLogin: false);
       final friendlyError = AuthException.fromClientException(e);
       if (friendlyError.message.toLowerCase().contains('verify your email')) {
@@ -160,7 +171,9 @@ class AuthNotifier extends Notifier<AuthState> {
         email: null
       );
     } catch (e) {
-      state = state.copyWith(isLoadingLogin: false, errorMessage: e.toString());
+      masterPasswordController.clear();
+      state = state.copyWith(
+          isLoadingLogin: false, errorMessage: sanitizeErrorMessage(e));
       return (
         success: false,
         error: 'An unexpected error occurred. Please contact support.',

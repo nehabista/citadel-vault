@@ -1,3 +1,4 @@
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -34,7 +35,8 @@ class TotpDisplay extends ConsumerWidget {
       ),
       error: (err, _) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Text('Error: $err', style: const TextStyle(color: Colors.red)),
+        child: Text('Error: ${sanitizeErrorMessage(err)}',
+            style: const TextStyle(color: Colors.red)),
       ),
       data: (displayState) => _buildDisplay(context, displayState),
     );

@@ -167,6 +167,16 @@ class SharingService {
   ///
   /// The decryption key is NOT stored server-side; it is returned to the
   /// caller and placed in the URL fragment (per D-04, D-05).
+  ///
+  /// SECURITY NOTE (accepted risk): PocketBase generates record IDs
+  /// server-side (15-char alphanumeric, ~82 bits of entropy). The
+  /// `shared_links.viewRule` is empty, so anyone who guesses a record ID
+  /// can fetch the encrypted blob. However, the blob is AES-256-GCM
+  /// encrypted and the decryption key is only present in the URL fragment
+  /// (never sent to the server). Without the key, the encrypted data is
+  /// cryptographically useless. Brute-forcing both the ID and the 256-bit
+  /// key is computationally infeasible. Additionally, links have expiration
+  /// and optional one-time-view enforcement. This risk is therefore accepted.
   Future<RecordModel> createSharedLink({
     required String encryptedData,
     required String creatorId,

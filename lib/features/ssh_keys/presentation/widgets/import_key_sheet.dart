@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../../../vault/presentation/providers/multi_vault_provider.dart';
 import '../../data/models/ssh_key_data.dart';
@@ -268,7 +269,8 @@ class _ImportKeySheetState extends ConsumerState<ImportKeySheet> {
       _tryParse();
     } catch (e) {
       if (mounted) {
-        showCitadelSnackBar(context, 'Failed to read file: $e',
+        showCitadelSnackBar(context,
+            'Failed to read file: ${sanitizeErrorMessage(e)}',
             type: SnackBarType.error);
       }
     }
@@ -313,7 +315,8 @@ class _ImportKeySheetState extends ConsumerState<ImportKeySheet> {
     } catch (e) {
       if (mounted) {
         setState(() => _isImporting = false);
-        showCitadelSnackBar(context, 'Failed to import key: $e',
+        showCitadelSnackBar(context,
+            'Failed to import key: ${sanitizeErrorMessage(e)}',
             type: SnackBarType.error);
       }
     }

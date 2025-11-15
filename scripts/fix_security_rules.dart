@@ -4,6 +4,7 @@
 ///   dart run scripts/fix_security_rules.dart <admin_email> <admin_password>
 ///
 /// CRITICAL SECURITY FIXES:
+///   - vault_items: only owner can list/view/update/delete; any auth user can create
 ///   - vault_members: only vault owner can add/update members (was: any authenticated user)
 ///   - vault_collections: only owner or members can list/view; only owner can update/delete
 ///   - shared_items: only sender can update/delete; only sender/recipient can view
@@ -61,6 +62,13 @@ final Map<String, Map<String, String?>> securityRules = {
     'createRule': '@request.auth.id != ""',
     'updateRule': 'grantorId = @request.auth.id',
     'deleteRule': 'grantorId = @request.auth.id',
+  },
+  'vault_items': {
+    'listRule': 'owner = @request.auth.id',
+    'viewRule': 'owner = @request.auth.id',
+    'createRule': '@request.auth.id != ""',
+    'updateRule': 'owner = @request.auth.id',
+    'deleteRule': 'owner = @request.auth.id',
   },
   'user_keys': {
     'listRule': '@request.auth.id != ""',

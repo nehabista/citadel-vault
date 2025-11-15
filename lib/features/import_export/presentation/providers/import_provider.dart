@@ -4,6 +4,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
@@ -107,7 +108,7 @@ class ImportNotifier extends Notifier<ImportState> {
     } on ImportFormatException catch (e) {
       state = ImportError(message: e.message);
     } catch (e) {
-      state = ImportError(message: 'Import failed: $e');
+      state = ImportError(message: 'Import failed: ${sanitizeErrorMessage(e)}');
     }
   }
 
@@ -186,7 +187,7 @@ class ImportNotifier extends Notifier<ImportState> {
 
       state = ImportComplete(count: count);
     } catch (e) {
-      state = ImportError(message: 'Import failed: $e');
+      state = ImportError(message: 'Import failed: ${sanitizeErrorMessage(e)}');
     }
   }
 

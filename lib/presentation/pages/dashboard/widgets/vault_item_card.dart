@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
 import '../../../../features/search/presentation/widgets/search_highlight.dart';
@@ -321,7 +322,8 @@ class VaultItemCard extends ConsumerWidget {
                 }
               } catch (e) {
                 if (context.mounted) {
-                  showCitadelSnackBar(context, 'Error deleting: $e',
+                  showCitadelSnackBar(context,
+                      'Error deleting: ${sanitizeErrorMessage(e)}',
                       type: SnackBarType.error);
                 }
               }
@@ -358,7 +360,8 @@ class VaultItemCard extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        showCitadelSnackBar(context, 'Error: $e', type: SnackBarType.error);
+        showCitadelSnackBar(context,
+            'Error: ${sanitizeErrorMessage(e)}', type: SnackBarType.error);
       }
     }
   }

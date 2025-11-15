@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../../data/models/alias_model.dart';
 import '../../data/services/simple_login_service.dart';
@@ -22,7 +23,7 @@ class SimpleLoginTab extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
         child: Text(
-          'Error loading API key: $e',
+          'Error loading API key: ${sanitizeErrorMessage(e)}',
           style: const TextStyle(fontFamily: 'Poppins', color: Colors.red),
         ),
       ),
@@ -124,7 +125,8 @@ class _ApiKeySetupViewState extends ConsumerState<_ApiKeySetupView> {
                         }
                       } catch (e) {
                         if (context.mounted) {
-                          showCitadelSnackBar(context, 'Failed to save: $e',
+                          showCitadelSnackBar(context,
+                              'Failed to save: ${sanitizeErrorMessage(e)}',
                               type: SnackBarType.error);
                         }
                       } finally {
@@ -227,7 +229,7 @@ class _AliasListView extends ConsumerWidget {
         }
         return Center(
           child: Text(
-            'Error: $e',
+            'Error: ${sanitizeErrorMessage(e)}',
             style:
                 const TextStyle(fontFamily: 'Poppins', color: Colors.red),
           ),
@@ -372,7 +374,8 @@ class _AliasCard extends ConsumerWidget {
           }
         } catch (e) {
           if (context.mounted) {
-            showCitadelSnackBar(context, 'Toggle failed: $e',
+            showCitadelSnackBar(context,
+                'Toggle failed: ${sanitizeErrorMessage(e)}',
                 type: SnackBarType.error);
           }
         }
@@ -409,7 +412,8 @@ class _AliasCard extends ConsumerWidget {
             }
           } catch (e) {
             if (context.mounted) {
-              showCitadelSnackBar(context, 'Delete failed: $e',
+              showCitadelSnackBar(context,
+                  'Delete failed: ${sanitizeErrorMessage(e)}',
                   type: SnackBarType.error);
             }
           }

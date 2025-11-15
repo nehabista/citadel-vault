@@ -9,6 +9,7 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../domain/entities/vault_item.dart';
 
 /// State for multi-vault management.
@@ -101,7 +102,7 @@ class MultiVaultNotifier extends Notifier<MultiVaultState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: () => e.toString(),
+        error: () => sanitizeErrorMessage(e),
       );
     }
   }
@@ -123,7 +124,7 @@ class MultiVaultNotifier extends Notifier<MultiVaultState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: () => e.toString(),
+        error: () => sanitizeErrorMessage(e),
       );
     }
   }
@@ -155,7 +156,7 @@ class MultiVaultNotifier extends Notifier<MultiVaultState> {
       await _loadVaults();
       await selectVault(id);
     } catch (e) {
-      state = state.copyWith(error: () => e.toString());
+      state = state.copyWith(error: () => sanitizeErrorMessage(e));
     }
   }
 
@@ -166,7 +167,7 @@ class MultiVaultNotifier extends Notifier<MultiVaultState> {
       await repo.deleteVault(vaultId);
       await _loadVaults();
     } catch (e) {
-      state = state.copyWith(error: () => e.toString());
+      state = state.copyWith(error: () => sanitizeErrorMessage(e));
     }
   }
 
@@ -176,7 +177,7 @@ class MultiVaultNotifier extends Notifier<MultiVaultState> {
       await repo.updateVault(id: vaultId, colorHex: colorHex, iconName: iconName);
       await _loadVaults();
     } catch (e) {
-      state = state.copyWith(error: () => e.toString());
+      state = state.copyWith(error: () => sanitizeErrorMessage(e));
     }
   }
 

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../providers/alias_providers.dart';
 
@@ -62,7 +63,8 @@ class _CreateAliasSheetState extends ConsumerState<CreateAliasSheet>
     } catch (e) {
       if (mounted) {
         setState(() => _loadingSuffixes = false);
-        showCitadelSnackBar(context, 'Failed to load options: $e',
+        showCitadelSnackBar(context,
+            'Failed to load options: ${sanitizeErrorMessage(e)}',
             type: SnackBarType.error);
       }
     }
@@ -273,7 +275,7 @@ class _CreateAliasSheetState extends ConsumerState<CreateAliasSheet>
       }
     } catch (e) {
       if (mounted) {
-        showCitadelSnackBar(context, 'Creation failed: $e',
+        showCitadelSnackBar(context, 'Creation failed: ${sanitizeErrorMessage(e)}',
             type: SnackBarType.error);
       }
     } finally {
@@ -310,7 +312,7 @@ class _CreateAliasSheetState extends ConsumerState<CreateAliasSheet>
       }
     } catch (e) {
       if (mounted) {
-        showCitadelSnackBar(context, 'Creation failed: $e',
+        showCitadelSnackBar(context, 'Creation failed: ${sanitizeErrorMessage(e)}',
             type: SnackBarType.error);
       }
     } finally {

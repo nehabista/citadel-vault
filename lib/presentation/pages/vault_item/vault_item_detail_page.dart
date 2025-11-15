@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../widgets/citadel_snackbar.dart';
+import '../../../core/utils/error_sanitizer.dart';
 import '../../../features/file_vault/presentation/pages/file_vault_page.dart';
 import '../../../features/sharing/presentation/pages/share_bottom_sheet.dart';
 
@@ -75,7 +76,7 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
       ),
       error: (err, _) => Scaffold(
         appBar: AppBar(),
-        body: Center(child: Text('Error: $err')),
+        body: Center(child: Text('Error: ${sanitizeErrorMessage(err)}')),
       ),
       data: (item) {
         if (item == null) {
@@ -384,7 +385,8 @@ class _VaultItemDetailPageState extends ConsumerState<VaultItemDetailPage> {
       GoRouter.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      showCitadelSnackBar(context, 'Error deleting item: $e',
+      showCitadelSnackBar(context,
+          'Error deleting item: ${sanitizeErrorMessage(e)}',
           type: SnackBarType.error);
     }
   }

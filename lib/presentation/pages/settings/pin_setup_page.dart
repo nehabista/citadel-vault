@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/core_providers.dart';
 import '../../widgets/citadel_snackbar.dart';
+import '../../../core/utils/error_sanitizer.dart';
 
 /// Full-screen PIN setup page with two steps: create and confirm.
 class PinSetupPage extends ConsumerStatefulWidget {
@@ -111,7 +112,8 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage>
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        showCitadelSnackBar(context, 'Failed to set up PIN: $e',
+        showCitadelSnackBar(context,
+            'Failed to set up PIN: ${sanitizeErrorMessage(e)}',
             type: SnackBarType.error);
       }
     }

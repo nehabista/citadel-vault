@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../providers/travel_mode_providers.dart';
 
@@ -134,7 +135,8 @@ class TravelModeToggle extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        showCitadelSnackBar(context, 'Failed to activate travel mode: $e',
+        showCitadelSnackBar(context,
+            'Failed to activate travel mode: ${sanitizeErrorMessage(e)}',
             type: SnackBarType.error);
       }
     }
@@ -351,7 +353,8 @@ class TravelModeToggle extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        showCitadelSnackBar(context, 'Failed to deactivate: $e',
+        showCitadelSnackBar(context,
+            'Failed to deactivate: ${sanitizeErrorMessage(e)}',
             type: SnackBarType.error);
       }
     }

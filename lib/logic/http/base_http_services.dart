@@ -9,6 +9,12 @@ abstract class BaseHttpService {
   final _client = http.Client();
   String baseUrl = "";
 
+  /// Security headers applied to every outbound request.
+  static const _securityHeaders = {
+    'X-Content-Type-Options': 'nosniff',
+    'Cache-Control': 'no-store',
+  };
+
   set setBaseUrl(String url) {
     baseUrl = url;
   }
@@ -17,7 +23,7 @@ abstract class BaseHttpService {
     log('[HTTP] GET $endpoint');
     try {
       final uri = Uri.parse('$baseUrl/$endpoint');
-      final response = await _client.get(uri);
+      final response = await _client.get(uri, headers: _securityHeaders);
       return _processResponse(response: response);
     } catch (e) {
       throw ApiException(message: e.toString(), code: 500);
@@ -30,8 +36,9 @@ abstract class BaseHttpService {
       Map<String, String>? headers}) async {
     try {
       final uri = Uri.parse('$baseUrl/$endpoint');
+      final mergedHeaders = {..._securityHeaders, ...?headers};
       final response =
-          await _client.post(uri, headers: headers, body: jsonEncode(body));
+          await _client.post(uri, headers: mergedHeaders, body: jsonEncode(body));
       log('[HTTP] POST $endpoint -> ${response.statusCode}');
       return _processResponse(response: response);
     } catch (e) {

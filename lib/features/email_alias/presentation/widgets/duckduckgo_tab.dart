@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../../data/services/duckduckgo_alias_service.dart';
 import '../pages/ddg_signup_webview.dart';
@@ -22,7 +23,7 @@ class DuckDuckGoTab extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
         child: Text(
-          'Error: $e',
+          'Error: ${sanitizeErrorMessage(e)}',
           style: const TextStyle(fontFamily: 'Poppins', color: Colors.red),
         ),
       ),
@@ -292,7 +293,7 @@ class _DdgLoginViewState extends ConsumerState<_DdgLoginView> {
       }
     } catch (e) {
       if (mounted) {
-        showCitadelSnackBar(context, 'Error: $e', type: SnackBarType.error);
+        showCitadelSnackBar(context, sanitizeErrorMessage(e), type: SnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -420,7 +421,7 @@ class _DdgAuthenticatedViewState
       }
     } catch (e) {
       if (mounted) {
-        showCitadelSnackBar(context, 'Failed: $e', type: SnackBarType.error);
+        showCitadelSnackBar(context, sanitizeErrorMessage(e), type: SnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _generating = false);

@@ -1,3 +1,4 @@
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import 'dart:math';
 
@@ -131,7 +132,8 @@ class _TotpAddDialogState extends ConsumerState<TotpAddDialog>
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
-        showCitadelSnackBar(context, 'Error saving TOTP: $e',
+        showCitadelSnackBar(context,
+            'Error saving TOTP: ${sanitizeErrorMessage(e)}',
             type: SnackBarType.error);
       }
     } finally {

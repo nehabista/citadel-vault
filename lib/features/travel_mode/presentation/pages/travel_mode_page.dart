@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../providers/travel_mode_providers.dart';
 
@@ -314,7 +315,7 @@ class _VaultTravelSafeList extends ConsumerWidget {
             ),
           ),
           error: (err, _) => Text(
-            'Error loading vaults: $err',
+            'Error loading vaults: ${sanitizeErrorMessage(err)}',
             style: const TextStyle(
               fontFamily: 'Poppins',
               color: Colors.red,

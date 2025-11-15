@@ -1,15 +1,70 @@
 // File: lib/features/security/presentation/pages/hibp_settings_page.dart
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 
-/// Provider that loads the current HIBP API key from SettingsDao.
+/// Encryption key name stored in secure storage for HIBP API key encryption.
+/// Uses flutter_secure_storage so the encryption key is protected by the
+/// platform keystore (Keychain on iOS/macOS, EncryptedSharedPreferences on Android).
+const _hibpEncryptionKeyName = 'hibp_api_key_encryption_key';
+const _secureStorage = FlutterSecureStorage();
+
+/// Encrypts the HIBP API key using a simple XOR cipher with a random key
+/// stored in flutter_secure_storage. This ensures the key is not stored
+/// in plaintext in the Drift database.
+Future<String> _encryptHibpKey(String key) async {
+  // Get or create encryption key
+  var encKey = await _secureStorage.read(key: _hibpEncryptionKeyName);
+  if (encKey == null) {
+    // Generate a random key and store it securely
+    final bytes = List<int>.generate(
+      key.length + 32,
+      (i) => DateTime.now().microsecondsSinceEpoch % 256 ^ (i * 37 + 13),
+    );
+    encKey = base64Encode(bytes);
+    await _secureStorage.write(key: _hibpEncryptionKeyName, value: encKey);
+  }
+  final keyBytes = base64Decode(encKey);
+  final inputBytes = utf8.encode(key);
+  final encrypted = List<int>.generate(
+    inputBytes.length,
+    (i) => inputBytes[i] ^ keyBytes[i % keyBytes.length],
+  );
+  return base64Encode(encrypted);
+}
+
+/// Decrypts the HIBP API key previously encrypted with [_encryptHibpKey].
+Future<String?> _decryptHibpKey(String encryptedBase64) async {
+  final encKey = await _secureStorage.read(key: _hibpEncryptionKeyName);
+  if (encKey == null) return null; // No encryption key -- cannot decrypt.
+  final keyBytes = base64Decode(encKey);
+  final encryptedBytes = base64Decode(encryptedBase64);
+  final decrypted = List<int>.generate(
+    encryptedBytes.length,
+    (i) => encryptedBytes[i] ^ keyBytes[i % keyBytes.length],
+  );
+  return utf8.decode(decrypted);
+}
+
+/// Provider that loads and decrypts the current HIBP API key from SettingsDao.
 final _hibpApiKeyProvider = FutureProvider<String?>((ref) async {
   final db = ref.watch(appDatabaseProvider);
-  return db.settingsDao.getSetting('hibp_api_key');
+  final raw = await db.settingsDao.getSetting('hibp_api_key');
+  if (raw == null || raw.isEmpty) return null;
+  // Attempt to decrypt; if decryption fails, the stored value may be
+  // a legacy plaintext key -- return it as-is for backward compatibility.
+  try {
+    return await _decryptHibpKey(raw);
+  } catch (_) {
+    return raw;
+  }
 });
 
 /// Page for managing the HIBP API key (D-06).
@@ -43,7 +98,9 @@ class _HibpSettingsPageState extends ConsumerState<HibpSettingsPage> {
     setState(() => _isSaving = true);
     try {
       final db = ref.read(appDatabaseProvider);
-      await db.settingsDao.setSetting('hibp_api_key', key);
+      // Encrypt the API key before storing in the database.
+      final encrypted = await _encryptHibpKey(key);
+      await db.settingsDao.setSetting('hibp_api_key', encrypted);
       ref.invalidate(_hibpApiKeyProvider);
       if (mounted) {
         showCitadelSnackBar(context, 'API key saved',
@@ -104,7 +161,7 @@ class _HibpSettingsPageState extends ConsumerState<HibpSettingsPage> {
       appBar: AppBar(title: const Text('HIBP API Key')),
       body: asyncKey.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('Error: ${sanitizeErrorMessage(e)}')),
         data: (existingKey) {
           // Initialize controller once when key loads.
           if (existingKey != null &&

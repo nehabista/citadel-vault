@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../domain/entities/vault_item.dart';
 
 /// Vault state
@@ -74,7 +75,7 @@ class VaultNotifier extends Notifier<VaultState> {
         filteredItems: items,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = state.copyWith(isLoading: false, errorMessage: sanitizeErrorMessage(e));
     }
   }
 
@@ -112,7 +113,7 @@ class VaultNotifier extends Notifier<VaultState> {
             : VaultItemType.values.indexOf(state.selectedFilter!) + 1,
       );
     } catch (e) {
-      state = state.copyWith(errorMessage: e.toString());
+      state = state.copyWith(errorMessage: sanitizeErrorMessage(e));
     }
   }
 }

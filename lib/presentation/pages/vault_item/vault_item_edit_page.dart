@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../widgets/citadel_snackbar.dart';
+import '../../../core/utils/error_sanitizer.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/providers/session_provider.dart';
 import '../../../core/providers/sync_providers.dart';
@@ -223,7 +224,8 @@ class _VaultItemEditPageState extends ConsumerState<VaultItemEditPage> {
       }
     } catch (e) {
       if (mounted) {
-        showCitadelSnackBar(context, 'Error saving item: $e',
+        showCitadelSnackBar(context,
+            'Error saving item: ${sanitizeErrorMessage(e)}',
             type: SnackBarType.error);
       }
     } finally {

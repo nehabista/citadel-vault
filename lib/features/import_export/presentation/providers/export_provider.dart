@@ -4,6 +4,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
@@ -66,7 +67,7 @@ class ExportNotifier extends Notifier<ExportState> {
 
       state = ExportComplete(filePath: outputPath);
     } catch (e) {
-      state = ExportError(message: 'Export failed: $e');
+      state = ExportError(message: 'Export failed: ${sanitizeErrorMessage(e)}');
     }
   }
 
@@ -102,7 +103,7 @@ class ExportNotifier extends Notifier<ExportState> {
 
       state = ExportComplete(filePath: outputPath);
     } catch (e) {
-      state = ExportError(message: 'Export failed: $e');
+      state = ExportError(message: 'Export failed: ${sanitizeErrorMessage(e)}');
     }
   }
 

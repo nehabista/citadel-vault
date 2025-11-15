@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../widgets/citadel_snackbar.dart';
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../features/ssh_keys/presentation/providers/ssh_key_providers.dart';
 import '../../../../features/vault/domain/entities/custom_field.dart';
 import '../../../../features/vault/domain/entities/vault_item.dart';
@@ -153,7 +154,7 @@ class SshKeyFormFieldsState extends ConsumerState<SshKeyFormFields>
       setState(() => _sshGenerating = false);
       showCitadelSnackBar(
         context,
-        'Key generation failed: $e',
+        'Key generation failed: ${sanitizeErrorMessage(e)}',
         type: SnackBarType.error,
       );
     }
@@ -193,7 +194,7 @@ class SshKeyFormFieldsState extends ConsumerState<SshKeyFormFields>
     } catch (e) {
       showCitadelSnackBar(
         context,
-        'Import failed: $e',
+        'Import failed: ${sanitizeErrorMessage(e)}',
         type: SnackBarType.error,
       );
     }

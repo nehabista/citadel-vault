@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../../domain/entities/file_attachment_entity.dart';
 import '../providers/file_vault_providers.dart';
@@ -61,7 +62,7 @@ class FileVaultSection extends ConsumerWidget {
               ),
             ),
             error: (err, _) => Text(
-              'Error loading files: $err',
+              'Error loading files: ${sanitizeErrorMessage(err)}',
               style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
             ),
             data: (files) => _buildContent(context, ref, theme, files),
@@ -259,7 +260,7 @@ class _FileCard extends ConsumerWidget {
       if (!context.mounted) return;
       showCitadelSnackBar(
         context,
-        'Error deleting file: $e',
+        'Error deleting file: ${sanitizeErrorMessage(e)}',
         type: SnackBarType.error,
       );
     }

@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/session_provider.dart';
 import '../../../../core/session/session_state.dart';
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../presentation/widgets/citadel_snackbar.dart';
 import '../../../vault/presentation/providers/multi_vault_provider.dart';
 import '../../data/models/ssh_key_data.dart';
@@ -331,7 +332,8 @@ class _GenerateKeySheetState extends ConsumerState<GenerateKeySheet> {
     } catch (e) {
       if (mounted) {
         setState(() => _isGenerating = false);
-        showCitadelSnackBar(context, 'Failed to generate key: $e',
+        showCitadelSnackBar(context,
+            'Failed to generate key: ${sanitizeErrorMessage(e)}',
             type: SnackBarType.error);
       }
     }
