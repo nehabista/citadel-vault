@@ -728,6 +728,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.6.0"
+  http_certificate_guard:
+    dependency: "direct main"
+    description:
+      name: http_certificate_guard
+      sha256: "882d4191d56d4c06c5538da2e3feb13a462280f60857172f618571f872dea16f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
   http_multi_server:
     dependency: transitive
     description:
@@ -1405,6 +1413,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  smart_dev_pinning_plugin:
+    dependency: "direct main"
+    description:
+      name: smart_dev_pinning_plugin
+      sha256: b5cf7ff142295574a09bc750bbb9f600da97e5e1151fc98f82479cfdbf720040
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
   source_gen:
     dependency: transitive
     description:

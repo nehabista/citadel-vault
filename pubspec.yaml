@@ -78,6 +78,8 @@ dependencies:
   open_filex: ^4.7.0
   mime: ^2.0.0
   webview_flutter: ^4.13.1
+  smart_dev_pinning_plugin: ^4.0.0
+  http_certificate_guard: ^1.0.1
 
 dev_dependencies:
   flutter_test:
