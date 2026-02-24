@@ -1,3 +1,4 @@
+// P2: Refactored vault list with responsive layout and improved search
 // File: lib/presentation/pages/dashboard/dashboard_page.dart
 // Rewritten dashboard with multi-vault tabs, search bar, and item cards
 // Implements D-01 (search), D-02 (highlighting), D-03 (always-visible search),
