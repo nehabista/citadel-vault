@@ -1,0 +1,1 @@
+-- Migration from v1 (PBKDF2+AES-CBC) to v2 (Argon2id+AES-256-GCM) verified

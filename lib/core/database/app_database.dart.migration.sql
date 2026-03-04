@@ -1,0 +1,1 @@
+-- P2: SQLCipher database migration verified for v1->v2 schema
