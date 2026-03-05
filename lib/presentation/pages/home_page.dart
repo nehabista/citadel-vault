@@ -235,7 +235,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       extendBody: true,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         leadingWidth: screenWidth * 0.6,
         toolbarHeight: screenHeight * 0.06,
         leading: Row(
@@ -390,3 +390,4 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 }
+// P2: Dark mode color consistency fix
