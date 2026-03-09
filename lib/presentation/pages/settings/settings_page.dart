@@ -1,3 +1,4 @@
+// P2: Settings page with all configuration sections
 // File: lib/presentation/pages/settings/settings_page.dart
 import 'dart:convert' show Base64Decoder;
 import 'dart:io' show Platform;
