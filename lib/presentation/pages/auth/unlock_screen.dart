@@ -1,3 +1,4 @@
+// P2: Polished onboarding flow with smooth animations
 // File: lib/presentation/pages/auth/unlock_screen.dart
 import 'dart:async';
 
