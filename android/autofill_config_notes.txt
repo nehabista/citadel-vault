@@ -1,0 +1,3 @@
+# Android AutofillService configured in AndroidManifest.xml
+# Service: CitadelAutofillService
+# Min SDK: 26 (required for Autofill Framework)
