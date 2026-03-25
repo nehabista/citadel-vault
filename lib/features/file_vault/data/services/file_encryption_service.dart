@@ -1,3 +1,4 @@
+// P2: Streaming AES-GCM file encryption for large files
 import 'dart:io';
 import 'dart:math';
 
