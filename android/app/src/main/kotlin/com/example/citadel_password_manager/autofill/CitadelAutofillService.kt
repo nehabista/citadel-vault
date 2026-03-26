@@ -1,3 +1,4 @@
+// P2: Inline suggestion support for Android Autofill
 package com.example.citadel_password_manager.autofill
 
 import android.os.Build
