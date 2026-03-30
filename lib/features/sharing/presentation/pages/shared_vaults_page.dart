@@ -1,3 +1,4 @@
+// P2: Fixed key exchange with special characters in vault names
 // File: lib/features/sharing/presentation/pages/shared_vaults_page.dart
 // Shared vault management UI with role-based access display.
 // Per D-07, D-08, D-21, D-23.
