@@ -1,3 +1,4 @@
+// P2: Background breach checks with HIBP k-anonymity
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
