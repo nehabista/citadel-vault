@@ -1,3 +1,4 @@
+// P2: Switched to pull-only sync during travel mode
 // File: lib/features/travel_mode/presentation/pages/travel_mode_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
