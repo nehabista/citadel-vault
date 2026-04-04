@@ -1,3 +1,4 @@
+// P2: Security audit — certificate pinning, session timeout, PIN rate limiting
 // File: lib/core/providers/session_provider.dart
 // Session state notifier with lock/unlock lifecycle
 import 'dart:convert';
