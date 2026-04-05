@@ -1,3 +1,4 @@
+// P2: Fixed app bar sizing for macOS title bar
 // File: lib/presentation/pages/home_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
