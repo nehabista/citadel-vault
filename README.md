@@ -463,3 +463,79 @@ All data transmitted over the network is **encrypted client-side before transmis
 ## Testing
 
 ### Test Strategy
+
+| Category | Scope | Approach |
+|----------|-------|----------|
+| Unit Tests | CryptoEngine, session management, sync logic, health score | Automated (flutter_test) |
+| Widget Tests | UI components, form validation, navigation | Automated (flutter_test) |
+| Acceptance Testing | End-to-end flows on Android, iOS, macOS | Manual with documented UAT scenarios |
+| Usability Testing | Client feedback and observation sessions | In-person with Amrit Hamal |
+| Security Audit | Encryption, session handling, certificate pinning, API rules | Manual review and penetration testing |
+
+### Running Tests
+
+```bash
+# Run all tests
+flutter test
+
+# Run with coverage report
+flutter test --coverage
+
+# Run a specific test file
+flutter test test/crypto_engine_test.dart
+```
+
+### UAT Scenarios
+
+Documented in [`docs/uat_scenarios.md`](docs/uat_scenarios.md):
+
+| ID | Scenario | Status |
+|----|----------|--------|
+| UAT-01 | Account Creation | Passed |
+| UAT-02 | Vault Item CRUD | Passed |
+| UAT-03 | Autofill (Android) | Passed |
+| UAT-04 | Breach Detection | Passed |
+| UAT-05 | Cross-Device Sync | Passed |
+
+---
+
+## Team
+
+| Member | Role | Key Contributions |
+|--------|------|------------------|
+| **Neha Bista** | Lead Developer / CTO | System architecture, CryptoEngine (Argon2id + AES-256-GCM), session management, PIN rate limiting, security audit, CI/CD |
+| **Keshang Lama** | Frontend Developer | Flutter UI/UX across all screens, responsive layouts, dark mode, password generator UI, settings, onboarding |
+| **Vishal Gurung** | Backend Developer | PocketBase integration, SyncEngine, Drift database schema, shared vault key exchange, import/export, file vault |
+| **Renuka Dahal** | Security and Platform Developer | Android AutofillService, iOS/macOS platform config, HIBP breach detection, Watchtower health scores, notification service |
+
+### Project Management
+
+- **Jira Board**: [CIT Project](https://nehabista98.atlassian.net/jira/software/projects/CIT/boards/1)
+- **Methodology**: Agile Scrum with 2-week sprints
+- **Version Control**: Git with conventional commits and Jira issue linking (CIT-XX prefixes)
+- **Repository**: [github.com/nehabista/citadel-vault](https://github.com/nehabista/citadel-vault)
+
+---
+
+## Acknowledgements
+
+- **Client**: Amrit Hamal (Everest Double Glazing) for project sponsorship, requirements, and usability feedback
+- **Academic Supervisor**: CIHE academic staff (ICT308 Capstone Project 2, Semester 1 2026)
+- **Have I Been Pwned**: Troy Hunt for the breach database API and k-anonymity model
+- **PocketBase**: Gani Georgiev for the open-source backend solution
+- **Flutter**: Google's cross-platform UI framework
+
+### References
+
+- Atlassian. (2025). *Jira Software features*. https://www.atlassian.com/software/jira/features
+- Google. (2024). *Google Cloud Documentation*. https://cloud.google.com/
+- Sommerville, I. (2020). *Engineering Software Products*. Pearson.
+- Martin, R. (2020). *Clean Agile: Back to Basics*. Pearson.
+- CIHE Academic Integrity Policy. (2025).
+
+---
+
+<p align="center">
+  <sub>Built with Flutter | Secured with Argon2id + AES-256-GCM | Zero-Knowledge Architecture</sub><br/>
+  <sub>ICT308 Capstone Project 2 | CIHE | Semester 1, 2026</sub>
+</p>
