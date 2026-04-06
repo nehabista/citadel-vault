@@ -227,3 +227,99 @@ Encrypted Vault Items
 
 ### Core Framework
 
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| Flutter | 3.27.2 | Cross-platform UI framework |
+| Dart | 3.7.2 | Programming language |
+| Riverpod | 3.3.1 | Reactive state management |
+| GoRouter | 17.2.0 | Declarative navigation with auth guards |
+| Drift | 2.22.0 | Type-safe SQLite with encryption support |
+| PocketBase | 0.23.0 | Backend-as-a-Service (self-hosted) |
+
+### Cryptography
+
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| cryptography | 2.7.0 | Argon2id, AES-256-GCM, X25519, HKDF |
+| cryptography_flutter | 2.3.2 | Platform-optimized native crypto acceleration |
+| pointycastle | 4.0.0 | Additional cryptographic primitives |
+| crypto | 3.0.6 | SHA-1 hashing for HIBP k-anonymity lookups |
+
+### Security
+
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| flutter_secure_storage | 9.2.4 | OS keychain and encrypted preferences |
+| local_auth | 2.3.0 | Biometric authentication (Face ID, Touch ID, fingerprint) |
+| http_certificate_guard | 1.0.1 | TLS certificate pinning |
+| permission_handler | 12.0.1 | Runtime permission management |
+
+### UI and Design
+
+| Technology | Purpose |
+|-----------|---------|
+| Google Fonts (Poppins) | Primary typography |
+| icons_plus | Bootstrap and line icon sets |
+| Lottie | Animated illustrations and transitions |
+| Rive | Interactive vector animations |
+| cached_network_image | Service logo caching via logo.dev |
+
+---
+
+## Project Structure
+
+```
+citadel-vault/
+|-- android/                      # Android platform (Kotlin)
+|   +-- app/src/main/kotlin/      # AutofillService, InlinePresenter
+|-- ios/                          # iOS platform (Swift)
+|-- macos/                        # macOS platform (Swift)
+|-- web/                          # Web platform
+|-- lib/
+|   |-- main.dart                 # App entry point with ProviderScope
+|   |-- app.dart                  # CitadelApp (session lifecycle, sync)
+|   |-- core/
+|   |   |-- crypto/               # CryptoEngine (Argon2id + AES-256-GCM)
+|   |   |-- database/             # Drift tables, DAOs, AppDatabase
+|   |   |-- providers/            # Core Riverpod providers
+|   |   |-- session/              # Session state machine, PIN rate limiter
+|   |   |-- sync/                 # Offline-first SyncEngine
+|   |   |-- storage/              # AppSecureStorage (keychain wrapper)
+|   |   +-- network/              # ConnectivityService
+|   |-- data/services/
+|   |   |-- api/                  # PocketBaseService (AsyncAuthStore)
+|   |   +-- auth/                 # AuthService, LocalAuthService
+|   |-- features/
+|   |   |-- auth/                 # Login, signup, verification providers
+|   |   |-- autofill/             # AutofillIndexService, DomainComparator
+|   |   |-- email_alias/          # SimpleLogin, DuckDuckGo Email
+|   |   |-- file_vault/           # FileEncryptionService
+|   |   |-- import_export/        # CSV import, encrypted export
+|   |   |-- notifications/        # NotificationService (local-only)
+|   |   |-- password_generator/   # Generator with entropy scoring
+|   |   |-- search/               # Full-text vault search
+|   |   |-- security/             # Watchtower, HIBP, TOTP, breach detection
+|   |   |-- sharing/              # SharedVaultService, EmergencyAccess
+|   |   |-- ssh_keys/             # SSH key management
+|   |   |-- travel_mode/          # Vault soft-hiding
+|   |   +-- vault/                # Core vault CRUD, domain entities
+|   |-- presentation/
+|   |   |-- pages/                # Auth, home, settings, dashboard, splash
+|   |   +-- widgets/              # Shared UI components
+|   +-- routing/                  # GoRouter configuration
+|-- assets/
+|   |-- images/                   # App logo, icons
+|   +-- animations/               # Lottie JSON files (11 animations)
+|-- scripts/                      # Server config, utilities
+|-- docs/                         # API docs, UAT scenarios
+|-- test/                         # Unit and widget tests
++-- pubspec.yaml                  # Dependencies and configuration
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Flutter SDK 3.27.2 or higher
