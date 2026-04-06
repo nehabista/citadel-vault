@@ -323,3 +323,143 @@ citadel-vault/
 ### Prerequisites
 
 - Flutter SDK 3.27.2 or higher
+- Dart 3.7.2 or higher
+- Android Studio (for Android builds, minSdk 26)
+- Xcode 15+ (for iOS/macOS builds)
+- A PocketBase instance (or use the hosted production server)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/nehabista/citadel-vault.git
+cd citadel-vault
+
+# Install dependencies
+flutter pub get
+
+# Generate code (Drift database, asset references)
+dart run build_runner build --delete-conflicting-outputs
+
+# Run on a connected device
+flutter run
+```
+
+### Environment Configuration
+
+```bash
+# Use custom PocketBase server
+flutter run --dart-define=POCKETBASE_URL=https://your-server.example.com
+
+# Default production server
+flutter run
+# Uses: https://citadelpasswordmanager.pockethost.io
+```
+
+### Building for Release
+
+```bash
+# Android APK
+flutter build apk --release
+
+# Android App Bundle
+flutter build appbundle --release
+
+# iOS
+flutter build ios --release
+
+# macOS
+flutter build macos --release
+
+# Web
+flutter build web --release
+```
+
+---
+
+## Platform Configuration
+
+### Android
+
+| Setting | Value |
+|---------|-------|
+| minSdk | 26 (required for Autofill Framework) |
+| compileSdk | 36 |
+| targetSdk | 35 |
+| Kotlin JVM Target | 17 |
+| NDK Version | 27.0.12077973 |
+
+**Native Components:**
+- `CitadelAutofillService` -- System autofill provider registered in AndroidManifest
+- `AutofillResponseBuilder` -- Constructs fill responses from encrypted vault data
+- `InlinePresenter` -- Renders inline autofill suggestion chips
+
+### iOS
+
+| Setting | Value |
+|---------|-------|
+| Minimum Deployment Target | iOS 16.0 |
+| Entitlements | Keychain Sharing, App Groups |
+| Frameworks | LocalAuthentication, Security |
+
+### macOS
+
+| Setting | Value |
+|---------|-------|
+| Minimum Deployment Target | macOS 10.14 |
+| Sandbox | Enabled |
+| Entitlements | Network Client/Server, File Access, Keychain Groups |
+
+---
+
+## Database Schema
+
+Citadel uses **Drift** (type-safe SQLite) with database-level encryption:
+
+| Table | Purpose | Key Fields |
+|-------|---------|-----------|
+| `vaults` | Vault metadata | id, name (encrypted), created_at, travel_safe |
+| `vault_items` | Encrypted credentials | id, vault_id, encrypted_blob, type, modified_at |
+| `password_history` | Previous password versions | id, item_id, encrypted_password, changed_at |
+| `totp_entries` | TOTP secrets | id, item_id, encrypted_secret, algorithm, digits |
+| `file_attachments` | Encrypted file metadata | id, item_id, encrypted_blob, filename, mime_type |
+| `shared_items` | Cross-user item shares | id, item_id, recipient_id, encrypted_key |
+| `vault_members` | Shared vault membership | vault_id, user_id, encrypted_vault_key, role |
+| `emergency_contacts` | Emergency access config | id, user_id, contact_id, status, delay_hours |
+| `notifications` | Local notification log | id, type, title, body, is_read, created_at |
+| `sync_queue` | Pending sync operations | id, table_name, record_id, operation, payload |
+| `settings` | Key-value configuration | key, value |
+| `autofill_index` | Domain/package hash index | item_id, domain_hash, package_hash |
+
+The database encryption key is a randomly generated 256-bit hex string, stored in platform secure storage on first launch.
+
+---
+
+## API and Backend
+
+Citadel uses **PocketBase** as a self-hosted Backend-as-a-Service:
+
+### Collections
+
+| Collection | Description | Access Rules |
+|-----------|-------------|-------------|
+| `users` | User accounts with email/password auth | Public registration, self-access |
+| `vault_items` | Encrypted vault entries | Owner-only (filtered by user_id) |
+| `shared_vaults` | Shared vault metadata and membership | Members-only access |
+| `sync_metadata` | Sync state tracking per user | Owner-only |
+
+### Sync Protocol
+
+1. **Push Phase**: Local changes (create/update/delete) are sent to PocketBase
+2. **Pull Phase**: Server records newer than the last sync timestamp are fetched and merged
+3. **Conflict Resolution**: Last-write-wins with local preference
+4. **Retry Logic**: Exponential backoff with a maximum of 5 retries per operation
+5. **Frequency**: Every 30 seconds when the app is online and the vault is unlocked
+
+All data transmitted over the network is **encrypted client-side before transmission**. The PocketBase server only stores and serves opaque encrypted blobs.
+
+---
+
+## Testing
+
+### Test Strategy
